@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>דרור ייעוץ ופרויקטים – מערכת ניהול איכות</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;color:#1a1a1a;background:#F7F8FA;direction:rtl;height:100vh;overflow:hidden}
@@ -419,6 +420,10 @@ function tgl(el){el.classList.toggle('on');el.innerHTML=el.classList.contains('o
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(e,id){if(e.target===document.getElementById(id))closeById(id);}
 function closeById(id){document.getElementById(id).classList.remove('open');}
+  // Supabase
+const SUPABASE_URL = 'https://hkdacdibkwgtcgaqxxjo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_32ahowCQKAghPHGSN5bgDQ_SgCEmJAo';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
 </body>
 </html>
