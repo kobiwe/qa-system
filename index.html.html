@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>דרור ייעוץ ופרויקטים – מערכת ניהול איכות</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;color:#1a1a1a;background:#F7F8FA;direction:rtl;height:100vh;overflow:hidden}
+.app{display:flex;height:100vh}
+
+/* SIDEBAR - dark navy */
+.sidebar{width:210px;background:#0F2744;border-left:none;display:flex;flex-direction:column;flex-shrink:0}
+.logo-wrap{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px}
+.logo-img{width:36px;height:36px;object-fit:contain;filter:brightness(0) invert(1)}
+.logo-text{display:flex;flex-direction:column}
+.logo-name{font-weight:700;font-size:12px;color:#fff;line-height:1.2}
+.logo-sub{font-size:10px;color:rgba(255,255,255,0.45);margin-top:1px}
+.nav-sec{padding:10px 0 4px}
+.nav-lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,0.3);padding:4px 18px 4px;text-transform:uppercase;letter-spacing:.08em}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:12.5px;cursor:pointer;color:rgba(255,255,255,0.55);border-right:3px solid transparent;transition:all .15s}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.9)}
+.nav-item.active{background:rgba(255,255,255,0.1);color:#fff;border-right-color:#6BB5F8;font-weight:600}
+.nav-item i{font-size:17px;width:19px}
+.nav-space{flex:1}
+.nav-bottom{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.08)}
+.nav-user{display:flex;align-items:center;gap:9px}
+.nav-user-name{font-size:12px;color:rgba(255,255,255,0.7);line-height:1.3}
+.nav-user-role{font-size:10px;color:rgba(255,255,255,0.35)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:#fff;border-bottom:1px solid #E8EBF0;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-weight:700;font-size:16px;color:#0F2744}
+.topbar-sub{font-size:11px;color:#9AA3B0;margin-top:2px}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.avatar{width:32px;height:32px;border-radius:50%;background:#E8F1FB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#185FA5}
+.notif{position:relative;cursor:pointer;color:#9AA3B0;padding:4px;transition:color .15s}
+.notif:hover{color:#0F2744}
+.notif-dot{position:absolute;top:3px;left:3px;width:7px;height:7px;background:#E24B4A;border-radius:50%;border:1.5px solid #fff}
+.content{flex:1;overflow-y:auto;padding:20px 24px}
+
+/* SCREENS */
+.screen{display:none}.screen.active{display:block}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:#fff;border:1px solid #E8EBF0;border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;right:0;width:4px;height:100%;border-radius:0 12px 12px 0}
+.stat.blue::before{background:#185FA5}
+.stat.amber::before{background:#C97B1A}
+.stat.red::before{background:#C0392B}
+.stat.green::before{background:#2E7D32}
+.stat-lbl{font-size:11px;color:#9AA3B0;margin-bottom:6px;font-weight:500}
+.stat-val{font-size:28px;font-weight:700;color:#0F2744}
+
+/* CARDS */
+.card{background:#fff;border:1px solid #E8EBF0;border-radius:12px;padding:18px 20px;margin-bottom:14px}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-ttl{font-weight:700;font-size:11px;color:#9AA3B0;text-transform:uppercase;letter-spacing:.05em}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:right;padding:9px 14px;font-weight:600;font-size:11px;color:#9AA3B0;border-bottom:1px solid #E8EBF0;background:#FAFBFC}
+td{padding:11px 14px;border-bottom:1px solid #F0F2F5;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFBFD}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600}
+.b-open{background:#E8F1FB;color:#185FA5}
+.b-ok{background:#E8F5E9;color:#2E7D32}
+.b-warn{background:#FFF3E0;color:#C97B1A}
+.b-fail{background:#FFEBEE;color:#C0392B}
+.b-gray{background:#F0F2F5;color:#6B7280}
+
+/* BUTTONS */
+.btn{padding:8px 14px;border-radius:8px;border:1px solid #E0E4EA;background:#fff;cursor:pointer;font-size:13px;color:#374151;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:#F5F7FA;border-color:#C8CDD6}
+.btn-p{background:#0F2744;color:#fff;border-color:#0F2744}
+.btn-p:hover{background:#1a3a5c}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:6px}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* ALERTS */
+.alert{padding:11px 15px;border-radius:10px;font-size:12px;margin-bottom:14px;display:flex;align-items:center;gap:9px;border:1px solid}
+.a-warn{background:#FFF8ED;color:#92600A;border-color:#F6C05C}
+.a-danger{background:#FFF1F0;color:#9B2226;border-color:#FFADA8}
+.a-info{background:#EEF4FF;color:#1D4ED8;border-color:#93C5FD}
+.alert i{font-size:16px;flex-shrink:0}
+
+/* PROGRESS */
+.prog{height:5px;background:#E8EBF0;border-radius:999px;overflow:hidden;width:80px;display:inline-block;vertical-align:middle;margin-left:6px}
+.prog-fill{height:100%;border-radius:999px;background:#185FA5}
+
+/* TREE */
+.tree-item{padding:8px 4px;border-bottom:1px solid #F5F7FA;display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:#374151}
+.tree-item:hover{color:#185FA5}
+.tree-item i{font-size:16px;color:#C8CDD6}
+.ml{margin-right:auto}
+.ind1{padding-right:20px}.ind2{padding-right:40px}
+
+/* CHECKLIST */
+.cl-item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid #F5F7FA}
+.cl-item:last-child{border-bottom:none}
+.chk{width:20px;height:20px;border:2px solid #D1D5DB;border-radius:5px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s}
+.chk.on{background:#185FA5;border-color:#185FA5;color:#fff}
+.chk i{font-size:12px}
+.cl-meta{font-size:11px;color:#9AA3B0;margin-top:3px}
+.cl-meta.w{color:#C97B1A}.cl-meta.d{color:#C0392B}
+
+/* REPORTS */
+.rpt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.rpt-card{background:#fff;border:1px solid #E8EBF0;border-radius:12px;padding:20px 14px;cursor:pointer;text-align:center;transition:all .15s}
+.rpt-card:hover{border-color:#185FA5;box-shadow:0 4px 12px rgba(24,95,165,.1);transform:translateY(-1px)}
+.rpt-card i{font-size:30px;margin-bottom:8px;display:block}
+.rpt-ttl{font-weight:700;font-size:13px;margin-bottom:3px;color:#0F2744}
+.rpt-sub{font-size:11px;color:#9AA3B0}
+
+/* FORMS */
+.form-row{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.form-lbl{font-size:12px;color:#4B5563;font-weight:600}
+.form-in{padding:9px 12px;border:1px solid #E0E4EA;border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1a1a1a;direction:rtl;width:100%;transition:border .15s}
+.form-in:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.1)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* SEC HEADER */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.sec-hdr h2{font-size:18px;font-weight:700;color:#0F2744}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(15,39,68,.4);display:none;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(2px)}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:26px;width:480px;max-width:92vw;max-height:88vh;overflow-y:auto;direction:rtl;box-shadow:0 20px 60px rgba(15,39,68,.2)}
+.modal-ttl{font-size:17px;font-weight:700;color:#0F2744;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center}
+.modal-x{cursor:pointer;color:#9AA3B0;background:none;border:none;font-size:20px;line-height:1;font-family:inherit;transition:color .15s}
+.modal-x:hover{color:#0F2744}
+.modal-foot{display:flex;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid #E8EBF0}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="logo-wrap">
+      <img class="logo-img" src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAF5AYsDASIAAhEBAxEB/8QAHQABAAEEAwEAAAAAAAAAAAAAAAgEBQYHAQIDCf/EAEoQAAEDBAEDAgMFBAYFCgcBAAEAAgMEBQYRBwgSIRMxQVFhFCJxocEygZGxCRUWI0JSFyRi0eEYM1NVcoKUosLUKDRDdJKTs/H/xAAYAQEBAQEBAAAAAAAAAAAAAAAAAgMBBP/EADIRAQEAAgAEAwUIAQUBAAAAAAABAhEDEiExIkFRYXGRofAEEyNCgbHB0WIUMlKS8eH/2gAMAwEAAhEDEQA/AJloiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIsPzTkzC8Qq4KS+3ylpZ53aZG5xJ/ILK6OphrKWKqp3iSKVoexw9iCNhB6oiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIsdzrM8ewy0S3K/XCGmjY0kNc77zvoAgv1TPDTQOnqJWRRtG3OcdAKMXUD1M0lmknxzB9V1xcCw1LPLY3fT47Wq+U+aM55ivDsUwiiqYaCR/YGxftSj22471pbE4/4HsvGWF1mdZmY6+701OZo4n/sRu1v+KCMFmp79nvJdvorzPUVNdXVTWvMh2WglfUHHaFltsVDQMGhBAxn8GgKEnRpYn5ZzLc8uqYz6NI95j2PGyQW/yU6kBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBCQBsnQVJdrlQWqikrbjVRU1PG0ue97tABRE556ma251EmL8bsmdK4mN9XGNucfbTf+IQbe5459xvjyjloqOeO4XotPZBGd9h+v/8AqjBj2Lcm9RWVC5XieentQf5lkBEcbfk0e6zjgrpquOQ1keW8jySOErvUFJJ5dJvzt3wUwrLarfZbdFb7bSx01NE0NYxg0AEGHcR8VYvxxaWU1ooozVFo9WpcPvvK1f135cLPxsyxQyds9xeAQD57PIKkb3N3ragZ1PXOTkXqEt2K0jnS08ErafQO9d2iT/FBv3onxH+znE0VdNH21Fyf6rtjyACQFvdWjFKGns2OUFthAY2CBjND5ho2rqHtPsUd1XZERHBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBEXWR7I2F8j2saPJLjoBB2WEcq8nYxx3ZZK681sZmA3HTtd995+X0WrOoDqTs+Hxy2bF3MuV5ILe5nlkR+vz/ctH8b8RZ5zbkgyjM6mohtrn7dJNvucN+zfkEFHl2a8mdQeTiz2GnqYLS5/aImeGNb83Hej+5SW4G6fMc49giuVxjjuN6IBMzxsRn5NWyOPsHxzA7HHbLDQxU8bQO94H3nn5lX2SUv+gXZNqxxterpmtHawey8XSPd7ldUVa02mMizZveY8exO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ERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERB//9k=" alt="לוגו דרור">
+      <div class="logo-text">
+        <div class="logo-name">דרור ייעוץ</div>
+        <div class="logo-sub">מערכת ניהול איכות</div>
+      </div>
+    </div>
+    <div class="nav-sec">
+      <div class="nav-lbl">ראשי</div>
+      <div class="nav-item active" onclick="go('dashboard',this)"><i class="ti ti-layout-dashboard"></i>דשבורד</div>
+      <div class="nav-item" onclick="go('tree',this)"><i class="ti ti-sitemap"></i>עץ מבנה</div>
+    </div>
+    <div class="nav-sec">
+      <div class="nav-lbl">ניהול שוטף</div>
+      <div class="nav-item" onclick="go('cl',this)"><i class="ti ti-checklist"></i>רשימות תיוג</div>
+      <div class="nav-item" onclick="go('labs',this)"><i class="ti ti-flask"></i>בדיקות מעבדה</div>
+      <div class="nav-item" onclick="go('nc',this)"><i class="ti ti-alert-triangle"></i>אי-התאמות</div>
+    </div>
+    <div class="nav-sec">
+      <div class="nav-lbl">ניהול</div>
+      <div class="nav-item" onclick="go('approvals',this)"><i class="ti ti-circle-check"></i>אישורים</div>
+      <div class="nav-item" onclick="go('reports',this)"><i class="ti ti-chart-bar"></i>דוחות</div>
+    </div>
+    <div class="nav-space"></div>
+    <div class="nav-bottom">
+      <div class="nav-user">
+        <div class="avatar">אכ</div>
+        <div><div class="nav-user-name">אליה כהן</div><div class="nav-user-role">הבטחת איכות (QA)</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div><div class="topbar-title" id="ttl">דשבורד ראשי</div><div class="topbar-sub">פרויקט: נוף הגליל – שלב א' | QA-2026-041</div></div>
+      <div class="topbar-right">
+        <div class="notif" onclick="go('nc',document.querySelectorAll('.nav-item')[4])"><i class="ti ti-bell" style="font-size:20px"></i><div class="notif-dot"></div></div>
+        <button class="btn btn-sm" style="font-size:12px"><i class="ti ti-settings"></i>הגדרות</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="screen active" id="s-dashboard">
+        <div class="alert a-warn"><i class="ti ti-alert-triangle"></i>3 רשימות תיוג נסגרו ללא בדיקת מעבדה – נדרשת בדיקה<span class="ml" style="cursor:pointer;text-decoration:underline;font-weight:600" onclick="go('cl',document.querySelectorAll('.nav-item')[2])">לפרטים ←</span></div>
+        <div class="stats">
+          <div class="stat blue"><div class="stat-lbl">רשימות תיוג פתוחות</div><div class="stat-val">27</div></div>
+          <div class="stat amber"><div class="stat-lbl">בדיקות ממתינות</div><div class="stat-val">8</div></div>
+          <div class="stat red"><div class="stat-lbl">אי-התאמות פתוחות</div><div class="stat-val">5</div></div>
+          <div class="stat green"><div class="stat-lbl">רשימות סגורות</div><div class="stat-val">112</div></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-ttl">התקדמות לפי מבנה</div></div>
+          <table><thead><tr><th>מבנה</th><th>רשימות</th><th>בדיקות</th><th>אי-התאמות</th><th>התקדמות</th></tr></thead>
+          <tbody>
+            <tr><td><b>כביש 2</b></td><td>45</td><td>54</td><td>0</td><td><div class="prog"><div class="prog-fill" style="width:82%"></div></div> <span style="font-size:11px;color:#9AA3B0">82%</span></td></tr>
+            <tr><td><b>כביש 6</b></td><td>63</td><td>44</td><td>1</td><td><div class="prog"><div class="prog-fill" style="width:67%"></div></div> <span style="font-size:11px;color:#9AA3B0">67%</span></td></tr>
+            <tr><td><b>מובל ניקוז</b></td><td>192</td><td>165</td><td>5</td><td><div class="prog"><div class="prog-fill" style="width:54%"></div></div> <span style="font-size:11px;color:#9AA3B0">54%</span></td></tr>
+            <tr><td><b>אשפה פנאומטי</b></td><td>29</td><td>5</td><td>12</td><td><div class="prog"><div class="prog-fill" style="width:31%"></div></div> <span style="font-size:11px;color:#9AA3B0">31%</span></td></tr>
+          </tbody></table>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-ttl">פעולות אחרונות</div></div>
+          <table><thead><tr><th>פעולה</th><th>גורם</th><th>שעה</th></tr></thead>
+          <tbody>
+            <tr><td>נסגרה רשימת תיוג #473 – מילוי שכבה 1</td><td>דניאל גורי</td><td>09:12</td></tr>
+            <tr><td>נפתחה אי-התאמה #41 – כישלון בדיקת דחיסות</td><td><span class="badge b-gray">מערכת</span></td><td>08:55</td></tr>
+            <tr><td>תעודת מעבדה #209 התקבלה – איזוטסט</td><td>מעבדת איזוטסט</td><td>08:30</td></tr>
+            <tr><td>אושר חומר: בטון C30</td><td>אליה כהן</td><td>אתמול</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <!-- TREE -->
+      <div class="screen" id="s-tree">
+        <div class="sec-hdr"><h2>עץ מבנה הפרויקט</h2><button class="btn btn-p"><i class="ti ti-plus"></i>הוסף אלמנט</button></div>
+        <div class="card">
+          <div class="tree-item" style="font-weight:700;color:#0F2744;font-size:14px"><i class="ti ti-folder-open" style="color:#185FA5"></i>נוף הגליל – שלב א'</div>
+          <div class="ind1">
+            <div class="tree-item" style="font-weight:600;color:#0F2744"><i class="ti ti-road"></i>כבישים<span class="ml"><span class="badge b-open">336 רשימות</span></span></div>
+            <div class="ind1">
+              <div class="tree-item"><i class="ti ti-arrow-left"></i>כביש מס' 2<span class="ml"><span class="badge b-ok">82%</span></span></div>
+              <div class="ind2">
+                <div class="tree-item" style="color:#9AA3B0"><i class="ti ti-layers"></i>מילוי שכבות עפר</div>
+                <div class="tree-item" style="color:#9AA3B0"><i class="ti ti-layers"></i>שכבת אבן מחוצב</div>
+                <div class="tree-item" style="color:#9AA3B0"><i class="ti ti-layers"></i>אספלט ראשון</div>
+              </div>
+              <div class="tree-item"><i class="ti ti-arrow-left"></i>כביש מס' 6<span class="ml"><span class="badge b-warn">67%</span></span></div>
+              <div class="tree-item"><i class="ti ti-arrow-left"></i>כביש מס' 7<span class="ml"><span class="badge b-gray">טרם התחיל</span></span></div>
+            </div>
+            <div class="tree-item" style="font-weight:600;color:#0F2744"><i class="ti ti-droplets"></i>מובל ניקוז<span class="ml"><span class="badge b-warn">192 רשימות | 54%</span></span></div>
+            <div class="tree-item" style="font-weight:600;color:#0F2744"><i class="ti ti-trash"></i>אשפה פנאומטי<span class="ml"><span class="badge b-fail">12 אי-התאמות</span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHECKLISTS -->
+      <div class="screen" id="s-cl">
+        <div id="cl-list">
+          <div class="sec-hdr"><h2>רשימות תיוג</h2><button class="btn btn-p" onclick="openM('m-new-cl')"><i class="ti ti-plus"></i>רשימה חדשה</button></div>
+          <div class="alert a-danger"><i class="ti ti-lock"></i>רשימה #474 נחסמה – חסר קטע ניסיון לסוג עבודה "יציקת בטון"</div>
+          <div class="card" style="padding:0">
+            <table><thead><tr><th>#</th><th>סוג עבודה</th><th>מיקום</th><th>תאריך</th><th>סטטוס</th><th>בקר</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><b>473</b></td><td>מילוי שכבה 1</td><td>כביש 6</td><td>17/05</td><td><span class="badge b-ok">סגורה</span></td><td>דניאל גורי</td><td><button class="btn btn-sm" onclick="showCL()">פתח</button></td></tr>
+              <tr><td><b>472</b></td><td>מילוי שכבה 2</td><td>כביש 6</td><td>17/05</td><td><span class="badge b-open">פתוחה</span></td><td>דניאל גורי</td><td><button class="btn btn-sm" onclick="showCL()">פתח</button></td></tr>
+              <tr><td><b>471</b></td><td>מילוי שכבה 3</td><td>כביש 6</td><td>17/05</td><td><span class="badge b-open">פתוחה</span></td><td>דניאל גורי</td><td><button class="btn btn-sm" onclick="showCL()">פתח</button></td></tr>
+              <tr><td><b>470</b></td><td>עיבוד שתית</td><td>כביש 2</td><td>14/05</td><td><span class="badge b-warn">ממתינה</span></td><td>דניאל גורי</td><td><button class="btn btn-sm" onclick="showCL()">פתח</button></td></tr>
+              <tr><td><b>469</b></td><td>עיבוד שתית</td><td>כביש 2</td><td>13/05</td><td><span class="badge b-open">פתוחה</span></td><td>אלון גינזבורג</td><td><button class="btn btn-sm" onclick="showCL()">פתח</button></td></tr>
+            </tbody></table>
+          </div>
+        </div>
+        <div id="cl-detail" style="display:none">
+          <button class="btn" style="margin-bottom:14px" onclick="hideCL()"><i class="ti ti-arrow-right"></i>חזרה</button>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+              <div><div style="font-weight:700;font-size:16px;color:#0F2744">רשימת תיוג #472 – מילוי שכבה 2</div><div style="font-size:12px;color:#9AA3B0;margin-top:3px">כביש 6 | דניאל גורי | 17/05/2026 | הזמנת בדיקה: #491</div></div>
+              <span class="badge b-open">פתוחה</span>
+            </div>
+            <div class="cl-item"><div class="chk on" onclick="tgl(this)"><i class="ti ti-check"></i></div><div><div>בדיקת תוכניות לביצוע – התאמה לתוכנית מאושרת</div><div class="cl-meta">✓ דניאל גורי 08:15 | 📷 תמונה מצורפת</div></div></div>
+            <div class="cl-item"><div class="chk on" onclick="tgl(this)"><i class="ti ti-check"></i></div><div><div>בדיקת עובי שכבה לפי מפרט (מינ' 30 ס"מ)</div><div class="cl-meta">✓ עובי נמדד: 34 ס"מ | 📷 תמונה מצורפת</div></div></div>
+            <div class="cl-item"><div class="chk" onclick="tgl(this)"></div><div><div>בדיקת דחיסות – הזמנת מעבדה #491</div><div class="cl-meta w">⏳ ממתין לתעודת מעבדה מאיזוטסט</div></div></div>
+            <div class="cl-item"><div class="chk" onclick="tgl(this)"></div><div><div>חתימת מהנדס ביצוע</div><div class="cl-meta">ממתין לחתימת יוסי לוי</div></div></div>
+            <div class="cl-item"><div class="chk" onclick="tgl(this)"></div><div><div>צילום מצב לאחר הדחיסה – חובה</div><div class="cl-meta d">⚠ לא הועלה – פריט חובה לסגירה</div></div></div>
+            <div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #E8EBF0">
+              <button class="btn"><i class="ti ti-camera"></i>הוסף תמונה</button>
+              <button class="btn"><i class="ti ti-flask"></i>הזמן מעבדה</button>
+              <button class="btn btn-p" style="margin-right:auto" disabled>סגור רשימה (חסרים פריטים)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LABS -->
+      <div class="screen" id="s-labs">
+        <div class="sec-hdr"><h2>בדיקות מעבדה</h2><button class="btn btn-p" onclick="openM('m-new-lab')"><i class="ti ti-plus"></i>הזמנה חדשה</button></div>
+        <div class="alert a-danger"><i class="ti ti-alert-triangle"></i>הזמנה #488 נכשלה – נפתחה אי-התאמה אוטומטית #41<span class="ml" style="cursor:pointer;text-decoration:underline;font-weight:600" onclick="go('nc',document.querySelectorAll('.nav-item')[4])">לצפייה ←</span></div>
+        <div class="card" style="padding:0">
+          <table><thead><tr><th>#</th><th>סוג</th><th>מזמין</th><th>מעבדה</th><th>רשימות מקושרות</th><th>תאריך</th><th>סטטוס</th><th>תעודה</th></tr></thead>
+          <tbody>
+            <tr><td><b>491</b></td><td>שוטפת</td><td>דניאל גורי</td><td>איזוטסט</td><td>472, 471, 470</td><td>17/05</td><td><span class="badge b-warn">ממתין</span></td><td>–</td></tr>
+            <tr><td><b>490</b></td><td>שוטפת</td><td>אלון גינזבורג</td><td>סיסטם</td><td>469, 468</td><td>14/05</td><td><span class="badge b-ok">הושלם</span></td><td><button class="btn btn-sm">📄 PDF</button></td></tr>
+            <tr><td><b>489</b></td><td>מוקדמת</td><td>דניאל גורי</td><td>איזוטסט</td><td>467</td><td>13/05</td><td><span class="badge b-ok">הושלם</span></td><td><button class="btn btn-sm">📄 PDF</button></td></tr>
+            <tr style="background:#FFF8F8"><td><b>488</b></td><td>שוטפת</td><td>אלון גינזבורג</td><td>קבוצת הנדסה</td><td>465, 464</td><td>12/05</td><td><span class="badge b-fail">נכשל</span></td><td><button class="btn btn-sm">📄 PDF</button></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <!-- NC -->
+      <div class="screen" id="s-nc">
+        <div class="sec-hdr"><h2>אי-התאמות</h2><button class="btn btn-p" onclick="openM('m-new-nc')"><i class="ti ti-plus"></i>אי-התאמה חדשה</button></div>
+        <div class="card" style="padding:0">
+          <table><thead><tr><th>#</th><th>תאריך</th><th>נושא</th><th>מבנה</th><th>חומרה</th><th>סטטוס</th><th>אחראי</th><th>יעד</th></tr></thead>
+          <tbody>
+            <tr style="background:#FFF8F8"><td><b>41</b></td><td>17/05</td><td>כישלון דחיסות #488 – אוטומטי</td><td>מובל ניקוז</td><td><span class="badge b-fail">קריטי</span></td><td><span class="badge b-open">פתוחה</span></td><td>דניאל גורי</td><td>20/05</td></tr>
+            <tr><td><b>40</b></td><td>14/05</td><td>חסר ניקוז צדי בקטע 3</td><td>כביש 6</td><td><span class="badge b-warn">בינוני</span></td><td><span class="badge b-warn">בטיפול</span></td><td>אלון גינזבורג</td><td>22/05</td></tr>
+            <tr><td><b>39</b></td><td>09/05</td><td>עובי שכבה חורג ממפרט</td><td>כביש 2</td><td><span class="badge b-warn">נמוך</span></td><td><span class="badge b-ok">סגורה</span></td><td>דניאל גורי</td><td>15/05</td></tr>
+            <tr><td><b>38</b></td><td>05/05</td><td>מובל ניקוז – עומק לא תקין</td><td>מובל ניקוז</td><td><span class="badge b-fail">גבוה</span></td><td><span class="badge b-ok">סגורה</span></td><td>אליה כהן</td><td>12/05</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <!-- APPROVALS -->
+      <div class="screen" id="s-approvals">
+        <div class="sec-hdr"><h2>ניהול אישורים</h2></div>
+        <div class="alert a-danger"><i class="ti ti-alert-triangle"></i>קבלן "גבעות בנייה" – ביטוח פג תוקף. לא ניתן לשייך לרשימות תיוג.</div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-ttl">אישור חומרים</div><button class="btn btn-sm"><i class="ti ti-plus"></i>הוסף</button></div>
+          <table><thead><tr><th>חומר</th><th>ספק</th><th>אושר</th><th>תוקף</th><th>סטטוס</th></tr></thead>
+          <tbody>
+            <tr><td>בטון C30</td><td>מרצ'ינה</td><td>01/01/26</td><td>31/12/26</td><td><span class="badge b-ok">מאושר</span></td></tr>
+            <tr style="background:#FFFBF0"><td>אספלט AC-16</td><td>נגב אספלט</td><td>15/03/26</td><td>14/09/26</td><td><span class="badge b-warn">פג בקרוב</span></td></tr>
+            <tr><td>חומר מילוי מסוג B</td><td>כרמל מחצבות</td><td>01/04/26</td><td>30/09/26</td><td><span class="badge b-ok">מאושר</span></td></tr>
+          </tbody></table>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-ttl">אישור קבלנים וספקים</div><button class="btn btn-sm"><i class="ti ti-plus"></i>הוסף</button></div>
+          <table><thead><tr><th>גורם</th><th>סוג</th><th>תוקף ביטוח</th><th>סטטוס</th></tr></thead>
+          <tbody>
+            <tr><td>פרו ש.י.א הנדסה</td><td>קבלן ראשי</td><td>31/12/26</td><td><span class="badge b-ok">מאושר</span></td></tr>
+            <tr><td>נגב חפירות</td><td>קבלן משנה</td><td>30/06/26</td><td><span class="badge b-ok">מאושר</span></td></tr>
+            <tr style="background:#FFF8F8"><td>גבעות בנייה</td><td>קבלן משנה</td><td>28/02/26</td><td><span class="badge b-fail">פג תוקף</span></td></tr>
+            <tr><td>מעבדת איזוטסט</td><td>מעבדה</td><td>31/12/26</td><td><span class="badge b-ok">מאושר</span></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <!-- REPORTS -->
+      <div class="screen" id="s-reports">
+        <div class="sec-hdr"><h2>דוחות</h2></div>
+        <div class="rpt-grid">
+          <div class="rpt-card"><i class="ti ti-chart-line" style="color:#185FA5"></i><div class="rpt-ttl">דוח חודשי אוטומטי</div><div class="rpt-sub">Excel / PDF</div></div>
+          <div class="rpt-card"><i class="ti ti-list-check" style="color:#2E7D32"></i><div class="rpt-ttl">Punchlist Report</div><div class="rpt-sub">פריטים פתוחים</div></div>
+          <div class="rpt-card"><i class="ti ti-alert-triangle" style="color:#C97B1A"></i><div class="rpt-ttl">דוח אי-התאמות</div><div class="rpt-sub">לפי קטגוריה</div></div>
+          <div class="rpt-card"><i class="ti ti-flask" style="color:#7C3AED"></i><div class="rpt-ttl">מעקב בדיקות</div><div class="rpt-sub">לפי מעבדה</div></div>
+          <div class="rpt-card"><i class="ti ti-star" style="color:#C97B1A"></i><div class="rpt-ttl">דירוג גורמים</div><div class="rpt-sub">מהירות תגובה חודשית</div></div>
+          <div class="rpt-card"><i class="ti ti-building" style="color:#6B7280"></i><div class="rpt-ttl">דוח מבנים</div><div class="rpt-sub">מצב אקטיבי</div></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-ttl">דירוג גורמים – מאי 2026</div><button class="btn btn-sm"><i class="ti ti-download"></i>ייצוא Excel</button></div>
+          <table><thead><tr><th>דירוג</th><th>גורם</th><th>סוג</th><th>זמן תגובה</th><th>עמידה ביעדים</th></tr></thead>
+          <tbody>
+            <tr><td>🥇 1</td><td>מעבדת איזוטסט</td><td>מעבדה</td><td>4 שעות</td><td><span class="badge b-ok">98%</span></td></tr>
+            <tr><td>🥈 2</td><td>נגב חפירות</td><td>קבלן משנה</td><td>6 שעות</td><td><span class="badge b-ok">91%</span></td></tr>
+            <tr><td>🥉 3</td><td>פרו ש.י.א הנדסה</td><td>קבלן ראשי</td><td>12 שעות</td><td><span class="badge b-warn">78%</span></td></tr>
+            <tr><td>4</td><td>סיסטם בע"מ</td><td>מעבדה</td><td>18 שעות</td><td><span class="badge b-warn">71%</span></td></tr>
+            <tr><td>5</td><td>גבעות בנייה</td><td>קבלן משנה</td><td>32 שעות</td><td><span class="badge b-fail">44%</span></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: רשימה חדשה -->
+<div class="modal-bg" id="m-new-cl" onclick="closeM(event,'m-new-cl')">
+  <div class="modal">
+    <div class="modal-ttl">רשימת תיוג חדשה<button class="modal-x" onclick="closeById('m-new-cl')"><i class="ti ti-x"></i></button></div>
+    <div class="form-row"><label class="form-lbl">סוג עבודה *</label><select class="form-in"><option>בחר...</option><option>מילוי שכבות עפר</option><option>יציקת בטון</option><option>עיבוד שתית</option><option>אספלט</option></select></div>
+    <div class="form-row"><label class="form-lbl">מיקום בעץ המבנה *</label><select class="form-in"><option>בחר...</option><option>כביש 2 / שכבה 1</option><option>כביש 6 / שכבה 1</option><option>מובל ניקוז / קטע א'</option></select></div>
+    <div class="form-row"><label class="form-lbl">קבלן מבצע *</label><select class="form-in"><option>בחר...</option><option>פרו ש.י.א הנדסה</option><option>נגב חפירות</option></select></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">תאריך ביצוע</label><input class="form-in" type="date"></div>
+      <div class="form-row"><label class="form-lbl">מנת עיבוד (כמות)</label><input class="form-in" type="number" value="1" min="1"></div>
+    </div>
+    <div class="alert a-info" style="font-size:12px"><i class="ti ti-circle-check"></i>תנאי סף: אישור חומרים ✓ | קטע ניסיון ✓ | אישור QA ✓</div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="closeById('m-new-cl')">פתח רשימה</button><button class="btn" onclick="closeById('m-new-cl')">ביטול</button></div>
+  </div>
+</div>
+
+<!-- MODAL: הזמנת בדיקה -->
+<div class="modal-bg" id="m-new-lab" onclick="closeM(event,'m-new-lab')">
+  <div class="modal">
+    <div class="modal-ttl">הזמנת בדיקה חדשה<button class="modal-x" onclick="closeById('m-new-lab')"><i class="ti ti-x"></i></button></div>
+    <div class="form-row"><label class="form-lbl">סוג הזמנה *</label><select class="form-in"><option>בדיקה שוטפת</option><option>בדיקה מוקדמת</option><option>הזמנת מדידה</option></select></div>
+    <div class="form-row"><label class="form-lbl">מעבדה *</label><select class="form-in"><option>בחר...</option><option>מעבדת איזוטסט</option><option>סיסטם בע"מ</option><option>קבוצת הנדסה</option></select></div>
+    <div class="form-row"><label class="form-lbl">מיקום *</label><select class="form-in"><option>בחר...</option><option>כביש 2 / שכבה 1</option><option>כביש 6 / שכבה 2</option></select></div>
+    <div class="form-row"><label class="form-lbl">רשימות תיוג לשיוך</label><input class="form-in" placeholder="לדוג': 472, 471, 470"></div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="closeById('m-new-lab')">שלח הזמנה</button><button class="btn" onclick="closeById('m-new-lab')">ביטול</button></div>
+  </div>
+</div>
+
+<!-- MODAL: אי-התאמה -->
+<div class="modal-bg" id="m-new-nc" onclick="closeM(event,'m-new-nc')">
+  <div class="modal">
+    <div class="modal-ttl">אי-התאמה חדשה<button class="modal-x" onclick="closeById('m-new-nc')"><i class="ti ti-x"></i></button></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">קטגוריה *</label><select class="form-in"><option>בחר...</option><option>בקרת איכות</option><option>הבטחת איכות</option><option>מעבדה</option><option>פיקוח עליון</option></select></div>
+      <div class="form-row"><label class="form-lbl">רמת חומרה *</label><select class="form-in"><option>בחר...</option><option>קריטי</option><option>גבוה</option><option>בינוני</option><option>נמוך</option></select></div>
+    </div>
+    <div class="form-row"><label class="form-lbl">מיקום *</label><select class="form-in"><option>בחר...</option><option>כביש 2</option><option>כביש 6</option><option>מובל ניקוז</option></select></div>
+    <div class="form-row"><label class="form-lbl">תיאור הבעיה *</label><textarea class="form-in" rows="3" placeholder="תאר את הממצא..."></textarea></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">אחראי לטיפול</label><select class="form-in"><option>בחר...</option><option>דניאל גורי</option><option>אלון גינזבורג</option><option>אליה כהן</option></select></div>
+      <div class="form-row"><label class="form-lbl">תאריך יעד</label><input class="form-in" type="date"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-p" onclick="closeById('m-new-nc')">פתח אי-התאמה</button><button class="btn" onclick="closeById('m-new-nc')">ביטול</button></div>
+  </div>
+</div>
+
+<script>
+const titles={dashboard:'דשבורד ראשי',tree:'עץ מבנה הפרויקט',cl:'רשימות תיוג',labs:'בדיקות מעבדה',nc:'אי-התאמות',approvals:'ניהול אישורים',reports:'דוחות',settings:'הגדרות'};
+function go(name,el){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  var s=document.getElementById('s-'+name);
+  if(s)s.classList.add('active');
+  if(el)el.classList.add('active');
+  document.getElementById('ttl').textContent=titles[name]||name;
+}
+function showCL(){document.getElementById('cl-list').style.display='none';document.getElementById('cl-detail').style.display='block';}
+function hideCL(){document.getElementById('cl-list').style.display='block';document.getElementById('cl-detail').style.display='none';}
+function tgl(el){el.classList.toggle('on');el.innerHTML=el.classList.contains('on')?'<i class="ti ti-check"></i>':'';}
+function openM(id){document.getElementById(id).classList.add('open');}
+function closeM(e,id){if(e.target===document.getElementById(id))closeById(id);}
+function closeById(id){document.getElementById(id).classList.remove('open');}
+</script>
+</body>
+</html>
