@@ -847,18 +847,27 @@ async function createUser() {
   btn.textContent = 'יוצר...';
 
   try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-      method: 'POST',
-      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+    const { data, error } = await db.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: null }
     });
-    const data = await res.json();
-    if (data.error || !data.id) {
-      errEl.textContent = data.error?.message || data.msg || 'שגיאה ביצירת משתמש';
+
+    if (error) {
+      const msg = {
+        'over_email_send_rate_limit': 'חריגה ממגבלת מיילים – כבה "Confirm email" ב-Supabase → Authentication → Sign In / Providers → Email',
+        'User already registered': 'משתמש עם אימייל זה כבר קיים',
+      }[error.message] || error.message;
+      errEl.textContent = msg;
       btn.disabled = false; btn.textContent = 'צור משתמש'; return;
     }
 
-    await db.from('profiles').upsert({ id: data.id, full_name, email, role });
+    if (!data?.user?.id) {
+      errEl.textContent = 'לא התקבל ID משתמש – ודא שכיבית אישור אימייל ב-Supabase';
+      btn.disabled = false; btn.textContent = 'צור משתמש'; return;
+    }
+
+    await db.from('profiles').upsert({ id: data.user.id, full_name, role });
 
     closeById('m-new-user');
     document.getElementById('nu-name').value = '';
