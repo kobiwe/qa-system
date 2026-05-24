@@ -824,12 +824,7 @@ async function loadDashboard() {
   const proj = projects || [];
   const find = findings || [];
 
-  // Update topbar
-  if (proj.length > 0) {
-    document.getElementById('topbar-sub').textContent = proj[0].name || '';
-  } else {
-    document.getElementById('topbar-sub').textContent = '';
-  }
+  _showActiveProjSub();
 
   // Stats
   const openFindings = find.filter(f => f.status === 'open' || f.status === 'in_progress');
@@ -1388,6 +1383,7 @@ function go(name, el) {
   if (s) s.classList.add('active');
   if (el) el.classList.add('active');
   document.getElementById('ttl').textContent = titles[name] || name;
+  _showActiveProjSub();
   if (name === 'users') loadUsersScreen();
 }
 
@@ -1411,11 +1407,16 @@ function setActiveProject(id) {
   const p = _allProjects.find(x => x.id === id);
   if (!p) return;
   _activeProjectId = id;
-  const selEl   = document.getElementById('proj-sel');
-  const nameEl  = document.getElementById('proj-sel-name');
-  nameEl.textContent = p.name;
-  selEl.classList.add('active');
+  document.getElementById('proj-sel-name').textContent = p.name;
+  document.getElementById('proj-sel').classList.add('active');
   document.getElementById('proj-picker').style.display = 'none';
+  _showActiveProjSub();
+}
+
+function _showActiveProjSub() {
+  if (!_activeProjectId) return;
+  const p = _allProjects.find(x => x.id === _activeProjectId);
+  if (p) document.getElementById('topbar-sub').textContent = p.name;
 }
 
 function toggleProjPicker(e) {
