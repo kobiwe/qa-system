@@ -478,6 +478,70 @@ tr:hover td{background:#FAFBFD}
   </div>
 </div>
 
+<!-- MODAL: פרטי פרויקט -->
+<div class="modal-bg" id="m-project-detail" onclick="closeM(event,'m-project-detail')">
+  <div class="modal detail-modal">
+    <div class="modal-ttl">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <span id="detail-proj-name" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <span id="detail-proj-status-badge"></span>
+      </div>
+      <button class="modal-x" onclick="closeById('m-project-detail')"><i class="ti ti-x"></i></button>
+    </div>
+
+    <!-- Stats -->
+    <div class="detail-stat-row">
+      <div class="detail-stat"><div class="ds-val" id="d-stat-total">–</div><div class="ds-lbl">סה"כ ממצאים</div></div>
+      <div class="detail-stat"><div class="ds-val" id="d-stat-open" style="color:#C97B1A">–</div><div class="ds-lbl">פתוחים</div></div>
+      <div class="detail-stat"><div class="ds-val" id="d-stat-crit" style="color:#C0392B">–</div><div class="ds-lbl">קריטיים</div></div>
+      <div class="detail-stat"><div class="ds-val" id="d-stat-closed" style="color:#2E7D32">–</div><div class="ds-lbl">סגורים</div></div>
+    </div>
+
+    <!-- Info + Contacts -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div>
+        <div class="detail-section-hdr">פרטים כלליים</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="detail-field"><div class="detail-lbl">מספר חוזה</div><div class="detail-val" id="d-contract">–</div></div>
+          <div class="detail-field"><div class="detail-lbl">סטטוס</div><div id="d-status">–</div></div>
+          <div class="detail-field"><div class="detail-lbl">תאריך התחלה</div><div class="detail-val" id="d-start">–</div></div>
+          <div class="detail-field"><div class="detail-lbl">תאריך סיום</div><div class="detail-val" id="d-end">–</div></div>
+        </div>
+        <div class="detail-field"><div class="detail-lbl">תיאור</div><div class="detail-val" id="d-desc" style="color:#4B5563;line-height:1.5">–</div></div>
+      </div>
+      <div>
+        <div class="detail-section-hdr">אנשי קשר</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div><div class="detail-lbl">מנהל פרויקט</div><div class="detail-val" id="d-pm">–</div><div style="font-size:12px;color:#6B7280;direction:ltr;text-align:right" id="d-pm-phone"></div></div>
+          <div><div class="detail-lbl">חברת ביצוע</div><div class="detail-val" id="d-contractor">–</div><div style="font-size:12px;color:#6B7280;direction:ltr;text-align:right" id="d-contractor-phone"></div></div>
+          <div><div class="detail-lbl">איש קשר לקוח</div><div class="detail-val" id="d-client">–</div><div style="font-size:12px;color:#6B7280;direction:ltr;text-align:right" id="d-client-phone"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Location + mini-map -->
+    <div class="detail-section-hdr" style="margin-bottom:10px">מיקום</div>
+    <div style="display:flex;gap:12px;margin-bottom:16px;align-items:flex-start">
+      <div style="min-width:130px">
+        <div class="detail-field" style="margin-bottom:10px"><div class="detail-lbl">כתובת</div><div class="detail-val" id="d-address">–</div></div>
+        <div class="detail-field"><div class="detail-lbl">עיר</div><div class="detail-val" id="d-city">–</div></div>
+      </div>
+      <div id="d-map-wrap" style="flex:1;display:none"><div id="detail-map"></div></div>
+    </div>
+
+    <!-- Findings table -->
+    <div class="detail-section-hdr">ממצאים</div>
+    <div class="detail-findings-wrap">
+      <table>
+        <thead><tr><th>#</th><th>כותרת</th><th>חומרה</th><th>סטטוס</th><th>אחראי</th><th>תאריך יעד</th></tr></thead>
+        <tbody id="detail-findings-tbody"><tr class="loading-row"><td colspan="6">–</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="modal-foot"><button class="btn" onclick="closeById('m-project-detail')">סגור</button></div>
+  </div>
+</div>
+
 <!-- MODAL: ממצא חדש -->
 <div class="modal-bg" id="m-new-nc" onclick="closeM(event,'m-new-nc')">
   <div class="modal">
@@ -767,10 +831,86 @@ function renderProjectsMap(projects) {
   if (bounds.length > 0) _map.fitBounds(bounds, { padding: [40, 40] });
 }
 
-function openProjectDetail(id) {
+let _detailMap = null;
+
+async function openProjectDetail(id) {
   const p = _allProjects.find(x => x.id === id);
   if (!p) return;
-  alert(`פרויקט: ${p.name}\n${p.address ? 'כתובת: ' + p.address + ', ' + (p.city||'') : ''}\n${p.project_manager ? 'מנהל: ' + p.project_manager : ''}\n${p.contractor ? 'קבלן: ' + p.contractor : ''}\n\nעמוד פרויקט מלא – בפיתוח`);
+
+  // Header
+  document.getElementById('detail-proj-name').textContent = p.name;
+  document.getElementById('detail-proj-status-badge').innerHTML = projectStatusBadge(p.status);
+
+  // General info
+  document.getElementById('d-contract').textContent = p.contract_number || '–';
+  document.getElementById('d-status').innerHTML = projectStatusBadge(p.status);
+  document.getElementById('d-start').textContent = p.start_date ? new Date(p.start_date).toLocaleDateString('he-IL') : '–';
+  document.getElementById('d-end').textContent   = p.end_date   ? new Date(p.end_date).toLocaleDateString('he-IL')   : '–';
+  document.getElementById('d-desc').textContent  = p.description || '–';
+
+  // Contacts
+  document.getElementById('d-pm').textContent              = p.project_manager       || '–';
+  document.getElementById('d-pm-phone').textContent        = p.project_manager_phone || '';
+  document.getElementById('d-contractor').textContent      = p.contractor            || '–';
+  document.getElementById('d-contractor-phone').textContent= p.contractor_phone      || '';
+  document.getElementById('d-client').textContent          = p.client_contact        || '–';
+  document.getElementById('d-client-phone').textContent    = p.client_contact_phone  || '';
+
+  // Location
+  document.getElementById('d-address').textContent = p.address || '–';
+  document.getElementById('d-city').textContent    = p.city    || '–';
+
+  // Mini-map
+  const mapWrap = document.getElementById('d-map-wrap');
+  if (p.latitude && p.longitude) {
+    mapWrap.style.display = '';
+    openM('m-project-detail');
+    setTimeout(() => {
+      if (!_detailMap) {
+        _detailMap = L.map('detail-map').setView([p.latitude, p.longitude], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(_detailMap);
+      } else {
+        _detailMap.eachLayer(l => { if (l instanceof L.Marker) _detailMap.removeLayer(l); });
+        _detailMap.setView([p.latitude, p.longitude], 15);
+      }
+      _detailMap.invalidateSize();
+      const icon = L.divIcon({
+        html: `<div style="width:16px;height:16px;background:#185FA5;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>`,
+        className: '', iconAnchor: [8, 8]
+      });
+      L.marker([p.latitude, p.longitude], { icon }).addTo(_detailMap).bindPopup(p.name).openPopup();
+    }, 150);
+  } else {
+    mapWrap.style.display = 'none';
+    openM('m-project-detail');
+  }
+
+  // Findings
+  const tbody = document.getElementById('detail-findings-tbody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><span class="spinner"></span> טוען...</td></tr>';
+  document.getElementById('d-stat-total').textContent = '–';
+  document.getElementById('d-stat-open').textContent  = '–';
+  document.getElementById('d-stat-crit').textContent  = '–';
+  document.getElementById('d-stat-closed').textContent= '–';
+
+  const { data: findings } = await db.from('findings').select('*').eq('project_id', id).order('created_at', { ascending: false });
+  const find = findings || [];
+
+  document.getElementById('d-stat-total').textContent  = find.length;
+  document.getElementById('d-stat-open').textContent   = find.filter(f => f.status !== 'closed').length;
+  document.getElementById('d-stat-crit').textContent   = find.filter(f => f.severity === 'critical' && f.status !== 'closed').length;
+  document.getElementById('d-stat-closed').textContent = find.filter(f => f.status === 'closed').length;
+
+  tbody.innerHTML = find.length > 0
+    ? find.map(f => `<tr>
+        <td><b>${f.id}</b></td>
+        <td>${f.title || '–'}</td>
+        <td>${severityBadge(f.severity)}</td>
+        <td>${statusBadge(f.status)}</td>
+        <td>${f.assigned_to || '–'}</td>
+        <td>${f.due_date ? new Date(f.due_date).toLocaleDateString('he-IL') : '–'}</td>
+      </tr>`).join('')
+    : '<tr class="loading-row"><td colspan="6">אין ממצאים לפרויקט זה</td></tr>';
 }
 
 async function loadFindingsScreen(findings, projects) {
