@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;color:#1a1a1a;background:#F7F8FA;direction:rtl;height:100vh;overflow:hidden}
@@ -186,6 +187,19 @@ tr:hover td{background:#FAFBFD}
 .proj-popup h4{font-size:13px;font-weight:700;color:#0F2744;margin-bottom:6px}
 .proj-popup p{font-size:11px;color:#6B7280;margin:2px 0}
 .proj-popup .pp-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;margin-bottom:6px}
+
+/* IMPORT */
+.upload-zone{border:2px dashed #D1D5DB;border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;color:#9AA3B0;font-size:13px}
+.upload-zone:hover,.upload-zone.drag-over{border-color:#185FA5;background:#EEF4FF;color:#185FA5}
+.upload-zone i{display:block;font-size:38px;margin-bottom:10px;color:#C8CDD6}
+.upload-zone.drag-over i{color:#185FA5}
+.upload-zone .btn{margin-top:10px;display:inline-flex}
+.import-preview{max-height:280px;overflow-y:auto;border:1px solid #E8EBF0;border-radius:8px}
+.import-preview table{font-size:11px}
+.import-preview th,.import-preview td{padding:6px 10px}
+.import-stats{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.import-stat-chip{background:#F0F2F5;border-radius:6px;padding:4px 10px;font-size:11px;color:#374151}
+.import-stat-chip b{color:#0F2744}
 </style>
 </head>
 <body>
@@ -538,7 +552,58 @@ tr:hover td{background:#FAFBFD}
       </table>
     </div>
 
-    <div class="modal-foot"><button class="btn" onclick="closeById('m-project-detail')">סגור</button></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="openImportExcel(_currentDetailId)"><i class="ti ti-table-import"></i>ייבא עץ מבנה</button>
+      <button class="btn" id="detail-work-tree-btn" onclick="openWorkTree(_currentDetailId)" style="display:none"><i class="ti ti-list-tree"></i>עץ מבנה <span id="detail-wi-count" class="badge b-open" style="margin-right:4px"></span></button>
+      <button class="btn" onclick="closeById('m-project-detail')">סגור</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ייבוא עץ מבנה -->
+<div class="modal-bg" id="m-import-excel" onclick="closeM(event,'m-import-excel')">
+  <div class="modal" style="width:700px">
+    <div class="modal-ttl">ייבוא עץ מבנה מ-Excel<button class="modal-x" onclick="closeById('m-import-excel')"><i class="ti ti-x"></i></button></div>
+
+    <!-- Step 1: Upload -->
+    <div id="import-step-upload">
+      <div class="upload-zone" id="import-dropzone" onclick="document.getElementById('excel-file-input').click()">
+        <i class="ti ti-file-spreadsheet"></i>
+        גרור קובץ Excel לכאן או לחץ לבחירה
+        <div style="font-size:11px;margin-top:6px">קובץ עם גיליון "הגדרת מבנים" ו"גיליון1"</div>
+        <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">
+      </div>
+    </div>
+
+    <!-- Step 2: Preview -->
+    <div id="import-step-preview" style="display:none">
+      <div class="import-stats" id="import-stats-chips"></div>
+      <div class="import-preview">
+        <table>
+          <thead><tr><th>תת-פרויקט</th><th>מבנה</th><th>תת-מבנה</th><th>אלמנט</th><th>תת-אלמנט</th><th>חתך</th><th>סוג ביצוע</th></tr></thead>
+          <tbody id="import-preview-tbody"></tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:#9AA3B0;margin-top:8px">
+        <i class="ti ti-alert-circle" style="color:#C97B1A"></i>
+        ייבוא יחליף את עץ המבנה הקיים לפרויקט זה (אם קיים)
+      </div>
+    </div>
+
+    <div id="import-err" style="color:#C0392B;font-size:12px;margin-top:10px;min-height:16px"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" id="import-confirm-btn" onclick="confirmImport()" style="display:none"><i class="ti ti-check"></i>ייבא לפרויקט</button>
+      <button class="btn" onclick="closeById('m-import-excel')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: עץ מבנה -->
+<div class="modal-bg" id="m-work-tree" onclick="closeM(event,'m-work-tree')">
+  <div class="modal" style="width:800px">
+    <div class="modal-ttl">עץ מבנה – <span id="wt-proj-name"></span><button class="modal-x" onclick="closeById('m-work-tree')"><i class="ti ti-x"></i></button></div>
+    <div id="wt-content" style="max-height:60vh;overflow-y:auto"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeById('m-work-tree')">סגור</button></div>
   </div>
 </div>
 
@@ -834,6 +899,7 @@ function renderProjectsMap(projects) {
 let _detailMap = null;
 
 async function openProjectDetail(id) {
+  _currentDetailId = id;
   const p = _allProjects.find(x => x.id === id);
   if (!p) return;
 
@@ -884,6 +950,17 @@ async function openProjectDetail(id) {
     mapWrap.style.display = 'none';
     openM('m-project-detail');
   }
+
+  // Work items count → show/hide button
+  db.from('work_items').select('id', { count: 'exact', head: true }).eq('project_id', id).then(({ count }) => {
+    const btn = document.getElementById('detail-work-tree-btn');
+    if (count > 0) {
+      btn.style.display = '';
+      document.getElementById('detail-wi-count').textContent = count;
+    } else {
+      btn.style.display = 'none';
+    }
+  });
 
   // Findings
   const tbody = document.getElementById('detail-findings-tbody');
@@ -1251,6 +1328,233 @@ function closeById(id) { document.getElementById(id).classList.remove('open'); }
 document.getElementById('login-password').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
+
+// ─── EXCEL IMPORT ─────────────────────────────────────────
+
+let _importProjectId = null;
+let _importParsedData = null;
+let _currentDetailId = null;
+
+function openImportExcel(projectId) {
+  _importProjectId = projectId;
+  _importParsedData = null;
+  document.getElementById('import-step-upload').style.display = '';
+  document.getElementById('import-step-preview').style.display = 'none';
+  document.getElementById('import-confirm-btn').style.display = 'none';
+  document.getElementById('import-err').textContent = '';
+  document.getElementById('excel-file-input').value = '';
+  openM('m-import-excel');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('excel-file-input');
+  input.addEventListener('change', e => { if (e.target.files[0]) handleExcelFile(e.target.files[0]); });
+
+  const dz = document.getElementById('import-dropzone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) handleExcelFile(e.dataTransfer.files[0]);
+  });
+});
+
+function handleExcelFile(file) {
+  const errEl = document.getElementById('import-err');
+  errEl.textContent = '';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+
+      const structSheet = wb.Sheets['הגדרת מבנים'];
+      if (!structSheet) throw new Error('לא נמצא גיליון "הגדרת מבנים"');
+      const structData = XLSX.utils.sheet_to_json(structSheet, { header: 1, defval: '' });
+      const workItems = parseWorkItemsSheet(structData);
+      if (workItems.length === 0) throw new Error('לא נמצאו שורות נתונים בגיליון');
+
+      const templSheet = wb.Sheets['גיליון1'] || wb.Sheets[wb.SheetNames[1]];
+      const templates = {};
+      if (templSheet) {
+        const td = XLSX.utils.sheet_to_json(templSheet, { header: 1, defval: '' });
+        let cur = ''; let ord = 0;
+        for (const row of td) {
+          if (!row.some(c => c !== '')) continue;
+          if (row[0]) { cur = row[0].toString().trim(); ord = 0; }
+          if (cur && row[1]) {
+            if (!templates[cur]) templates[cur] = [];
+            templates[cur].push({ task_order: ++ord, task_name: row[1].toString().trim() });
+          }
+        }
+      }
+
+      _importParsedData = { workItems, templates };
+      showImportPreview(workItems, templates);
+    } catch (err) {
+      errEl.textContent = 'שגיאה: ' + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseWorkItemsSheet(data) {
+  const rows = data.slice(8);
+  let last = { sub_project:'', structure:'', sub_structure:'', element:'', section_from:null, section_to:null };
+  const items = []; let ord = 0;
+  for (const row of rows) {
+    if (!row.some(c => c !== '')) continue;
+    if (row[1] !== '') last.sub_project   = row[1].toString().trim();
+    if (row[2] !== '') last.structure     = row[2].toString().trim();
+    if (row[3] !== '') last.sub_structure = row[3].toString().trim();
+    if (row[4] !== '') last.element       = row[4].toString().trim();
+    if (row[6] !== '') last.section_from  = parseFloat(row[6]) || null;
+    if (row[7] !== '') last.section_to    = parseFloat(row[7]) || null;
+    const sub_element    = row[5] ? row[5].toString().trim() : '';
+    const execution_type = row[8] ? row[8].toString().trim() : '';
+    if (!sub_element && !execution_type) continue;
+    items.push({ ...last, sub_element, execution_type, row_order: ++ord });
+  }
+  return items;
+}
+
+function showImportPreview(items, templates) {
+  document.getElementById('import-step-upload').style.display = 'none';
+  document.getElementById('import-step-preview').style.display = '';
+  document.getElementById('import-confirm-btn').style.display = '';
+
+  const typeCount = new Set(items.map(i => i.execution_type)).size;
+  const taskTotal = items.reduce((s, i) => s + (templates[i.execution_type]?.length || 0), 0);
+  document.getElementById('import-stats-chips').innerHTML =
+    `<div class="import-stat-chip"><b>${items.length}</b> פריטי עבודה</div>
+     <div class="import-stat-chip"><b>${typeCount}</b> סוגי ביצוע</div>
+     <div class="import-stat-chip"><b>${taskTotal}</b> משימות צ'קליסט</div>`;
+
+  const tbody = document.getElementById('import-preview-tbody');
+  tbody.innerHTML = items.slice(0, 60).map(item =>
+    `<tr>
+      <td>${item.sub_project}</td>
+      <td>${item.structure}</td>
+      <td>${item.sub_structure}</td>
+      <td>${item.element}</td>
+      <td><b>${item.sub_element}</b></td>
+      <td style="direction:ltr;text-align:left">${item.section_from !== null ? item.section_from+'–'+item.section_to : '–'}</td>
+      <td><span class="badge b-gray" style="font-size:10px">${item.execution_type}</span></td>
+    </tr>`
+  ).join('') + (items.length > 60 ? `<tr class="loading-row"><td colspan="7">ועוד ${items.length - 60} שורות...</td></tr>` : '');
+}
+
+async function confirmImport() {
+  if (!_importParsedData || !_importProjectId) return;
+  const btn = document.getElementById('import-confirm-btn');
+  const errEl = document.getElementById('import-err');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> מייבא...';
+  errEl.textContent = '';
+
+  const { workItems, templates } = _importParsedData;
+  try {
+    // 1. Upsert templates
+    const tRows = [];
+    for (const [type_name, tasks] of Object.entries(templates))
+      for (const t of tasks) tRows.push({ type_name, task_order: t.task_order, task_name: t.task_name });
+    if (tRows.length > 0)
+      await db.from('checklist_templates').upsert(tRows, { onConflict: 'type_name,task_order' });
+
+    // 2. Delete existing work items for this project
+    await db.from('work_items').delete().eq('project_id', _importProjectId);
+
+    // 3. Insert work items in batch
+    const toInsert = workItems.map(item => ({ ...item, project_id: _importProjectId }));
+    const { data: inserted, error: wiErr } = await db.from('work_items').insert(toInsert).select('id, execution_type');
+    if (wiErr) throw new Error(wiErr.message);
+
+    // 4. Create checklist instances
+    const ciRows = [];
+    for (const wi of inserted)
+      for (const t of (templates[wi.execution_type] || []))
+        ciRows.push({ work_item_id: wi.id, task_name: t.task_name, task_order: t.task_order });
+
+    for (let i = 0; i < ciRows.length; i += 500) {
+      const { error: ce } = await db.from('checklist_instances').insert(ciRows.slice(i, i + 500));
+      if (ce) throw new Error(ce.message);
+    }
+
+    closeById('m-import-excel');
+    openProjectDetail(_importProjectId);
+  } catch (e) {
+    errEl.textContent = 'שגיאה: ' + e.message;
+  }
+  btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i>ייבא לפרויקט';
+}
+
+// ─── WORK TREE VIEWER ─────────────────────────────────────
+
+async function openWorkTree(projectId) {
+  const p = _allProjects.find(x => x.id === projectId);
+  document.getElementById('wt-proj-name').textContent = p?.name || '';
+  const content = document.getElementById('wt-content');
+  content.innerHTML = '<div style="text-align:center;padding:30px"><span class="spinner"></span> טוען...</div>';
+  openM('m-work-tree');
+
+  const { data: items } = await db.from('work_items').select('*').eq('project_id', projectId).order('row_order');
+  if (!items || items.length === 0) {
+    content.innerHTML = '<div style="text-align:center;padding:30px;color:#9AA3B0">לא הוגדר עץ מבנה לפרויקט זה</div>';
+    return;
+  }
+
+  // Group by sub_project → structure → sub_structure
+  const tree = {};
+  for (const item of items) {
+    const sp = item.sub_project || '–';
+    const st = item.structure   || '–';
+    const ss = item.sub_structure || '–';
+    if (!tree[sp]) tree[sp] = {};
+    if (!tree[sp][st]) tree[sp][st] = {};
+    if (!tree[sp][st][ss]) tree[sp][st][ss] = [];
+    tree[sp][st][ss].push(item);
+  }
+
+  const statusIcon = s => ({ pending:'<i class="ti ti-circle" style="color:#C8CDD6"></i>', in_progress:'<i class="ti ti-circle-half-2" style="color:#C97B1A"></i>', completed:'<i class="ti ti-circle-check" style="color:#2E7D32"></i>' })[s] || '';
+
+  let html = '';
+  for (const [sp, structures] of Object.entries(tree)) {
+    html += `<div style="margin-bottom:4px">
+      <div style="background:#F7F8FA;border-radius:8px;padding:8px 12px;font-weight:700;font-size:12px;color:#0F2744;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">
+        <i class="ti ti-building" style="color:#6BB5F8"></i>${sp}
+      </div>
+      <div>`;
+    for (const [st, subs] of Object.entries(structures)) {
+      html += `<div style="margin:4px 0 0 16px">
+        <div style="padding:6px 12px;font-weight:600;font-size:12px;color:#374151;border-right:3px solid #E8EBF0;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">
+          <i class="ti ti-layers-subtract" style="color:#9AA3B0"></i> ${st}
+        </div>
+        <div>`;
+      for (const [ss, wItems] of Object.entries(subs)) {
+        html += `<div style="margin:2px 0 0 28px">
+          <div style="padding:5px 10px;font-size:11px;font-weight:600;color:#6B7280">${ss}</div>`;
+        for (const wi of wItems) {
+          html += `<div style="padding:5px 10px 5px 10px;margin:1px 0 0 12px;border-bottom:1px solid #F5F7FA;display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer" onclick="openChecklistModal('${wi.id}','${wi.sub_element.replace(/'/g,"\\'")}','${wi.execution_type.replace(/'/g,"\\'")}')">
+            ${statusIcon(wi.status)}
+            <span style="flex:1">${wi.sub_element}</span>
+            <span style="font-size:10px;color:#9AA3B0;direction:ltr">${wi.section_from !== null ? wi.section_from+'–'+wi.section_to : ''}</span>
+            <span class="badge b-gray" style="font-size:9px">${wi.execution_type}</span>
+            <i class="ti ti-chevron-left" style="color:#C8CDD6;font-size:13px"></i>
+          </div>`;
+        }
+        html += `</div>`;
+      }
+      html += `</div></div>`;
+    }
+    html += `</div></div>`;
+  }
+  content.innerHTML = html;
+}
+
+// ─── CHECKLIST MODAL ──────────────────────────────────────
+
+async function openChecklistModal(workItemId, itemName, execType) {
+  // Open an inline panel – for now show as alert placeholder
+  alert(`צ'קליסט: ${itemName}\nסוג ביצוע: ${execType}\n\n(מסך סימון מפורט – בפיתוח)`);
+}
 
 // ─── BOOT ────────────────────────────────────────────────
 
