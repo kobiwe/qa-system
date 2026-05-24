@@ -1421,7 +1421,7 @@ function setActiveProject(id) {
 function toggleProjPicker(e) {
   e.stopPropagation();
   const picker = document.getElementById('proj-picker');
-  if (picker.style.display !== 'none') { picker.style.display = 'none'; return; }
+  if (picker.style.display === 'block') { picker.style.display = 'none'; return; }
 
   picker.innerHTML = _allProjects.length > 0
     ? _allProjects.map(p => {
@@ -1433,7 +1433,7 @@ function toggleProjPicker(e) {
       }).join('')
     : '<div style="padding:12px 14px;font-size:12px;color:#9AA3B0">אין פרויקטים</div>';
 
-  picker.style.display = '';
+  picker.style.display = 'block';
 }
 
 document.addEventListener('click', () => {
