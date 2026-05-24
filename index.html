@@ -854,16 +854,16 @@ async function createUser() {
     });
 
     if (error) {
-      const msg = {
-        'over_email_send_rate_limit': 'חריגה ממגבלת מיילים – כבה "Confirm email" ב-Supabase → Authentication → Sign In / Providers → Email',
-        'User already registered': 'משתמש עם אימייל זה כבר קיים',
-      }[error.message] || error.message;
-      errEl.textContent = msg;
+      if (error.message === 'User already registered') {
+        errEl.innerHTML = `משתמש קיים – הרץ ב-<a href="https://supabase.com/dashboard/project/hkdacdibkwgtcgaqxxjo/sql/new" target="_blank" style="color:#185FA5">SQL Editor</a>:<br><code style="font-size:10px;direction:ltr;display:block;margin-top:4px">INSERT INTO profiles (id,full_name,role) SELECT id,'${full_name}','${role}' FROM auth.users WHERE email='${email}' ON CONFLICT (id) DO UPDATE SET full_name=EXCLUDED.full_name,role=EXCLUDED.role;</code>`;
+      } else {
+        errEl.textContent = error.message;
+      }
       btn.disabled = false; btn.textContent = 'צור משתמש'; return;
     }
 
     if (!data?.user?.id) {
-      errEl.textContent = 'לא התקבל ID משתמש – ודא שכיבית אישור אימייל ב-Supabase';
+      errEl.textContent = 'לא התקבל ID – ודא שכיבית אישור אימייל ב-Supabase';
       btn.disabled = false; btn.textContent = 'צור משתמש'; return;
     }
 
