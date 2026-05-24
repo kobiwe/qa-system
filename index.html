@@ -200,6 +200,47 @@ tr:hover td{background:#FAFBFD}
 .import-stats{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .import-stat-chip{background:#F0F2F5;border-radius:6px;padding:4px 10px;font-size:11px;color:#374151}
 .import-stat-chip b{color:#0F2744}
+
+/* BOARD */
+.board-hdr{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.board-back{color:#6B7280;font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer;padding:5px 0;transition:color .15s}
+.board-back:hover{color:#0F2744}
+.board-hdr-title{font-size:17px;font-weight:700;color:#0F2744;flex:1}
+.board-overall{display:flex;align-items:center;gap:8px;font-size:12px;color:#6B7280;background:#F7F8FA;padding:6px 12px;border-radius:8px}
+.board-overall .prog{width:100px}
+.board-overall b{color:#0F2744}
+.board-tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #E8EBF0;flex-wrap:wrap}
+.board-tab{padding:8px 16px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:600;color:#6B7280;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.board-tab:hover{color:#0F2744;background:#F7F8FA}
+.board-tab.active{color:#185FA5;border-bottom-color:#185FA5}
+.board-section{background:#fff;border:1px solid #E8EBF0;border-radius:12px;margin-bottom:8px;overflow:hidden}
+.board-sec-hdr{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;background:#FAFBFC;user-select:none;transition:background .15s}
+.board-sec-hdr:hover{background:#F0F2F5}
+.board-sec-title{font-weight:700;font-size:13px;color:#0F2744;flex:1}
+.board-prog-row{display:flex;align-items:center;gap:7px}
+.board-prog-txt{font-size:11px;color:#6B7280}
+.board-prog-pct{font-size:11px;font-weight:700;color:#185FA5;min-width:30px}
+.b-chevron{font-size:15px;color:#9AA3B0;transition:transform .2s;flex-shrink:0}
+.board-subsec{border-top:1px solid #F0F2F5}
+.board-subsec-hdr{display:flex;align-items:center;gap:8px;padding:8px 16px 8px 28px;cursor:pointer;user-select:none;transition:background .15s}
+.board-subsec-hdr:hover{background:#FAFBFC}
+.board-subsec-title{font-size:12px;font-weight:600;color:#374151;flex:1}
+.mini-badge{font-size:10px;color:#9AA3B0;background:#F0F2F5;padding:2px 8px;border-radius:999px}
+.board-el-hdr{font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.05em;padding:8px 16px 3px 40px;display:flex;align-items:center;gap:6px}
+.board-wi{border-top:1px solid #F5F7FA}
+.board-wi-row{display:flex;align-items:center;gap:10px;padding:9px 16px 9px 40px;cursor:pointer;transition:background .15s}
+.board-wi-row:hover{background:#FAFBFD}
+.board-wi-name{font-size:13px;color:#1a1a1a;font-weight:500;flex:1;min-width:0}
+.board-wi.wi-done .board-wi-name{color:#2E7D32}
+.board-wi-meta{font-size:10px;color:#9AA3B0;margin-top:1px}
+.board-wi-cnt{font-size:11px;color:#6B7280;min-width:36px;text-align:center}
+.board-cl{background:#F7F8FA;margin:0 16px 10px 56px;border-radius:8px;border:1px solid #EEF0F3}
+.board-cl-row{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;transition:background .1s;border-bottom:1px solid #F0F2F5}
+.board-cl-row:last-child{border-bottom:none}
+.board-cl-row:hover{background:#F0F2F5}
+.board-cl-name{font-size:12px;color:#374151;flex:1}
+.board-cl-name.done{text-decoration:line-through;color:#9AA3B0}
+.board-cl-who{font-size:10px;color:#9AA3B0}
 </style>
 </head>
 <body>
@@ -370,6 +411,21 @@ tr:hover td{background:#FAFBFD}
             </tbody>
           </table>
         </div>
+      </div>
+
+      <!-- PROJECT BOARD -->
+      <div class="screen" id="s-project-board">
+        <div class="board-hdr">
+          <div class="board-back" onclick="go('projects',document.querySelectorAll('.nav-item')[1])"><i class="ti ti-arrow-right"></i> פרויקטים</div>
+          <div class="board-hdr-title" id="board-proj-name"></div>
+          <div class="board-overall">
+            <span id="board-prog-txt">–</span>
+            <div class="prog" style="width:100px"><div class="prog-fill" id="board-prog-bar" style="width:0%"></div></div>
+            <b id="board-prog-pct">0%</b>
+          </div>
+        </div>
+        <div class="board-tabs" id="board-tabs"></div>
+        <div id="board-tree"></div>
       </div>
 
       <!-- REPORTS -->
@@ -553,7 +609,8 @@ tr:hover td{background:#FAFBFD}
     </div>
 
     <div class="modal-foot">
-      <button class="btn btn-p" onclick="openImportExcel(_currentDetailId)"><i class="ti ti-table-import"></i>ייבא עץ מבנה</button>
+      <button class="btn btn-p" onclick="closeById('m-project-detail');openProjectBoard(_currentDetailId)"><i class="ti ti-layout-board"></i>לוח פרויקט</button>
+      <button class="btn" onclick="openImportExcel(_currentDetailId)"><i class="ti ti-table-import"></i>ייבא עץ מבנה</button>
       <button class="btn" id="detail-work-tree-btn" onclick="openWorkTree(_currentDetailId)" style="display:none"><i class="ti ti-list-tree"></i>עץ מבנה <span id="detail-wi-count" class="badge b-open" style="margin-right:4px"></span></button>
       <button class="btn" onclick="closeById('m-project-detail')">סגור</button>
     </div>
@@ -841,7 +898,7 @@ async function loadProjectsScreen(projects, findings) {
         <td>${p.project_manager || '–'}${p.project_manager_phone ? `<div style="font-size:10px;color:#9AA3B0">${p.project_manager_phone}</div>` : ''}</td>
         <td>${projectStatusBadge(p.status)}</td>
         <td>${openCount > 0 ? `<span class="badge b-warn">${openCount}</span>` : '<span class="badge b-ok">0</span>'}</td>
-        <td><button class="btn btn-sm" onclick="event.stopPropagation();openProjectDetail('${p.id}')"><i class="ti ti-eye"></i></button></td>
+        <td style="display:flex;gap:4px"><button class="btn btn-sm" onclick="event.stopPropagation();openProjectDetail('${p.id}')"><i class="ti ti-eye"></i></button><button class="btn btn-sm btn-p" onclick="event.stopPropagation();openProjectBoard('${p.id}')" title="לוח פרויקט"><i class="ti ti-layout-board"></i></button></td>
       </tr>`;
     }).join('');
   } else {
@@ -1299,11 +1356,12 @@ function projectStatusBadge(s) {
 // ─── NAVIGATION ───────────────────────────────────────────
 
 const titles = {
-  dashboard: 'דשבורד ראשי',
-  projects:  'פרויקטים',
-  nc:        'ממצאים',
-  reports:   'דוחות',
-  users:     'ניהול משתמשים',
+  dashboard:       'דשבורד ראשי',
+  projects:        'פרויקטים',
+  nc:              'ממצאים',
+  reports:         'דוחות',
+  users:           'ניהול משתמשים',
+  'project-board': 'לוח פרויקט',
 };
 
 function go(name, el) {
@@ -1328,6 +1386,248 @@ function closeById(id) { document.getElementById(id).classList.remove('open'); }
 document.getElementById('login-password').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
+
+// ─── PROJECT BOARD ───────────────────────────────────────
+
+let _boardProjectId = null;
+let _boardItems = [];
+let _boardSubProjects = {};
+
+async function openProjectBoard(projectId) {
+  _boardProjectId = projectId;
+  const p = _allProjects.find(x => x.id === projectId);
+
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('s-project-board').classList.add('active');
+  document.getElementById('ttl').textContent = p?.name || 'לוח פרויקט';
+  document.getElementById('topbar-sub').textContent = 'לוח ביצוע ובקרה';
+  document.getElementById('board-proj-name').textContent = p?.name || '';
+  document.getElementById('board-tabs').innerHTML = '';
+  document.getElementById('board-tree').innerHTML = '<div style="text-align:center;padding:50px"><span class="spinner"></span> טוען עץ מבנה...</div>';
+  document.getElementById('board-prog-txt').textContent = '–';
+  document.getElementById('board-prog-bar').style.width = '0%';
+  document.getElementById('board-prog-pct').textContent = '0%';
+
+  const { data, error } = await db
+    .from('work_items')
+    .select('*, checklist_instances(id, task_name, task_order, is_checked, checked_by, checked_at)')
+    .eq('project_id', projectId)
+    .order('row_order');
+
+  if (error || !data || data.length === 0) {
+    document.getElementById('board-tree').innerHTML = `
+      <div style="text-align:center;padding:60px;color:#9AA3B0">
+        <i class="ti ti-table-import" style="font-size:40px;display:block;margin-bottom:12px;color:#C8CDD6"></i>
+        לא הוגדר עץ מבנה לפרויקט זה<br>
+        <small style="font-size:12px">פתח את פרטי הפרויקט ולחץ "ייבא עץ מבנה"</small>
+      </div>`;
+    return;
+  }
+
+  _boardItems = data;
+  _updateBoardProgress();
+
+  // Group by sub_project
+  _boardSubProjects = {};
+  for (const item of data) {
+    const sp = item.sub_project || 'כללי';
+    if (!_boardSubProjects[sp]) _boardSubProjects[sp] = [];
+    _boardSubProjects[sp].push(item);
+  }
+
+  const spNames = Object.keys(_boardSubProjects);
+  document.getElementById('board-tabs').innerHTML = spNames.map((sp, i) =>
+    `<button class="board-tab ${i===0?'active':''}" onclick="switchBoardTab('${sp.replace(/'/g,"\\'").replace(/"/g,'&quot;')}',this)">${sp}</button>`
+  ).join('');
+
+  _renderBoardSubProject(_boardSubProjects[spNames[0]]);
+}
+
+function switchBoardTab(spName, btn) {
+  document.querySelectorAll('.board-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  _renderBoardSubProject(_boardSubProjects[spName]);
+}
+
+function _renderBoardSubProject(items) {
+  const tree = {};
+  for (const item of items) {
+    const st = item.structure    || '–';
+    const ss = item.sub_structure|| '–';
+    const el = item.element      || '–';
+    if (!tree[st]) tree[st] = {};
+    if (!tree[st][ss]) tree[st][ss] = {};
+    if (!tree[st][ss][el]) tree[st][ss][el] = [];
+    tree[st][ss][el].push(item);
+  }
+
+  const progOf = arr => {
+    const total   = arr.reduce((s,i) => s + i.checklist_instances.length, 0);
+    const checked = arr.reduce((s,i) => s + i.checklist_instances.filter(c=>c.is_checked).length, 0);
+    return { total, checked, pct: total>0 ? Math.round(checked/total*100) : 0 };
+  };
+
+  const wiIcon = wi => {
+    const { total, checked } = progOf([wi]);
+    if (total === 0)          return '<i class="ti ti-minus" style="color:#C8CDD6;font-size:17px;flex-shrink:0"></i>';
+    if (checked === total)    return '<i class="ti ti-circle-check" style="color:#2E7D32;font-size:17px;flex-shrink:0"></i>';
+    if (checked > 0)          return '<i class="ti ti-circle-half-2" style="color:#C97B1A;font-size:17px;flex-shrink:0"></i>';
+    return '<i class="ti ti-circle" style="color:#C8CDD6;font-size:17px;flex-shrink:0"></i>';
+  };
+
+  let html = '';
+  for (const [st, subs] of Object.entries(tree)) {
+    const stItems = Object.values(subs).flatMap(s => Object.values(s).flat());
+    const { total: stT, checked: stC, pct: stP } = progOf(stItems);
+    html += `<div class="board-section">
+      <div class="board-sec-hdr" onclick="toggleBoardSection(this)">
+        <i class="b-chevron ti ti-chevron-down"></i>
+        <span class="board-sec-title"><i class="ti ti-layers-subtract" style="color:#9AA3B0;margin-left:6px"></i>${st}</span>
+        <div class="board-prog-row">
+          <span class="board-prog-txt">${stC}/${stT}</span>
+          <div class="prog" style="width:80px"><div class="prog-fill" style="width:${stP}%"></div></div>
+          <span class="board-prog-pct">${stP}%</span>
+        </div>
+      </div>
+      <div class="board-sec-body">`;
+
+    for (const [ss, elements] of Object.entries(subs)) {
+      const ssItems = Object.values(elements).flat();
+      const { total: ssT, checked: ssC } = progOf(ssItems);
+      html += `<div class="board-subsec">
+        <div class="board-subsec-hdr" onclick="toggleBoardSection(this)">
+          <i class="b-chevron ti ti-chevron-down"></i>
+          <span class="board-subsec-title">${ss}</span>
+          <span class="mini-badge">${ssC}/${ssT}</span>
+        </div>
+        <div class="board-subsec-body">`;
+
+      for (const [el, wItems] of Object.entries(elements)) {
+        html += `<div><div class="board-el-hdr"><i class="ti ti-shape" style="font-size:12px"></i>${el}</div>`;
+        for (const wi of wItems) {
+          const { total: wT, checked: wC, pct: wP } = progOf([wi]);
+          const isDone = wT > 0 && wC === wT;
+          html += `<div class="board-wi${isDone?' wi-done':''}" id="wi-${wi.id}">
+            <div class="board-wi-row" onclick="toggleBoardChecklist('${wi.id}')">
+              ${wiIcon(wi)}
+              <div style="flex:1;min-width:0">
+                <div class="board-wi-name">${wi.sub_element}</div>
+                ${wi.section_from!=null?`<div class="board-wi-meta">חתך ${wi.section_from}–${wi.section_to}</div>`:''}
+              </div>
+              <span class="badge b-gray" style="font-size:9px;flex-shrink:0">${wi.execution_type}</span>
+              <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+                <div class="prog"><div class="prog-fill" id="wprog-${wi.id}" style="width:${wP}%"></div></div>
+                <span class="board-wi-cnt" id="wcnt-${wi.id}">${wC}/${wT}</span>
+              </div>
+              <i class="ti ti-chevron-left b-chevron" id="wchev-${wi.id}" style="font-size:13px"></i>
+            </div>
+            <div class="board-cl" id="cl-${wi.id}" style="display:none">
+              ${wi.checklist_instances.length === 0
+                ? '<div style="padding:12px 14px;font-size:12px;color:#9AA3B0">אין משימות לסוג ביצוע זה</div>'
+                : wi.checklist_instances.sort((a,b)=>a.task_order-b.task_order).map(ci => `
+                <div class="board-cl-row" onclick="toggleCheckItem('${ci.id}','${wi.id}')" id="ci-${ci.id}">
+                  <div class="chk ${ci.is_checked?'on':''}"><i class="ti ti-check"></i></div>
+                  <div style="flex:1">
+                    <div class="board-cl-name${ci.is_checked?' done':''}">${ci.task_name}</div>
+                    ${ci.is_checked&&ci.checked_at?`<div class="board-cl-who">${new Date(ci.checked_at).toLocaleDateString('he-IL')}</div>`:''}
+                  </div>
+                </div>`).join('')}
+            </div>
+          </div>`;
+        }
+        html += '</div>';
+      }
+      html += '</div></div>';
+    }
+    html += '</div></div>';
+  }
+  document.getElementById('board-tree').innerHTML = html;
+}
+
+function toggleBoardSection(hdr) {
+  const body = hdr.nextElementSibling;
+  const chev = hdr.querySelector('.b-chevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  if (chev) chev.style.transform = open ? 'rotate(-90deg)' : '';
+}
+
+function toggleBoardChecklist(wiId) {
+  const cl   = document.getElementById('cl-' + wiId);
+  const chev = document.getElementById('wchev-' + wiId);
+  const open = cl.style.display !== 'none';
+  cl.style.display = open ? 'none' : '';
+  if (chev) chev.style.transform = open ? '' : 'rotate(90deg)';
+}
+
+async function toggleCheckItem(ciId, wiId) {
+  const ciEl  = document.getElementById('ci-' + ciId);
+  const chkEl = ciEl.querySelector('.chk');
+  const nameEl= ciEl.querySelector('.board-cl-name');
+  const wasChecked = chkEl.classList.contains('on');
+  const newVal = !wasChecked;
+
+  // Optimistic UI
+  chkEl.classList.toggle('on', newVal);
+  nameEl.classList.toggle('done', newVal);
+
+  const { error } = await db.from('checklist_instances').update({
+    is_checked: newVal,
+    checked_by: newVal ? currentUserId : null,
+    checked_at: newVal ? new Date().toISOString() : null
+  }).eq('id', ciId);
+
+  if (error) { chkEl.classList.toggle('on', wasChecked); nameEl.classList.toggle('done', wasChecked); return; }
+
+  // Update local data + DOM
+  for (const wi of _boardItems) {
+    const ci = wi.checklist_instances.find(c => c.id === ciId);
+    if (!ci) continue;
+    ci.is_checked = newVal;
+    ci.checked_at = newVal ? new Date().toISOString() : null;
+
+    const total   = wi.checklist_instances.length;
+    const checked = wi.checklist_instances.filter(c => c.is_checked).length;
+    const pct     = total > 0 ? Math.round(checked/total*100) : 0;
+    const newStatus = checked === 0 ? 'pending' : checked === total ? 'completed' : 'in_progress';
+
+    // Update progress bar & count
+    const bar = document.getElementById('wprog-' + wiId);
+    const cnt = document.getElementById('wcnt-'  + wiId);
+    if (bar) bar.style.width = pct + '%';
+    if (cnt) cnt.textContent = `${checked}/${total}`;
+
+    // Update row icon
+    const wiEl = document.getElementById('wi-' + wiId);
+    if (wiEl) {
+      wiEl.classList.toggle('wi-done', checked === total);
+      const icon = wiEl.querySelector('.board-wi-row > i:first-child');
+      if (icon) {
+        if (total === 0)          { icon.className='ti ti-minus';icon.style.color='#C8CDD6'; }
+        else if (checked===total) { icon.className='ti ti-circle-check';icon.style.color='#2E7D32'; }
+        else if (checked>0)       { icon.className='ti ti-circle-half-2';icon.style.color='#C97B1A'; }
+        else                      { icon.className='ti ti-circle';icon.style.color='#C8CDD6'; }
+      }
+    }
+
+    if (wi.status !== newStatus) {
+      wi.status = newStatus;
+      db.from('work_items').update({ status: newStatus }).eq('id', wiId);
+    }
+    break;
+  }
+  _updateBoardProgress();
+}
+
+function _updateBoardProgress() {
+  const total   = _boardItems.reduce((s,wi) => s + wi.checklist_instances.length, 0);
+  const checked = _boardItems.reduce((s,wi) => s + wi.checklist_instances.filter(c=>c.is_checked).length, 0);
+  const pct = total > 0 ? Math.round(checked/total*100) : 0;
+  document.getElementById('board-prog-txt').textContent = `${checked}/${total} משימות`;
+  document.getElementById('board-prog-bar').style.width = pct + '%';
+  document.getElementById('board-prog-pct').textContent = pct + '%';
+}
 
 // ─── EXCEL IMPORT ─────────────────────────────────────────
 
