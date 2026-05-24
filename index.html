@@ -5,6 +5,8 @@
 <title>QAField – מערכת ניהול איכות בנייה</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;color:#1a1a1a;background:#F7F8FA;direction:rtl;height:100vh;overflow:hidden}
@@ -158,6 +160,16 @@ tr:hover td{background:#FAFBFD}
 .loading-row td{text-align:center;color:#9AA3B0;padding:28px;font-size:13px}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid #E8EBF0;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-left:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* MAP */
+#projects-map{height:520px;border-radius:12px;border:1px solid #E8EBF0;z-index:0}
+.view-toggle{display:flex;border:1px solid #E0E4EA;border-radius:8px;overflow:hidden}
+.view-toggle button{padding:6px 14px;font-size:12px;font-weight:600;border:none;background:#fff;cursor:pointer;color:#6B7280;font-family:inherit;transition:all .15s}
+.view-toggle button.active{background:#0F2744;color:#fff}
+.proj-popup{min-width:200px;direction:rtl;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif}
+.proj-popup h4{font-size:13px;font-weight:700;color:#0F2744;margin-bottom:6px}
+.proj-popup p{font-size:11px;color:#6B7280;margin:2px 0}
+.proj-popup .pp-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -273,15 +285,26 @@ tr:hover td{background:#FAFBFD}
       <div class="screen" id="s-projects">
         <div class="sec-hdr">
           <h2>פרויקטים</h2>
-          <button class="btn btn-p" onclick="openM('m-new-project')"><i class="ti ti-plus"></i>פרויקט חדש</button>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="view-toggle">
+              <button class="active" id="btn-list-view" onclick="setProjectView('list')"><i class="ti ti-list"></i> רשימה</button>
+              <button id="btn-map-view" onclick="setProjectView('map')"><i class="ti ti-map-pin"></i> מפה</button>
+            </div>
+            <button class="btn btn-p" onclick="openM('m-new-project')"><i class="ti ti-plus"></i>פרויקט חדש</button>
+          </div>
         </div>
-        <div class="card" style="padding:0">
-          <table>
-            <thead><tr><th>#</th><th>שם פרויקט</th><th>סטטוס</th><th>ממצאים פתוחים</th><th>תאריך יצירה</th><th></th></tr></thead>
-            <tbody id="projects-tbody">
-              <tr class="loading-row"><td colspan="6"><span class="spinner"></span> טוען...</td></tr>
-            </tbody>
-          </table>
+        <div id="projects-list-view">
+          <div class="card" style="padding:0">
+            <table>
+              <thead><tr><th>שם פרויקט</th><th>עיר</th><th>חברת ביצוע</th><th>מנהל פרויקט</th><th>סטטוס</th><th>ממצאים</th><th></th></tr></thead>
+              <tbody id="projects-tbody">
+                <tr class="loading-row"><td colspan="7"><span class="spinner"></span> טוען...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div id="projects-map-view" style="display:none">
+          <div id="projects-map"></div>
         </div>
       </div>
 
@@ -344,21 +367,51 @@ tr:hover td{background:#FAFBFD}
 
 <!-- MODAL: פרויקט חדש -->
 <div class="modal-bg" id="m-new-project" onclick="closeM(event,'m-new-project')">
-  <div class="modal">
+  <div class="modal" style="width:560px">
     <div class="modal-ttl">פרויקט חדש<button class="modal-x" onclick="closeById('m-new-project')"><i class="ti ti-x"></i></button></div>
+
+    <div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">פרטים כלליים</div>
     <div class="form-row"><label class="form-lbl">שם הפרויקט *</label><input class="form-in" id="np-name" type="text" placeholder="שם הפרויקט..."></div>
-    <div class="form-row"><label class="form-lbl">תיאור</label><textarea class="form-in" id="np-desc" rows="3" placeholder="תיאור קצר..."></textarea></div>
-    <div class="form-row"><label class="form-lbl">סטטוס</label>
-      <select class="form-in" id="np-status">
-        <option value="active">פעיל</option>
-        <option value="planning">תכנון</option>
-        <option value="completed">הושלם</option>
-        <option value="on_hold">מוקפא</option>
-      </select>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">מספר חוזה</label><input class="form-in" id="np-contract" type="text" placeholder="QA-2026-001"></div>
+      <div class="form-row"><label class="form-lbl">סטטוס</label>
+        <select class="form-in" id="np-status">
+          <option value="active">פעיל</option>
+          <option value="planning">תכנון</option>
+          <option value="completed">הושלם</option>
+          <option value="on_hold">מוקפא</option>
+        </select>
+      </div>
     </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">תאריך התחלה</label><input class="form-in" id="np-start" type="date"></div>
+      <div class="form-row"><label class="form-lbl">תאריך סיום משוער</label><input class="form-in" id="np-end" type="date"></div>
+    </div>
+    <div class="form-row"><label class="form-lbl">תיאור</label><textarea class="form-in" id="np-desc" rows="2" placeholder="תיאור קצר..."></textarea></div>
+
+    <div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 10px">מיקום</div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">כתובת</label><input class="form-in" id="np-address" type="text" placeholder="רחוב ומספר"></div>
+      <div class="form-row"><label class="form-lbl">עיר</label><input class="form-in" id="np-city" type="text" placeholder="תל אביב"></div>
+    </div>
+
+    <div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 10px">אנשי קשר</div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">מנהל פרויקט</label><input class="form-in" id="np-pm" type="text" placeholder="שם מלא"></div>
+      <div class="form-row"><label class="form-lbl">טלפון מנהל פרויקט</label><input class="form-in" id="np-pm-phone" type="tel" placeholder="050-0000000" style="direction:ltr"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">חברת ביצוע</label><input class="form-in" id="np-contractor" type="text" placeholder="שם החברה"></div>
+      <div class="form-row"><label class="form-lbl">טלפון חברת ביצוע</label><input class="form-in" id="np-contractor-phone" type="tel" placeholder="03-0000000" style="direction:ltr"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">איש קשר מטעם לקוח</label><input class="form-in" id="np-client-contact" type="text" placeholder="שם מלא"></div>
+      <div class="form-row"><label class="form-lbl">טלפון איש קשר</label><input class="form-in" id="np-client-phone" type="tel" placeholder="050-0000000" style="direction:ltr"></div>
+    </div>
+
     <div id="np-err" style="color:#C0392B;font-size:12px;margin-bottom:8px;min-height:16px"></div>
     <div class="modal-foot">
-      <button class="btn btn-p" onclick="createProject()">צור פרויקט</button>
+      <button class="btn btn-p" onclick="createProject()"><i class="ti ti-plus"></i>צור פרויקט</button>
       <button class="btn" onclick="closeById('m-new-project')">ביטול</button>
     </div>
   </div>
@@ -625,27 +678,83 @@ async function loadDashboard() {
   await loadReportsScreen(find);
 }
 
+let _allProjects = [];
+
 async function loadProjectsScreen(projects, findings) {
   const proj = projects || (await db.from('projects').select('*')).data || [];
   const find = findings || (await db.from('findings').select('*')).data || [];
+  _allProjects = proj;
   const tbody = document.getElementById('projects-tbody');
 
   if (proj.length > 0) {
-    tbody.innerHTML = proj.map((p, i) => {
+    tbody.innerHTML = proj.map(p => {
       const openCount = find.filter(f => f.project_id === p.id && f.status !== 'closed').length;
-      const date = p.created_at ? new Date(p.created_at).toLocaleDateString('he-IL') : '–';
-      return `<tr>
-        <td><b>${i + 1}</b></td>
-        <td>${p.name || p.id}</td>
+      return `<tr style="cursor:pointer" onclick="openProjectDetail('${p.id}')">
+        <td><b>${p.name}</b>${p.contract_number ? `<div style="font-size:10px;color:#9AA3B0">${p.contract_number}</div>` : ''}</td>
+        <td>${p.city || '–'}</td>
+        <td>${p.contractor || '–'}${p.contractor_phone ? `<div style="font-size:10px;color:#9AA3B0">${p.contractor_phone}</div>` : ''}</td>
+        <td>${p.project_manager || '–'}${p.project_manager_phone ? `<div style="font-size:10px;color:#9AA3B0">${p.project_manager_phone}</div>` : ''}</td>
         <td>${projectStatusBadge(p.status)}</td>
         <td>${openCount > 0 ? `<span class="badge b-warn">${openCount}</span>` : '<span class="badge b-ok">0</span>'}</td>
-        <td>${date}</td>
-        <td><button class="btn btn-sm" onclick="alert('בפיתוח')"><i class="ti ti-eye"></i></button></td>
+        <td><button class="btn btn-sm" onclick="event.stopPropagation();openProjectDetail('${p.id}')"><i class="ti ti-eye"></i></button></td>
       </tr>`;
     }).join('');
   } else {
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="6">אין פרויקטים עדיין – צור פרויקט חדש</td></tr>';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">אין פרויקטים עדיין – צור פרויקט חדש</td></tr>';
   }
+}
+
+function setProjectView(view) {
+  document.getElementById('projects-list-view').style.display = view === 'list' ? '' : 'none';
+  document.getElementById('projects-map-view').style.display  = view === 'map'  ? '' : 'none';
+  document.getElementById('btn-list-view').classList.toggle('active', view === 'list');
+  document.getElementById('btn-map-view').classList.toggle('active', view === 'map');
+  if (view === 'map') renderProjectsMap(_allProjects);
+}
+
+let _map = null;
+function renderProjectsMap(projects) {
+  const proj = projects || _allProjects;
+  if (!_map) {
+    _map = L.map('projects-map').setView([31.5, 34.9], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(_map);
+  } else {
+    _map.eachLayer(l => { if (l instanceof L.Marker) _map.removeLayer(l); });
+  }
+  setTimeout(() => _map.invalidateSize(), 100);
+
+  const withCoords = proj.filter(p => p.latitude && p.longitude);
+  if (withCoords.length === 0) return;
+
+  const bounds = [];
+  withCoords.forEach(p => {
+    const color = { active:'#185FA5', planning:'#6B7280', completed:'#2E7D32', on_hold:'#C97B1A' }[p.status] || '#185FA5';
+    const icon = L.divIcon({
+      html: `<div style="width:14px;height:14px;background:${color};border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>`,
+      className: '', iconAnchor: [7,7]
+    });
+    const marker = L.marker([p.latitude, p.longitude], { icon }).addTo(_map);
+    marker.bindPopup(`
+      <div class="proj-popup">
+        <h4>${p.name}</h4>
+        <span class="pp-badge" style="background:#E8F1FB;color:#185FA5">${p.city || ''}</span>
+        ${p.contractor ? `<p><b>חברת ביצוע:</b> ${p.contractor}</p>` : ''}
+        ${p.project_manager ? `<p><b>מנהל פרויקט:</b> ${p.project_manager}</p>` : ''}
+        ${p.project_manager_phone ? `<p>📞 ${p.project_manager_phone}</p>` : ''}
+      </div>
+    `);
+    bounds.push([p.latitude, p.longitude]);
+  });
+
+  if (bounds.length > 0) _map.fitBounds(bounds, { padding: [40, 40] });
+}
+
+function openProjectDetail(id) {
+  const p = _allProjects.find(x => x.id === id);
+  if (!p) return;
+  alert(`פרויקט: ${p.name}\n${p.address ? 'כתובת: ' + p.address + ', ' + (p.city||'') : ''}\n${p.project_manager ? 'מנהל: ' + p.project_manager : ''}\n${p.contractor ? 'קבלן: ' + p.contractor : ''}\n\nעמוד פרויקט מלא – בפיתוח`);
 }
 
 async function loadFindingsScreen(findings, projects) {
@@ -725,19 +834,49 @@ async function loadProjectSelect() {
 
 async function createProject() {
   const name = document.getElementById('np-name').value.trim();
-  const description = document.getElementById('np-desc').value.trim();
-  const status = document.getElementById('np-status').value;
   const errEl = document.getElementById('np-err');
   errEl.textContent = '';
-
   if (!name) { errEl.textContent = 'שם הפרויקט הוא שדה חובה'; return; }
 
-  const { error } = await db.from('projects').insert({ name, description, status });
+  const address = document.getElementById('np-address').value.trim();
+  const city    = document.getElementById('np-city').value.trim();
+
+  let latitude = null, longitude = null;
+  if (address || city) {
+    try {
+      const q = encodeURIComponent([address, city, 'ישראל'].filter(Boolean).join(', '));
+      const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
+        headers: { 'Accept-Language': 'he' }
+      }).then(r => r.json());
+      if (geo.length > 0) { latitude = parseFloat(geo[0].lat); longitude = parseFloat(geo[0].lon); }
+    } catch(e) {}
+  }
+
+  const payload = {
+    name,
+    description:           document.getElementById('np-desc').value.trim() || null,
+    status:                document.getElementById('np-status').value,
+    contract_number:       document.getElementById('np-contract').value.trim() || null,
+    start_date:            document.getElementById('np-start').value || null,
+    end_date:              document.getElementById('np-end').value || null,
+    address:               address || null,
+    city:                  city || null,
+    latitude,
+    longitude,
+    project_manager:       document.getElementById('np-pm').value.trim() || null,
+    project_manager_phone: document.getElementById('np-pm-phone').value.trim() || null,
+    contractor:            document.getElementById('np-contractor').value.trim() || null,
+    contractor_phone:      document.getElementById('np-contractor-phone').value.trim() || null,
+    client_contact:        document.getElementById('np-client-contact').value.trim() || null,
+    client_contact_phone:  document.getElementById('np-client-phone').value.trim() || null,
+  };
+
+  const { error } = await db.from('projects').insert(payload);
   if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
 
   closeById('m-new-project');
-  document.getElementById('np-name').value = '';
-  document.getElementById('np-desc').value = '';
+  document.querySelectorAll('#m-new-project input, #m-new-project textarea, #m-new-project select')
+    .forEach(el => { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; });
   await loadDashboard();
   await loadProjectSelect();
 }
