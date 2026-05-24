@@ -188,6 +188,17 @@ tr:hover td{background:#FAFBFD}
 .proj-popup p{font-size:11px;color:#6B7280;margin:2px 0}
 .proj-popup .pp-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;margin-bottom:6px}
 
+/* PROJECT SELECTOR */
+.proj-sel{display:flex;align-items:center;gap:6px;padding:5px 11px;border:1px solid #E0E4EA;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#374151;position:relative;transition:all .15s;user-select:none;max-width:200px}
+.proj-sel:hover{background:#F5F7FA;border-color:#C8CDD6}
+.proj-sel.active{background:#E8F1FB;border-color:#185FA5;color:#185FA5}
+.proj-sel-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.proj-picker{position:absolute;top:calc(100% + 6px);left:0;right:auto;background:#fff;border:1px solid #E0E4EA;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:240px;max-height:280px;overflow-y:auto;z-index:300;display:none}
+.proj-picker-item{padding:9px 14px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s;border-bottom:1px solid #F5F7FA}
+.proj-picker-item:last-child{border-bottom:none}
+.proj-picker-item:hover{background:#F5F7FA}
+.proj-picker-item.sel{background:#E8F1FB;font-weight:600;color:#185FA5}
+
 /* IMPORT */
 .upload-zone{border:2px dashed #D1D5DB;border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;color:#9AA3B0;font-size:13px}
 .upload-zone:hover,.upload-zone.drag-over{border-color:#185FA5;background:#EEF4FF;color:#185FA5}
@@ -287,6 +298,7 @@ tr:hover td{background:#FAFBFD}
     </div>
     <div class="nav-sec">
       <div class="nav-lbl">ניהול שוטף</div>
+      <div class="nav-item" id="nav-board" onclick="goBoardNav(this)"><i class="ti ti-layout-board"></i>לוח פרויקט</div>
       <div class="nav-item" onclick="go('nc',this)"><i class="ti ti-alert-triangle"></i>ממצאים</div>
       <div class="nav-item" onclick="go('reports',this)"><i class="ti ti-chart-bar"></i>דוחות</div>
     </div>
@@ -314,7 +326,13 @@ tr:hover td{background:#FAFBFD}
         <div class="topbar-sub" id="topbar-sub">טוען נתונים...</div>
       </div>
       <div class="topbar-right">
-        <div class="notif" onclick="go('nc',document.querySelectorAll('.nav-item')[2])">
+        <div class="proj-sel" id="proj-sel" onclick="toggleProjPicker(event)">
+          <i class="ti ti-building" style="font-size:13px;flex-shrink:0"></i>
+          <span class="proj-sel-name" id="proj-sel-name">בחר פרויקט</span>
+          <i class="ti ti-chevron-down" style="font-size:11px;flex-shrink:0"></i>
+          <div class="proj-picker" id="proj-picker"></div>
+        </div>
+        <div class="notif" onclick="go('nc',document.querySelectorAll('.nav-item')[3])">
           <i class="ti ti-bell" style="font-size:20px"></i>
           <div class="notif-dot" id="notif-dot" style="display:none"></div>
         </div>
@@ -416,8 +434,6 @@ tr:hover td{background:#FAFBFD}
       <!-- PROJECT BOARD -->
       <div class="screen" id="s-project-board">
         <div class="board-hdr">
-          <div class="board-back" onclick="go('projects',document.querySelectorAll('.nav-item')[1])"><i class="ti ti-arrow-right"></i> פרויקטים</div>
-          <div class="board-hdr-title" id="board-proj-name"></div>
           <div class="board-overall">
             <span id="board-prog-txt">–</span>
             <div class="prog" style="width:100px"><div class="prog-fill" id="board-prog-bar" style="width:0%"></div></div>
@@ -1387,6 +1403,57 @@ document.getElementById('login-password').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
 
+// ─── ACTIVE PROJECT SELECTOR ─────────────────────────────
+
+let _activeProjectId = null;
+
+function setActiveProject(id) {
+  const p = _allProjects.find(x => x.id === id);
+  if (!p) return;
+  _activeProjectId = id;
+  const selEl   = document.getElementById('proj-sel');
+  const nameEl  = document.getElementById('proj-sel-name');
+  nameEl.textContent = p.name;
+  selEl.classList.add('active');
+  document.getElementById('proj-picker').style.display = 'none';
+}
+
+function toggleProjPicker(e) {
+  e.stopPropagation();
+  const picker = document.getElementById('proj-picker');
+  if (picker.style.display !== 'none') { picker.style.display = 'none'; return; }
+
+  picker.innerHTML = _allProjects.length > 0
+    ? _allProjects.map(p => {
+        const badge = { active:'b-open', planning:'b-gray', completed:'b-ok', on_hold:'b-warn' }[p.status] || 'b-gray';
+        return `<div class="proj-picker-item${p.id === _activeProjectId ? ' sel' : ''}" onclick="event.stopPropagation();setActiveProject('${p.id}')">
+          <span style="flex:1">${p.name}</span>
+          <span class="badge ${badge}" style="font-size:9px">${projectStatusBadge(p.status).replace(/<[^>]+>/g,'').trim()}</span>
+        </div>`;
+      }).join('')
+    : '<div style="padding:12px 14px;font-size:12px;color:#9AA3B0">אין פרויקטים</div>';
+
+  picker.style.display = '';
+}
+
+document.addEventListener('click', () => {
+  const picker = document.getElementById('proj-picker');
+  if (picker) picker.style.display = 'none';
+});
+
+function goBoardNav(el) {
+  if (!_activeProjectId) {
+    const sel = document.getElementById('proj-sel');
+    sel.style.outline = '2px solid #C97B1A';
+    setTimeout(() => sel.style.outline = '', 1500);
+    toggleProjPicker({ stopPropagation: () => {} });
+    return;
+  }
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  openProjectBoard(_activeProjectId);
+}
+
 // ─── PROJECT BOARD ───────────────────────────────────────
 
 let _boardProjectId = null;
@@ -1395,14 +1462,15 @@ let _boardSubProjects = {};
 
 async function openProjectBoard(projectId) {
   _boardProjectId = projectId;
+  setActiveProject(projectId);
   const p = _allProjects.find(x => x.id === projectId);
 
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('s-project-board').classList.add('active');
-  document.getElementById('ttl').textContent = p?.name || 'לוח פרויקט';
-  document.getElementById('topbar-sub').textContent = 'לוח ביצוע ובקרה';
-  document.getElementById('board-proj-name').textContent = p?.name || '';
+  document.getElementById('nav-board').classList.add('active');
+  document.getElementById('ttl').textContent = 'לוח פרויקט';
+  document.getElementById('topbar-sub').textContent = p?.name || '';
   document.getElementById('board-tabs').innerHTML = '';
   document.getElementById('board-tree').innerHTML = '<div style="text-align:center;padding:50px"><span class="spinner"></span> טוען עץ מבנה...</div>';
   document.getElementById('board-prog-txt').textContent = '–';
