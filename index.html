@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;color:#1a1a1a;background:#F7F8FA;direction:rtl;height:100vh;overflow:hidden}
@@ -252,12 +254,90 @@ tr:hover td{background:#FAFBFD}
 .board-cl-name{font-size:12px;color:#374151;flex:1}
 .board-cl-name.done{text-decoration:line-through;color:#9AA3B0}
 .board-cl-who{font-size:10px;color:#9AA3B0}
+
+/* INSPECTION ORDERS */
+.b-pending{background:#FFF3E0;color:#C97B1A}
+.b-insp-done{background:#E8F5E9;color:#2E7D32}
+.b-cancelled{background:#F0F2F5;color:#6B7280}
+.b-pass{background:#E8F5E9;color:#2E7D32}
+.b-fail{background:#FFEBEE;color:#C0392B}
+.b-partial{background:#FFF3E0;color:#C97B1A}
+.insp-order-btn{padding:3px 8px;font-size:10px;border-radius:5px;border:1px solid #E0E4EA;background:#fff;cursor:pointer;color:#374151;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:3px;flex-shrink:0}
+.insp-order-btn:hover{background:#E8F1FB;border-color:#185FA5;color:#185FA5}
+
+/* STOP POINTS */
+.board-wi.wi-stop .board-wi-row{border-right:3px solid #C0392B}
+.board-wi.wi-stop.wi-stop-released .board-wi-row{border-right-color:#2E7D32}
+.stop-banner{margin:0 16px 8px 56px;background:#FFF1F0;border:1px solid #FFADA8;border-radius:8px;padding:8px 12px;font-size:12px;color:#9B2226;display:flex;align-items:center;gap:8px}
+.stop-banner.released{background:#E8F5E9;border-color:#A5D6A7;color:#1B5E20}
+.stop-release-btn{padding:4px 10px;font-size:11px;border-radius:6px;border:1px solid #C0392B;background:#fff;cursor:pointer;color:#C0392B;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:4px;flex-shrink:0;margin-right:auto}
+.stop-release-btn:hover{background:#C0392B;color:#fff}
+.stop-mark-btn{padding:3px 8px;font-size:10px;border-radius:5px;border:1px solid #E0E4EA;background:#fff;cursor:pointer;color:#9AA3B0;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:3px;flex-shrink:0}
+.stop-mark-btn:hover{border-color:#C0392B;color:#C0392B}
+.stop-mark-btn.active{border-color:#C0392B;color:#C0392B;background:#FFF1F0}
+
+/* ─── NCR REDESIGN ─────────────────────────────────────────── */
+.ncr-header-band{padding:18px 24px 14px;transition:background .2s}
+.ncr-header-band.sev-low    {background:linear-gradient(135deg,#4B5563,#374151)}
+.ncr-header-band.sev-medium {background:linear-gradient(135deg,#D97706,#B45309)}
+.ncr-header-band.sev-high   {background:linear-gradient(135deg,#DC2626,#B91C1C)}
+.ncr-header-band.sev-critical{background:linear-gradient(135deg,#7C1F1F,#450A0A)}
+.ncr-header-inner{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.ncr-sev-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ncr-sev-btn{border:2px solid #E2E8F0;border-radius:8px;padding:8px 10px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;color:#64748B;background:#fff;transition:all .15s;display:flex;align-items:center;gap:5px;justify-content:center}
+.ncr-sev-btn:hover{background:#F1F5F9;border-color:#CBD5E1;color:#334155}
+#nsb-low.active    {border-color:#9CA3AF;background:#F3F4F6;color:#374151}
+#nsb-medium.active {border-color:#D97706;background:#FEF3C7;color:#92400E}
+#nsb-high.active   {border-color:#DC2626;background:#FEE2E2;color:#991B1B}
+#nsb-critical.active{border-color:#7C1F1F;background:#FECACA;color:#450A0A}
+.ncr-sev-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.ncr-sec{background:#F8FAFC;border-radius:10px;padding:14px 16px;margin-bottom:10px;border:1px solid #EEF0F4}
+.ncr-sec-label{font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.ncr-title-input{width:100%;padding:8px 0;font-size:15px;font-weight:700;font-family:inherit;border:none;background:none;outline:none;color:#1A2332;direction:rtl}
+.ncr-title-input::placeholder{color:#C8CDD6;font-weight:400}
+.ncr-attach-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.ncr-attach-thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#E8EDF4;border:2px solid transparent}
+.ncr-attach-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ncr-attach-thumb:hover .ncr-thumb-ov{opacity:1}
+.ncr-thumb-ov{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:.15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.ncr-thumb-ov button{background:rgba(255,255,255,.9);border:none;border-radius:6px;padding:5px;cursor:pointer;font-size:13px;color:#1A2332;font-family:inherit;display:flex;align-items:center;gap:2px;font-size:11px;font-weight:600}
+.ncr-upload-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px dashed #CBD5E1;border-radius:8px;cursor:pointer;color:#9AA3B0;font-size:12px;font-weight:600;transition:.15s;font-family:inherit;background:none;width:100%;justify-content:center}
+.ncr-upload-btn:hover{border-color:#185FA5;color:#185FA5;background:#EEF4FB}
+.fd-tabs{display:flex;gap:2px;border-bottom:2px solid #EEF0F4;margin-bottom:16px}
+.fd-tab{padding:8px 18px;font-size:12px;font-weight:600;font-family:inherit;border:none;background:none;cursor:pointer;color:#9AA3B0;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s}
+.fd-tab.active{color:#185FA5;border-bottom-color:#185FA5}
+.fd-tab:hover{color:#185FA5}
+.ncr-timeline{position:relative;padding-right:20px}
+.ncr-timeline::before{content:'';position:absolute;right:7px;top:6px;bottom:6px;width:2px;background:#EEF0F4}
+.ncr-tl-item{position:relative;padding:0 22px 16px 0}
+.ncr-tl-dot{position:absolute;right:-8px;top:3px;width:14px;height:14px;border-radius:50%;background:#185FA5;border:2px solid #fff;box-shadow:0 0 0 2px #DBEAFE}
+.ncr-tl-dot.dot-open{background:#DC2626;box-shadow:0 0 0 2px #FEE2E2}
+.ncr-tl-dot.dot-close{background:#16A34A;box-shadow:0 0 0 2px #DCFCE7}
+.ncr-tl-dot.dot-req{background:#D97706;box-shadow:0 0 0 2px #FEF3C7}
+.ncr-tl-time{font-size:10px;color:#9AA3B0;margin-bottom:3px}
+.ncr-tl-action{font-size:12px;font-weight:600;color:#1A2332}
+.ncr-tl-notes{font-size:11px;color:#6B7280;margin-top:2px;line-height:1.5}
+.ncr-overdue{background:#FEF2F2;border:1px solid #FCA5A5;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:#DC2626}
+.ncr-ontime{background:#F0FDF4;border:1px solid #86EFAC;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:#15803D}
+.markup-tool-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:12px;font-weight:700;color:#fff;transition:.15s;font-family:inherit}
+.markup-tool-btn.active{background:rgba(255,255,255,.35);border-color:#fff}
+.ncr-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.ncr-info-item{padding:10px 14px;border-bottom:1px solid #EEF0F4}
+.ncr-info-item:nth-child(odd){border-left:1px solid #EEF0F4}
+.ncr-info-lbl{font-size:10px;color:#9AA3B0;font-weight:600;margin-bottom:2px}
+.ncr-info-val{font-size:12px;color:#1A2332;font-weight:500}
 </style>
 </head>
 <body>
 
+<!-- LOADING SCREEN -->
+<div id="loading-screen" style="position:fixed;inset:0;background:#0F2744;display:flex;align-items:center;justify-content:center;z-index:300;flex-direction:column;gap:16px">
+  <div style="color:#fff;font-size:22px;font-weight:800;letter-spacing:-.3px">QAField</div>
+  <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></div>
+</div>
+
 <!-- LOGIN SCREEN -->
-<div id="login-screen">
+<div id="login-screen" style="display:none">
   <div class="login-box">
     <div class="login-logo">
       <div style="width:52px;height:52px;background:#0F2744;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto">
@@ -300,11 +380,16 @@ tr:hover td{background:#FAFBFD}
       <div class="nav-lbl">ניהול שוטף</div>
       <div class="nav-item" id="nav-board" onclick="goBoardNav(this)"><i class="ti ti-layout-board"></i>לוח פרויקט</div>
       <div class="nav-item" onclick="go('nc',this)"><i class="ti ti-alert-triangle"></i>ממצאים</div>
+      <div class="nav-item" onclick="go('inspections',this)"><i class="ti ti-calendar-check"></i>הזמנות בדיקה</div>
       <div class="nav-item" onclick="go('reports',this)"><i class="ti ti-chart-bar"></i>דוחות</div>
     </div>
     <div class="nav-sec" id="admin-nav-sec" style="display:none">
       <div class="nav-lbl">אדמין</div>
       <div class="nav-item" id="nav-users-item" onclick="go('users',this)"><i class="ti ti-users"></i>משתמשים</div>
+    </div>
+    <div class="nav-sec" id="sysadmin-nav-sec" style="display:none">
+      <div class="nav-lbl">System</div>
+      <div class="nav-item" onclick="go('companies',this)"><i class="ti ti-building-skyscraper"></i>חברות</div>
     </div>
     <div class="nav-space"></div>
     <div class="nav-bottom">
@@ -350,6 +435,7 @@ tr:hover td{background:#FAFBFD}
           <div class="stat red"><div class="stat-lbl">ממצאים קריטיים</div><div class="stat-val" id="stat-critical"><span class="spinner"></span></div></div>
           <div class="stat green"><div class="stat-lbl">ממצאים סגורים</div><div class="stat-val" id="stat-closed"><span class="spinner"></span></div></div>
         </div>
+        <div id="stop-points-alert" style="display:none;margin-bottom:14px"></div>
         <div class="card">
           <div class="card-hdr"><div class="card-ttl">פרויקטים</div></div>
           <table>
@@ -379,7 +465,7 @@ tr:hover td{background:#FAFBFD}
               <button class="active" id="btn-list-view" onclick="setProjectView('list')"><i class="ti ti-list"></i> רשימה</button>
               <button id="btn-map-view" onclick="setProjectView('map')"><i class="ti ti-map-pin"></i> מפה</button>
             </div>
-            <button class="btn btn-p" onclick="openM('m-new-project')"><i class="ti ti-plus"></i>פרויקט חדש</button>
+            <button class="btn btn-p" onclick="openNewProjectModal()"><i class="ti ti-plus"></i>פרויקט חדש</button>
           </div>
         </div>
         <div id="projects-list-view">
@@ -401,13 +487,34 @@ tr:hover td{background:#FAFBFD}
       <div class="screen" id="s-nc">
         <div class="sec-hdr">
           <h2>ממצאים</h2>
-          <button class="btn btn-p" onclick="openM('m-new-nc')"><i class="ti ti-plus"></i>ממצא חדש</button>
+          <button class="btn btn-p" onclick="openNewFinding()"><i class="ti ti-plus"></i>ממצא חדש</button>
         </div>
         <div id="nc-alert" style="display:none"></div>
         <div class="card" style="padding:0">
           <table>
-            <thead><tr><th>#</th><th>כותרת</th><th>פרויקט</th><th>חומרה</th><th>סטטוס</th><th>אחראי</th><th>תאריך יעד</th><th></th></tr></thead>
+            <thead><tr><th>כותרת</th><th>פרויקט</th><th>חומרה</th><th>סטטוס</th><th>קבלן</th><th>יעד</th><th></th></tr></thead>
             <tbody id="nc-tbody">
+              <tr class="loading-row"><td colspan="10"><span class="spinner"></span> טוען...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- INSPECTION ORDERS -->
+      <div class="screen" id="s-inspections">
+        <div class="sec-hdr">
+          <h2>הזמנות בדיקה</h2>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="form-in" id="insp-filter-proj" onchange="loadInspectionsScreen()" style="width:180px;padding:6px 10px;font-size:12px">
+              <option value="">כל הפרויקטים</option>
+            </select>
+            <button class="btn btn-p" onclick="openNewInspection()"><i class="ti ti-plus"></i>הזמנה חדשה</button>
+          </div>
+        </div>
+        <div class="card" style="padding:0">
+          <table>
+            <thead><tr><th>#</th><th>פרויקט</th><th>אלמנט / מיקום</th><th>בודק</th><th>קבלן</th><th>תאריך</th><th>סטטוס</th><th></th></tr></thead>
+            <tbody id="inspections-tbody">
               <tr class="loading-row"><td colspan="8"><span class="spinner"></span> טוען...</td></tr>
             </tbody>
           </table>
@@ -421,11 +528,61 @@ tr:hover td{background:#FAFBFD}
           <button class="btn btn-p" onclick="openM('m-new-user')"><i class="ti ti-user-plus"></i>משתמש חדש</button>
         </div>
         <div class="alert a-info"><i class="ti ti-shield-lock"></i>עמוד זה נגיש לאדמינים בלבד. שינויי תפקיד נכנסים לתוקף בכניסה הבאה של המשתמש.</div>
+
+        <!-- הגדרות חברה -->
+        <div class="card" style="margin-bottom:20px">
+          <div style="font-weight:700;font-size:14px;color:#0F2744;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <i class="ti ti-building-community" style="color:#185FA5"></i>הגדרות חברה
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap">
+            <!-- תצוגת לוגו -->
+            <div id="logo-preview-area" style="width:160px;height:80px;border:2px dashed #CBD5E1;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#F8FAFC;flex-shrink:0;overflow:hidden;cursor:pointer" onclick="document.getElementById('logo-file-input').click()" title="לחץ להחלפת לוגו">
+              <img id="logo-preview-img" style="display:none;max-width:154px;max-height:74px;object-fit:contain">
+              <div id="logo-placeholder" style="text-align:center;color:#94A3B8;font-size:11px;line-height:1.6">
+                <i class="ti ti-photo-up" style="font-size:22px;display:block;margin-bottom:4px"></i>העלה לוגו
+              </div>
+            </div>
+            <!-- שדות -->
+            <div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:12px">
+              <div>
+                <label style="font-size:12px;color:#64748B;font-weight:600;display:block;margin-bottom:4px">שם חברת הבקרה</label>
+                <input id="company-name-input" type="text" class="form-control" placeholder="לדוגמה: א.ב בקרת איכות בע&quot;מ" style="max-width:320px">
+              </div>
+              <div>
+                <label style="font-size:12px;color:#64748B;font-weight:600;display:block;margin-bottom:4px">קובץ לוגו (PNG / JPG / SVG)</label>
+                <input type="file" id="logo-file-input" accept="image/*" style="display:none" onchange="handleLogoUpload(this)">
+                <div style="display:flex;gap:8px;align-items:center">
+                  <button class="btn btn-sm btn-p" onclick="document.getElementById('logo-file-input').click()"><i class="ti ti-upload"></i>בחר קובץ</button>
+                  <button class="btn btn-sm" id="logo-remove-btn" onclick="removeCompanyLogo()" style="display:none;color:#C0392B"><i class="ti ti-trash"></i>הסר לוגו</button>
+                  <button class="btn btn-sm btn-p" onclick="saveCompanySettings()"><i class="ti ti-device-floppy"></i>שמור</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="card" style="padding:0">
           <table>
             <thead><tr><th>שם מלא</th><th>אימייל</th><th>תפקיד</th><th>תאריך הצטרפות</th><th>פעולות</th></tr></thead>
             <tbody id="users-tbody">
               <tr class="loading-row"><td colspan="5"><span class="spinner"></span> טוען...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- COMPANIES (system admin) -->
+      <div class="screen" id="s-companies">
+        <div class="sec-hdr">
+          <h2>ניהול חברות</h2>
+          <button class="btn btn-p" onclick="openM('m-new-company')"><i class="ti ti-plus"></i>חברה חדשה</button>
+        </div>
+        <div class="alert a-info"><i class="ti ti-shield-lock"></i>עמוד זה נגיש לסופר-אדמין בלבד. כל חברה היא דייר עצמאי עם בידוד נתונים מלא.</div>
+        <div class="card" style="padding:0">
+          <table>
+            <thead><tr><th>שם חברה</th><th>תוכנית</th><th>נוצרה</th><th>משתמשים</th><th>פרויקטים</th><th>פעולות</th></tr></thead>
+            <tbody id="companies-tbody">
+              <tr class="loading-row"><td colspan="6"><span class="spinner"></span> טוען...</td></tr>
             </tbody>
           </table>
         </div>
@@ -447,13 +604,38 @@ tr:hover td{background:#FAFBFD}
       <!-- REPORTS -->
       <div class="screen" id="s-reports">
         <div class="sec-hdr"><h2>דוחות</h2></div>
-        <div class="rpt-grid">
-          <div class="rpt-card"><i class="ti ti-chart-line" style="color:#185FA5"></i><div class="rpt-ttl">דוח ממצאים</div><div class="rpt-sub">לפי חומרה וסטטוס</div></div>
-          <div class="rpt-card"><i class="ti ti-building" style="color:#2E7D32"></i><div class="rpt-ttl">דוח פרויקטים</div><div class="rpt-sub">סטטוס כללי</div></div>
-          <div class="rpt-card"><i class="ti ti-alert-triangle" style="color:#C97B1A"></i><div class="rpt-ttl">ממצאים פתוחים</div><div class="rpt-sub">לפי עדיפות</div></div>
+
+        <!-- BUILDING REPORT -->
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-hdr">
+            <div class="card-ttl"><i class="ti ti-building" style="font-size:13px;margin-left:5px;color:#185FA5"></i>דוח התקדמות מבנים</div>
+            <select class="form-in" id="rpt-bldg-proj" onchange="loadBuildingReport()" style="width:200px;padding:5px 10px;font-size:12px">
+              <option value="">כל הפרויקטים</option>
+            </select>
+          </div>
+          <div id="rpt-bldg-summary" style="display:none;margin-bottom:14px"></div>
+          <table>
+            <thead>
+              <tr>
+                <th id="rpt-bldg-th-proj">פרויקט</th>
+                <th>תת-פרויקט</th>
+                <th>מבנה</th>
+                <th style="text-align:center">סה"כ פריטים</th>
+                <th style="text-align:center">הושלמו</th>
+                <th style="text-align:center">בתהליך</th>
+                <th style="text-align:center">ממתינים</th>
+                <th>התקדמות</th>
+              </tr>
+            </thead>
+            <tbody id="rpt-bldg-tbody">
+              <tr class="loading-row"><td colspan="8" style="color:#9AA3B0">טוען נתונים...</td></tr>
+            </tbody>
+          </table>
         </div>
+
+        <!-- FINDINGS SEVERITY REPORT -->
         <div class="card">
-          <div class="card-hdr"><div class="card-ttl">סיכום ממצאים לפי חומרה</div></div>
+          <div class="card-hdr"><div class="card-ttl"><i class="ti ti-alert-triangle" style="font-size:13px;margin-left:5px;color:#C97B1A"></i>סיכום ממצאים לפי חומרה</div></div>
           <table>
             <thead><tr><th>חומרה</th><th>סה"כ</th><th>פתוחים</th><th>סגורים</th></tr></thead>
             <tbody id="report-tbody">
@@ -467,10 +649,11 @@ tr:hover td{background:#FAFBFD}
   </div>
 </div>
 
-<!-- MODAL: פרויקט חדש -->
+<!-- MODAL: פרויקט חדש / עריכת פרויקט -->
 <div class="modal-bg" id="m-new-project" onclick="closeM(event,'m-new-project')">
   <div class="modal" style="width:560px">
-    <div class="modal-ttl">פרויקט חדש<button class="modal-x" onclick="closeById('m-new-project')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-ttl"><span id="np-modal-title">פרויקט חדש</span><button class="modal-x" onclick="closeById('m-new-project')"><i class="ti ti-x"></i></button></div>
+    <input type="hidden" id="np-id">
 
     <div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">פרטים כלליים</div>
     <div class="form-row"><label class="form-lbl">שם הפרויקט *</label><input class="form-in" id="np-name" type="text" placeholder="שם הפרויקט..."></div>
@@ -510,10 +693,11 @@ tr:hover td{background:#FAFBFD}
       <div class="form-row"><label class="form-lbl">איש קשר מטעם לקוח</label><input class="form-in" id="np-client-contact" type="text" placeholder="שם מלא"></div>
       <div class="form-row"><label class="form-lbl">טלפון איש קשר</label><input class="form-in" id="np-client-phone" type="tel" placeholder="050-0000000" style="direction:ltr"></div>
     </div>
+    <div class="form-row"><label class="form-lbl">מייל מעבדה <span style="font-size:10px;color:#9AA3B0;font-weight:400">(לשליחת הזמנות בדיקה)</span></label><input class="form-in" id="np-lab-email" type="email" placeholder="lab@company.com" style="direction:ltr;text-align:left"></div>
 
     <div id="np-err" style="color:#C0392B;font-size:12px;margin-bottom:8px;min-height:16px"></div>
     <div class="modal-foot">
-      <button class="btn btn-p" onclick="createProject()"><i class="ti ti-plus"></i>צור פרויקט</button>
+      <button class="btn btn-p" id="np-submit-btn" onclick="createProject()"><i class="ti ti-plus" id="np-submit-icon"></i><span id="np-submit-lbl">צור פרויקט</span></button>
       <button class="btn" onclick="closeById('m-new-project')">ביטול</button>
     </div>
   </div>
@@ -538,6 +722,29 @@ tr:hover td{background:#FAFBFD}
     <div class="modal-foot">
       <button class="btn btn-p" onclick="createUser()">צור משתמש</button>
       <button class="btn" onclick="closeById('m-new-user')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: חברה חדשה -->
+<div class="modal-bg" id="m-new-company" onclick="closeM(event,'m-new-company')">
+  <div class="modal" style="width:420px">
+    <div class="modal-ttl">חברה חדשה<button class="modal-x" onclick="closeById('m-new-company')"><i class="ti ti-x"></i></button></div>
+    <div class="form-row"><label class="form-lbl">שם החברה *</label><input class="form-in" id="nc-name" type="text" placeholder="א.ב בקרת איכות בע&quot;מ"></div>
+    <div class="form-row"><label class="form-lbl">תוכנית</label>
+      <select class="form-in" id="nc-plan">
+        <option value="free">Free</option>
+        <option value="basic">Basic</option>
+        <option value="pro" selected>Pro</option>
+      </select>
+    </div>
+    <div class="form-row"><label class="form-lbl">אימייל אדמין ראשוני *</label><input class="form-in" id="nc-admin-email" type="email" placeholder="admin@company.com" style="direction:ltr;text-align:left"></div>
+    <div class="form-row"><label class="form-lbl">סיסמה זמנית *</label><input class="form-in" id="nc-admin-pass" type="text" placeholder="לפחות 6 תווים" style="direction:ltr;text-align:left"></div>
+    <div class="form-row"><label class="form-lbl">שם מלא של האדמין</label><input class="form-in" id="nc-admin-name" type="text" placeholder="ישראל ישראלי"></div>
+    <div id="nc-err" style="color:#C0392B;font-size:12px;margin-bottom:8px;min-height:16px"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" id="nc-submit-btn" onclick="createCompany()"><i class="ti ti-building-skyscraper"></i>צור חברה + אדמין</button>
+      <button class="btn" onclick="closeById('m-new-company')">ביטול</button>
     </div>
   </div>
 </div>
@@ -601,6 +808,7 @@ tr:hover td{background:#FAFBFD}
           <div><div class="detail-lbl">מנהל פרויקט</div><div class="detail-val" id="d-pm">–</div><div style="font-size:12px;color:#6B7280;direction:ltr;text-align:right" id="d-pm-phone"></div></div>
           <div><div class="detail-lbl">חברת ביצוע</div><div class="detail-val" id="d-contractor">–</div><div style="font-size:12px;color:#6B7280;direction:ltr;text-align:right" id="d-contractor-phone"></div></div>
           <div><div class="detail-lbl">איש קשר לקוח</div><div class="detail-val" id="d-client">–</div><div style="font-size:12px;color:#6B7280;direction:ltr;text-align:right" id="d-client-phone"></div></div>
+          <div><div class="detail-lbl">מייל מעבדה</div><div class="detail-val" id="d-lab-email" style="direction:ltr;font-size:12px;color:#185FA5">–</div></div>
         </div>
       </div>
     </div>
@@ -628,6 +836,7 @@ tr:hover td{background:#FAFBFD}
       <button class="btn btn-p" onclick="closeById('m-project-detail');openProjectBoard(_currentDetailId)"><i class="ti ti-layout-board"></i>לוח פרויקט</button>
       <button class="btn" onclick="openImportExcel(_currentDetailId)"><i class="ti ti-table-import"></i>ייבא עץ מבנה</button>
       <button class="btn" id="detail-work-tree-btn" onclick="openWorkTree(_currentDetailId)" style="display:none"><i class="ti ti-list-tree"></i>עץ מבנה <span id="detail-wi-count" class="badge b-open" style="margin-right:4px"></span></button>
+      <button class="btn" id="detail-edit-btn" onclick="closeById('m-project-detail');openEditProject(_currentDetailId)" style="display:none"><i class="ti ti-pencil"></i>ערוך פרויקט</button>
       <button class="btn" onclick="closeById('m-project-detail')">סגור</button>
     </div>
   </div>
@@ -680,40 +889,396 @@ tr:hover td{background:#FAFBFD}
   </div>
 </div>
 
-<!-- MODAL: ממצא חדש -->
-<div class="modal-bg" id="m-new-nc" onclick="closeM(event,'m-new-nc')">
-  <div class="modal">
-    <div class="modal-ttl">ממצא חדש<button class="modal-x" onclick="closeById('m-new-nc')"><i class="ti ti-x"></i></button></div>
-    <div class="form-row"><label class="form-lbl">כותרת *</label><input class="form-in" id="nf-title" type="text" placeholder="תאר את הממצא..."></div>
-    <div class="form-row"><label class="form-lbl">פרויקט *</label>
-      <select class="form-in" id="nf-project"><option value="">בחר פרויקט...</option></select>
+<!-- MODAL: NCR – יצירה ועריכה (Phase A) -->
+<div class="modal-bg" id="m-new-nc">
+  <div class="modal" style="width:600px;max-height:92vh;overflow-y:auto">
+
+    <div class="modal-ttl">
+      <span id="nc-modal-ttl">אי-התאמה חדשה</span>
+      <button class="modal-x" onclick="closeById('m-new-nc')"><i class="ti ti-x"></i></button>
     </div>
+
+    <div>
+      <input type="hidden" id="nf-id">
+      <input type="hidden" id="nf-severity" value="high">
+
+      <!-- כותרת + תיאור -->
+      <div class="ncr-sec">
+        <input class="ncr-title-input" id="nf-title" type="text" placeholder="כותרת אי-ההתאמה *">
+        <textarea class="form-in" id="nf-description" rows="3" style="margin-top:8px;resize:vertical" placeholder="פירוט המצב בשטח..."></textarea>
+      </div>
+
+      <!-- חומרה -->
+      <div class="ncr-sec">
+        <div class="ncr-sec-label"><i class="ti ti-alert-triangle"></i>חומרה *</div>
+        <div class="ncr-sev-row">
+          <button class="ncr-sev-btn" id="nsb-low"         onclick="selectSeverity('low')"     ><span class="ncr-sev-dot" style="background:#9CA3AF"></span>נמוכה</button>
+          <button class="ncr-sev-btn" id="nsb-medium"      onclick="selectSeverity('medium')"  ><span class="ncr-sev-dot" style="background:#D97706"></span>בינונית</button>
+          <button class="ncr-sev-btn active" id="nsb-high" onclick="selectSeverity('high')"    ><span class="ncr-sev-dot" style="background:#DC2626"></span>גבוהה</button>
+          <button class="ncr-sev-btn" id="nsb-critical"    onclick="selectSeverity('critical')"><span class="ncr-sev-dot" style="background:#7C1F1F"></span>קריטית</button>
+        </div>
+      </div>
+
+      <!-- מיקום -->
+      <div class="ncr-sec">
+        <div class="ncr-sec-label"><i class="ti ti-map-pin"></i>מיקום</div>
+        <div class="form-row" style="margin-bottom:8px">
+          <label class="form-lbl">פרויקט *</label>
+          <div id="nf-project-wrap">
+            <select class="form-in" id="nf-project" onchange="ncrOnProjectChange()"><option value="">בחר פרויקט...</option></select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label class="form-lbl">מיקום בשטח</label>
+            <input class="form-in" id="nf-location" type="text" placeholder="חתך / מבנה / קומה..."></div>
+          <div><label class="form-lbl">פריט עבודה</label>
+            <select class="form-in" id="nf-work-item"><option value="">— ללא —</option></select></div>
+        </div>
+      </div>
+
+      <!-- אחריות -->
+      <div class="ncr-sec">
+        <div class="ncr-sec-label"><i class="ti ti-users"></i>אחריות</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label class="form-lbl">קבלן אחראי</label>
+            <input class="form-in" id="nf-contractor" type="text" placeholder="שם הקבלן..."></div>
+          <div><label class="form-lbl">אחראי QC</label>
+            <input class="form-in" id="nf-assigned" type="text" placeholder="שם האחראי..."></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <div><label class="form-lbl">קטגוריה</label>
+            <select class="form-in" id="nf-category">
+              <option value="">— בחר —</option>
+              <option>עבודות עפר</option><option>בטון</option><option>תשתיות יבשות</option>
+              <option>תשתיות רטובות</option><option>אספלט</option><option>בנייה</option>
+              <option>מדרכות</option><option>נוף ופיתוח</option><option>גדרות ומעקות</option>
+              <option>שלטוט</option><option>כללי</option>
+            </select></div>
+          <div><label class="form-lbl">דיסציפלינה</label>
+            <select class="form-in" id="nf-discipline">
+              <option value="">— בחר —</option>
+              <option value="QC">QC – בקרת איכות</option><option value="בטיחות">בטיחות</option>
+              <option value="סביבה">סביבה</option><option value="הנדסה">הנדסה</option>
+              <option value="חשמל">חשמל</option><option value="מים וביוב">מים וביוב</option>
+              <option value="ניקוז">ניקוז</option><option value="תקשורת">תקשורת</option>
+            </select></div>
+        </div>
+      </div>
+
+      <!-- תאריכים + פותח -->
+      <div class="ncr-sec">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div><label class="form-lbl">נפתח על ידי</label>
+            <input class="form-in" id="nf-opened-by" type="text" placeholder="שם הפותח..."></div>
+          <div><label class="form-lbl">תאריך פתיחה</label>
+            <input class="form-in" id="nf-opened-date" type="date"></div>
+          <div><label class="form-lbl">יעד לסגירה</label>
+            <input class="form-in" id="nf-due" type="date"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <div><label class="form-lbl">סטטוס</label>
+            <select class="form-in" id="nf-status">
+              <option value="open">פתוח</option>
+              <option value="in_progress">בטיפול</option>
+              <option value="closed">סגור</option>
+            </select></div>
+          <div><label class="form-lbl">הועבר לטיפול</label>
+            <input class="form-in" id="nf-transferred" type="text" placeholder="גורם מטפל..."></div>
+        </div>
+      </div>
+
+      <!-- תמונות מהשטח -->
+      <div class="ncr-sec">
+        <div class="ncr-sec-label"><i class="ti ti-photo"></i>תמונות מהשטח</div>
+        <div id="nf-attach-grid" class="ncr-attach-grid"></div>
+        <div style="display:flex;gap:8px">
+          <label class="ncr-upload-btn" for="nf-file-camera" style="flex:1">
+            <i class="ti ti-camera" style="font-size:16px"></i><span>צלם תמונה</span>
+            <input type="file" id="nf-file-camera" accept="image/*" capture="environment" multiple style="display:none" onchange="ncrAddPhotos(this)">
+          </label>
+          <label class="ncr-upload-btn" for="nf-file-input" style="flex:1">
+            <i class="ti ti-folder-open" style="font-size:16px"></i><span>בחר מהמחשב</span>
+            <input type="file" id="nf-file-input" accept="image/*" multiple style="display:none" onchange="ncrAddPhotos(this)">
+          </label>
+        </div>
+      </div>
+
+      <div id="nf-err" style="color:#C0392B;font-size:12px;margin-bottom:8px;min-height:16px"></div>
+      <div class="modal-foot" style="padding:0 0 4px">
+        <button class="btn btn-p" id="nf-submit-btn" onclick="submitNCR()"><i class="ti ti-alert-triangle"></i>פתח ממצא</button>
+        <button class="btn" onclick="closeById('m-new-nc')">ביטול</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: פרטי NCR / עריכה (Phase B+C) -->
+<div class="modal-bg" id="m-finding-detail" onclick="closeM(event,'m-finding-detail')">
+  <div class="modal" style="width:700px;max-height:92vh;overflow-y:auto;border-radius:16px;padding:0">
+    <div id="fd-header-band" class="ncr-header-band sev-high">
+      <div class="ncr-header-inner" style="align-items:center">
+        <div>
+          <div id="fd-title" style="font-size:15px;font-weight:700;color:#fff"></div>
+          <div id="fd-meta"  style="font-size:11px;color:rgba(255,255,255,.7);margin-top:3px"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div id="fd-overdue"></div>
+          <button class="btn btn-sm" id="fd-edit-btn" style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.4);color:#fff;display:none" onclick="fdEditFinding()"><i class="ti ti-pencil"></i>ערוך</button>
+          <button class="modal-x" style="color:#fff;opacity:.75" onclick="closeById('m-finding-detail')"><i class="ti ti-x"></i></button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:18px 22px">
+      <div class="fd-tabs">
+        <button class="fd-tab active" id="fd-tab-info"     onclick="fdTab('info')">פרטים</button>
+        <button class="fd-tab"        id="fd-tab-media"    onclick="fdTab('media')">תמונות <span id="fd-media-count"></span></button>
+        <button class="fd-tab"        id="fd-tab-timeline" onclick="fdTab('timeline')">היסטוריה</button>
+      </div>
+      <div id="fd-pane-info"></div>
+      <div id="fd-pane-media"    style="display:none"></div>
+      <div id="fd-pane-timeline" style="display:none"></div>
+      <div id="fd-actions" style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #EEF0F4;padding-top:16px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: סימון תמונה – Markup (Phase A) -->
+<div class="modal-bg" id="m-photo-markup">
+  <div class="modal" style="width:720px;padding:0;border-radius:12px;overflow:hidden">
+    <div style="padding:12px 16px;background:#1A2B4A;display:flex;justify-content:space-between;align-items:center">
+      <span style="color:#fff;font-weight:700;font-size:13px">סימון על תמונה</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="markup-tool-btn active" id="mbt-circle" onclick="setMarkupTool('circle')">⭕ עיגול</button>
+        <button class="markup-tool-btn"        id="mbt-arrow"  onclick="setMarkupTool('arrow')" >➡️ חץ</button>
+        <button class="markup-tool-btn"        id="mbt-rect"   onclick="setMarkupTool('rect')"  >⬜ מסגרת</button>
+        <button class="markup-tool-btn" style="margin-right:8px" onclick="clearMarkup()">🗑 נקה</button>
+      </div>
+    </div>
+    <div style="background:#111;display:flex;justify-content:center;align-items:center;min-height:320px;max-height:520px;overflow:hidden">
+      <canvas id="markup-canvas" style="max-width:100%;max-height:520px;cursor:crosshair;display:block"></canvas>
+    </div>
+    <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;background:#F8FAFC;border-top:1px solid #E5E7EB">
+      <span style="font-size:11px;color:#9AA3B0" id="markup-hint">לחץ וגרור להוספת עיגול</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="closeById('m-photo-markup')">ביטול</button>
+        <button class="btn btn-p" onclick="saveMarkup()"><i class="ti ti-check"></i>שמור סימון</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: סגירת NCR עם חתימה (Phase C) -->
+<div class="modal-bg" id="m-ncr-closure" onclick="closeM(event,'m-ncr-closure')">
+  <div class="modal" style="width:560px;border-radius:16px;padding:0;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#065F46,#047857);padding:20px 24px">
+      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:3px">אישור סגירת אי-ההתאמה</div>
+      <div id="closure-ncr-title" style="font-size:11px;color:rgba(255,255,255,.75)"></div>
+    </div>
+    <div style="padding:20px 24px">
+      <input type="hidden" id="closure-ncr-id">
+      <div style="margin-bottom:14px">
+        <label class="form-lbl">תיאור התיקון שבוצע *</label>
+        <textarea class="form-in" id="closure-notes" rows="3" placeholder="תאר את הפעולות שנעשו לתיקון הליקוי..."></textarea>
+      </div>
+      <div style="margin-bottom:14px">
+        <div class="ncr-sec-label" style="margin-bottom:8px"><i class="ti ti-photo"></i>תמונת מצב מתוקן (מומלץ)</div>
+        <div id="closure-attach-grid" class="ncr-attach-grid" style="grid-template-columns:repeat(4,1fr)"></div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <label class="ncr-upload-btn" for="closure-file-camera" style="flex:1">
+            <i class="ti ti-camera" style="font-size:14px"></i><span>צלם</span>
+            <input type="file" id="closure-file-camera" accept="image/*" capture="environment" multiple style="display:none" onchange="closureAddPhotos(this)">
+          </label>
+          <label class="ncr-upload-btn" for="closure-file-input" style="flex:1">
+            <i class="ti ti-folder-open" style="font-size:14px"></i><span>בחר מהמחשב</span>
+            <input type="file" id="closure-file-input" accept="image/*" multiple style="display:none" onchange="closureAddPhotos(this)">
+          </label>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div class="ncr-sec-label" style="margin-bottom:8px"><i class="ti ti-signature"></i>חתימה דיגיטלית *</div>
+        <div style="border:2px dashed #CBD5E1;border-radius:8px;background:#F8FAFC;position:relative">
+          <canvas id="signature-canvas" width="500" height="110" style="width:100%;touch-action:none;cursor:crosshair;display:block;border-radius:6px"></canvas>
+          <button onclick="clearSignature()" style="position:absolute;top:6px;left:8px;font-size:10px;color:#9AA3B0;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;border:1px solid #E5E7EB;background:#fff">מחק</button>
+        </div>
+        <div style="font-size:10px;color:#9AA3B0;margin-top:4px;text-align:center">חתום בשטח למעלה</div>
+      </div>
+      <div id="closure-err" style="color:#C0392B;font-size:12px;margin-bottom:8px;min-height:14px"></div>
+      <div class="modal-foot" style="padding:0">
+        <button class="btn" style="background:#065F46;color:#fff;border-color:#065F46" onclick="submitClosure()"><i class="ti ti-rosette-discount-check"></i>אשר סגירה</button>
+        <button class="btn" onclick="closeById('m-ncr-closure')">ביטול</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- placeholder for old fields still referenced elsewhere -->
+<input type="hidden" id="nf-est-close">
+<input type="hidden" id="nf-treatment">
+
+
+<!-- MODAL: שחרור נקודת עצירה -->
+<div class="modal-bg" id="m-stop-release" onclick="closeM(event,'m-stop-release')">
+  <div class="modal" style="width:480px">
+    <div class="modal-ttl">
+      <div style="display:flex;align-items:center;gap:9px">
+        <i class="ti ti-octagon" style="color:#C0392B;font-size:20px;flex-shrink:0"></i>
+        <span>שחרור נקודת עצירה</span>
+      </div>
+      <button class="modal-x" onclick="closeById('m-stop-release')"><i class="ti ti-x"></i></button>
+    </div>
+    <input type="hidden" id="sp-wi-id">
+    <div id="sp-wi-name" style="background:#F7F8FA;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:600;color:#0F2744;margin-bottom:16px"></div>
+
     <div class="form-grid">
-      <div class="form-row"><label class="form-lbl">חומרה *</label>
-        <select class="form-in" id="nf-severity">
-          <option value="low">נמוך</option>
-          <option value="medium">בינוני</option>
-          <option value="high">גבוה</option>
-          <option value="critical">קריטי</option>
+      <div class="form-row"><label class="form-lbl">תאריך אישור *</label><input class="form-in" id="sp-date" type="date"></div>
+      <div class="form-row"><label class="form-lbl">תוצאה *</label>
+        <select class="form-in" id="sp-result">
+          <option value="approved">אושר ✓</option>
+          <option value="rejected">נדחה ✗</option>
+          <option value="conditional">מותנה ~</option>
         </select>
       </div>
-      <div class="form-row"><label class="form-lbl">סטטוס</label>
-        <select class="form-in" id="nf-status">
-          <option value="open">פתוח</option>
-          <option value="in_progress">בטיפול</option>
-          <option value="closed">סגור</option>
-        </select>
-      </div>
     </div>
-    <div class="form-row"><label class="form-lbl">מיקום</label><input class="form-in" id="nf-location" type="text" placeholder="מיקום בשטח..."></div>
-    <div class="form-grid">
-      <div class="form-row"><label class="form-lbl">אחראי לטיפול</label><input class="form-in" id="nf-assigned" type="text" placeholder="שם האחראי..."></div>
-      <div class="form-row"><label class="form-lbl">תאריך יעד</label><input class="form-in" id="nf-due" type="date"></div>
+    <div class="form-row"><label class="form-lbl">הערות הבקר</label>
+      <textarea class="form-in" id="sp-notes" rows="3" placeholder="תנאים, הגבלות, הסברים..."></textarea>
     </div>
-    <div id="nf-err" style="color:#C0392B;font-size:12px;margin-bottom:8px;min-height:16px"></div>
+    <div id="sp-err" style="color:#C0392B;font-size:12px;min-height:16px"></div>
     <div class="modal-foot">
-      <button class="btn btn-p" onclick="createFinding()">פתח ממצא</button>
-      <button class="btn" onclick="closeById('m-new-nc')">ביטול</button>
+      <button class="btn btn-p" id="sp-submit-btn" onclick="submitStopRelease()">
+        <i class="ti ti-check"></i>אשר שחרור
+      </button>
+      <button class="btn" onclick="closeById('m-stop-release')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: תוצאת בדיקה מהירה -->
+<div class="modal-bg" id="m-quick-result" onclick="closeM(event,'m-quick-result')">
+  <div class="modal" style="width:380px">
+    <div class="modal-ttl">סימון תוצאת בדיקה<button class="modal-x" onclick="closeById('m-quick-result')"><i class="ti ti-x"></i></button></div>
+    <input type="hidden" id="qr-id">
+    <div style="font-size:12px;color:#6B7280;margin-bottom:14px" id="qr-desc"></div>
+    <div class="form-grid" style="margin-bottom:12px">
+      <div class="form-row"><label class="form-lbl">סטטוס</label>
+        <select class="form-in" id="qr-status">
+          <option value="pending">פתוח</option>
+          <option value="completed">סגור</option>
+          <option value="cancelled">בוטל</option>
+        </select>
+      </div>
+      <div class="form-row"><label class="form-lbl">תוצאה</label>
+        <select class="form-in" id="qr-result">
+          <option value="">— לא הוגדר —</option>
+          <option value="pass">עבר ✓</option>
+          <option value="fail">נכשל ✗</option>
+          <option value="partial">חלקי ~</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label class="form-lbl">הערות</label><textarea class="form-in" id="qr-notes" rows="2" placeholder="סיכום, ליקויים, הערות..."></textarea></div>
+    <div id="qr-err" style="color:#C0392B;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveQuickResult()"><i class="ti ti-device-floppy"></i>שמור תוצאה</button>
+      <button class="btn" onclick="closeById('m-quick-result')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: הזמנת בדיקה -->
+<div class="modal-bg" id="m-new-inspection">
+  <div class="modal" style="width:560px">
+    <div class="modal-ttl" id="insp-modal-ttl">הזמנת בדיקה חדשה<button class="modal-x" onclick="closeById('m-new-inspection')"><i class="ti ti-x"></i></button></div>
+    <input type="hidden" id="insp-id">
+
+    <div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">פרטי הבדיקה</div>
+    <div class="form-row"><label class="form-lbl">פרויקט *</label>
+      <div id="insp-project-wrap">
+        <select class="form-in" id="insp-project" onchange="loadInspectionWorkItems();_updateInspSubmitBtn()"><option value="">בחר פרויקט...</option></select>
+      </div>
+      <div id="insp-lab-hint" style="display:none;margin-top:5px;font-size:11px;align-items:center;gap:5px"></div>
+    </div>
+    <div class="form-row"><label class="form-lbl">פריט עבודה</label>
+      <select class="form-in" id="insp-work-item"><option value="">— ללא פריט ספציפי —</option></select>
+    </div>
+    <div class="form-row"><label class="form-lbl">מיקום בשטח</label>
+      <input class="form-in" id="insp-location" type="text" placeholder="חתך / מבנה / קומה... (אם לא נבחר פריט)">
+    </div>
+
+    <div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 10px">פרטי הבודק</div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">שם הבודק *</label><input class="form-in" id="insp-inspector" type="text" placeholder="שם הבקר / המפקח..."></div>
+      <div class="form-row"><label class="form-lbl">קבלן</label><input class="form-in" id="insp-contractor" type="text" placeholder="שם הקבלן..."></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">תאריך בדיקה *</label><input class="form-in" id="insp-date" type="date"></div>
+      <div class="form-row"><label class="form-lbl">שעה</label><input class="form-in" id="insp-time" type="time" style="direction:ltr;text-align:left"></div>
+    </div>
+    <div class="form-row"><label class="form-lbl">הערות</label><textarea class="form-in" id="insp-notes" rows="2" placeholder="הוראות מיוחדות, ציוד נדרש..."></textarea></div>
+
+    <div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 10px">פרטי מעבדה</div>
+    <div class="form-row"><label class="form-lbl">מבדקה מבצעת</label><input class="form-in" id="insp-lab" type="text" placeholder="שם המעבדה..."></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">יצרן</label><input class="form-in" id="insp-producer" type="text" placeholder="יצרן החומר..."></div>
+      <div class="form-row"><label class="form-lbl">חומר נבדק</label><input class="form-in" id="insp-material" type="text" placeholder="סוג החומר..."></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">כמות</label><input class="form-in" id="insp-quantity" type="text" placeholder="למשל: 1 מ&quot;ר"></div>
+      <div class="form-row"><label class="form-lbl">צד</label>
+        <select class="form-in" id="insp-side">
+          <option value="">— לא רלוונטי —</option>
+          <option value="R">R</option>
+          <option value="L">L</option>
+          <option value="R+L">R+L</option>
+          <option value="מרכז">מרכז</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label class="form-lbl">דיוק בשעת הנטילה</label>
+      <select class="form-in" id="insp-time-prec">
+        <option value="משוער">משוער</option>
+        <option value="מדויק">מדויק</option>
+        <option value="לא רלוונטי">לא רלוונטי</option>
+      </select>
+    </div>
+
+    <div id="insp-result-section" style="display:none;border-top:1px solid #F0F2F5;margin-top:14px;padding-top:14px">
+      <div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">תוצאת הבדיקה</div>
+      <div class="form-grid">
+        <div class="form-row"><label class="form-lbl">סטטוס</label>
+          <select class="form-in" id="insp-status">
+            <option value="pending">פתוח</option>
+            <option value="completed">סגור</option>
+            <option value="cancelled">בוטל</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="form-lbl">תוצאה</label>
+          <select class="form-in" id="insp-result">
+            <option value="">— לא הוגדר —</option>
+            <option value="pass">עבר ✓</option>
+            <option value="fail">נכשל ✗</option>
+            <option value="partial">חלקי ~</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row"><label class="form-lbl">הערות תוצאה</label><textarea class="form-in" id="insp-result-notes" rows="2" placeholder="סיכום הבדיקה, ליקויים שנמצאו..."></textarea></div>
+      <div id="insp-cert-section" style="display:none;margin-top:12px;padding:12px 14px;background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <i class="ti ti-rosette-discount-check" style="font-size:22px;color:#16A34A;flex-shrink:0"></i>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#065F46">תעודת מעבדה התקבלה</div>
+            <div style="font-size:11px;color:#166534" id="insp-cert-date"></div>
+          </div>
+        </div>
+        <a id="insp-cert-link" href="#" target="_blank" class="btn btn-sm" style="color:#15803D;border-color:#86EFAC;white-space:nowrap"><i class="ti ti-file-text"></i>פתח תעודה</a>
+      </div>
+      <div id="insp-no-cert-msg" style="display:none;margin-top:10px;font-size:11px;color:#9AA3B0;text-align:center">תעודת מעבדה טרם התקבלה</div>
+    </div>
+
+    <div id="insp-err" style="color:#C0392B;font-size:12px;margin-bottom:8px;min-height:16px"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" id="insp-submit-btn" onclick="submitInspection()"><i class="ti ti-calendar-check"></i>צור הזמנה</button>
+      <button class="btn" id="insp-save-only-btn" onclick="submitInspection()" style="display:none" title="צור הזמנה בלבד ללא שליחה למעבדה"><i class="ti ti-device-floppy"></i>שמור בלבד</button>
+      <button class="btn" onclick="closeById('m-new-inspection')">ביטול</button>
     </div>
   </div>
 </div>
@@ -728,6 +1293,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function checkSession() {
   const { data: { session } } = await db.auth.getSession();
+  document.getElementById('loading-screen').style.display = 'none';
   if (session) {
     await initApp(session.user);
   } else {
@@ -736,11 +1302,13 @@ async function checkSession() {
 }
 
 function showLogin() {
+  document.getElementById('loading-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('main-app').style.display = 'none';
 }
 
 function showApp() {
+  document.getElementById('loading-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display = 'flex';
 }
@@ -785,8 +1353,38 @@ db.auth.onAuthStateChange((event) => {
 
 // ─── INIT ────────────────────────────────────────────────
 
-let currentUserId = null;
-let currentUserRole = null;
+let currentUserId    = null;
+let currentUserRole  = null;
+let currentCompanyId = null;
+let currentCompany   = null;
+let currentSystemAdmin = false;
+let _certRealtimeSub   = null;
+
+// ─── REALTIME: תעודות מעבדה ───────────────────────────────
+function subscribeCertificateUpdates() {
+  if (_certRealtimeSub) return;
+  _certRealtimeSub = db
+    .channel('cert-updates-' + (currentCompanyId || 'all'))
+    .on('postgres_changes', {
+      event:  'UPDATE',
+      schema: 'public',
+      table:  'inspection_orders',
+    }, payload => {
+      const n = payload.new;
+      const o = payload.old;
+      // תעודה חדשה שהועלתה (לא הייתה לפני)
+      if (n?.certificate_url && !o?.certificate_url) {
+        const orderNum = n.id ? n.id.slice(-6).toUpperCase() : '';
+        showToast(`תעודת מעבדה התקבלה — הזמנה #${orderNum}`, 'success');
+        // רענן את טבלת ההזמנות אם הסקרין פתוח
+        const inspScreen = document.getElementById('s-inspections');
+        if (inspScreen?.classList.contains('active')) {
+          loadInspectionsScreen();
+        }
+      }
+    })
+    .subscribe();
+}
 
 async function initApp(user) {
   currentUserId = user.id;
@@ -798,19 +1396,38 @@ async function initApp(user) {
 
   const name = profile?.full_name || user.email.split('@')[0];
   const role = profile?.role || 'user';
-  currentUserRole = role;
-  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  currentUserRole    = role;
+  currentCompanyId   = profile?.company_id || null;
+  currentSystemAdmin = profile?.system_admin === true;
+  _currentUserProfile = profile;
 
+  // Load company info (logo, name)
+  if (currentCompanyId) {
+    const { data: co } = await db.from('companies').select('*').eq('id', currentCompanyId).single();
+    currentCompany = co || null;
+  }
+
+  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   document.getElementById('nav-user-name').textContent = name;
   document.getElementById('nav-user-role').textContent = roleName(role);
-  document.getElementById('nav-avatar').textContent = initials || '?';
+  document.getElementById('nav-avatar').textContent    = initials || '?';
 
-  if (role === 'admin') {
+  if (role === 'admin' || currentSystemAdmin) {
     document.getElementById('admin-nav-sec').style.display = '';
+  }
+  if (currentSystemAdmin) {
+    document.getElementById('sysadmin-nav-sec').style.display = '';
   }
 
   showApp();
+  // תמיד נחיתה על הדשבורד — ניקוי active מכל סקרין/nav ומיקום מחדש
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('s-dashboard').classList.add('active');
+  document.querySelector('.nav-item[onclick*="dashboard"]')?.classList.add('active');
+
   await Promise.all([loadDashboard(), loadProjectSelect()]);
+  subscribeCertificateUpdates();
 }
 
 // ─── DATA LOADERS ─────────────────────────────────────────
@@ -825,6 +1442,7 @@ async function loadDashboard() {
   const find = findings || [];
 
   _showActiveProjSub();
+  loadStopPointsAlert();
 
   // Stats
   const openFindings = find.filter(f => f.status === 'open' || f.status === 'in_progress');
@@ -887,7 +1505,7 @@ async function loadDashboard() {
   // NC screen
   await loadFindingsScreen(find, proj);
 
-  // Reports screen
+  // Reports screen (findings summary only – building report loads on demand)
   await loadReportsScreen(find);
 }
 
@@ -989,6 +1607,7 @@ async function openProjectDetail(id) {
   document.getElementById('d-contractor-phone').textContent= p.contractor_phone      || '';
   document.getElementById('d-client').textContent          = p.client_contact        || '–';
   document.getElementById('d-client-phone').textContent    = p.client_contact_phone  || '';
+  document.getElementById('d-lab-email').textContent       = p.lab_email              || '–';
 
   // Location
   document.getElementById('d-address').textContent = p.address || '–';
@@ -1017,6 +1636,12 @@ async function openProjectDetail(id) {
   } else {
     mapWrap.style.display = 'none';
     openM('m-project-detail');
+  }
+
+  // Show edit button for admin / manager / system_admin
+  const editBtn = document.getElementById('detail-edit-btn');
+  if (editBtn) {
+    editBtn.style.display = (currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager') ? '' : 'none';
   }
 
   // Work items count → show/hide button
@@ -1074,29 +1699,49 @@ async function loadFindingsScreen(findings, projects) {
     alertEl.style.display = 'none';
   }
 
+  const sevBg = { low:'#F3F4F6', medium:'#FEF3C7', high:'#FEE2E2', critical:'#FDF2F8' };
+  const sevBorder = { low:'#9CA3AF', medium:'#F59E0B', high:'#EF4444', critical:'#9B2C2C' };
   if (find.length > 0) {
     tbody.innerHTML = find.map(f => {
-      const bg = f.severity === 'critical' && f.status !== 'closed' ? ' style="background:#FFF8F8"' : '';
-      const due = f.due_date ? new Date(f.due_date).toLocaleDateString('he-IL') : '–';
+      const due      = f.due_date ? new Date(f.due_date + 'T12:00').toLocaleDateString('he-IL') : '–';
       const projName = projMap[f.project_id] || '–';
-      return `<tr${bg}>
-        <td><b>${f.id}</b></td>
-        <td>${f.title || f.description || '–'}</td>
+      const sev      = f.severity || 'low';
+      const bg       = f.status !== 'closed' ? (sevBg[sev] || '') : '';
+      const overdue  = f.due_date && f.status !== 'closed' && new Date(f.due_date + 'T12:00') < new Date()
+        ? `<span style="font-size:10px;color:#DC2626;font-weight:700"> ⏰</span>` : '';
+      return `<tr style="cursor:pointer;${bg ? `background:${bg}` : ''}" onclick="openFindingDetail('${f.id}')">
+        <td style="border-right:3px solid ${sevBorder[sev]};padding-right:12px">
+          <b style="font-size:12px">${f.title || '–'}</b>
+          ${f.location ? `<div style="font-size:10px;color:#9AA3B0;margin-top:1px">${f.location}</div>` : ''}
+        </td>
         <td>${projName}</td>
-        <td>${severityBadge(f.severity)}</td>
+        <td>${severityBadge(sev)}</td>
         <td>${statusBadge(f.status)}</td>
-        <td>${f.assigned_to || '–'}</td>
-        <td>${due}</td>
-        <td><button class="btn btn-sm" onclick="openEditFinding(${f.id})"><i class="ti ti-edit"></i></button></td>
+        <td style="font-size:11px;color:#6B7280">${f.contractor || '–'}</td>
+        <td style="font-size:11px">${due}${overdue}</td>
+        <td onclick="event.stopPropagation()">
+          <button class="btn btn-sm" onclick="openEditFinding('${f.id}')" title="ערוך"><i class="ti ti-pencil"></i></button>
+        </td>
       </tr>`;
     }).join('');
   } else {
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="8">אין ממצאים עדיין</td></tr>';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">אין ממצאים עדיין</td></tr>';
   }
 }
 
 async function loadReportsScreen(findings) {
   const find = findings || (await db.from('findings').select('*')).data || [];
+
+  // Populate building report project filter
+  const bldgSel = document.getElementById('rpt-bldg-proj');
+  if (bldgSel && bldgSel.options.length <= 1 && _allProjects.length > 0) {
+    _allProjects.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id; o.textContent = p.name;
+      bldgSel.appendChild(o);
+    });
+  }
+
   const severities = ['critical', 'high', 'medium', 'low'];
   const labels = { critical: 'קריטי', high: 'גבוה', medium: 'בינוני', low: 'נמוך' };
   const tbody = document.getElementById('report-tbody');
@@ -1129,11 +1774,64 @@ async function loadProjectSelect() {
     opt.textContent = p.name || p.id;
     sel.appendChild(opt);
   });
+
+  // Also populate inspections filter
+  const filterSel = document.getElementById('insp-filter-proj');
+  filterSel.innerHTML = '<option value="">כל הפרויקטים</option>';
+  (projects || []).forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id; opt.textContent = p.name || p.id;
+    filterSel.appendChild(opt);
+  });
 }
 
 // ─── CREATE RECORDS ───────────────────────────────────────
 
+function openNewProjectModal() {
+  // Reset to "new project" mode
+  document.getElementById('np-id').value = '';
+  document.getElementById('np-modal-title').textContent = 'פרויקט חדש';
+  document.getElementById('np-submit-icon').className = 'ti ti-plus';
+  document.getElementById('np-submit-lbl').textContent = 'צור פרויקט';
+  document.getElementById('np-err').textContent = '';
+  document.querySelectorAll('#m-new-project input:not([type=hidden]), #m-new-project textarea, #m-new-project select')
+    .forEach(el => { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; });
+  openM('m-new-project');
+}
+
+function openEditProject(id) {
+  const p = _allProjects.find(x => x.id === id);
+  if (!p) return;
+
+  // Switch modal to edit mode
+  document.getElementById('np-id').value = id;
+  document.getElementById('np-modal-title').textContent = 'עריכת פרויקט';
+  document.getElementById('np-submit-icon').className = 'ti ti-device-floppy';
+  document.getElementById('np-submit-lbl').textContent = 'שמור שינויים';
+  document.getElementById('np-err').textContent = '';
+
+  // Fill fields
+  document.getElementById('np-name').value              = p.name                  || '';
+  document.getElementById('np-contract').value          = p.contract_number       || '';
+  document.getElementById('np-status').value            = p.status                || 'active';
+  document.getElementById('np-start').value             = p.start_date            || '';
+  document.getElementById('np-end').value               = p.end_date              || '';
+  document.getElementById('np-desc').value              = p.description           || '';
+  document.getElementById('np-address').value           = p.address               || '';
+  document.getElementById('np-city').value              = p.city                  || '';
+  document.getElementById('np-pm').value                = p.project_manager       || '';
+  document.getElementById('np-pm-phone').value          = p.project_manager_phone || '';
+  document.getElementById('np-contractor').value        = p.contractor            || '';
+  document.getElementById('np-contractor-phone').value  = p.contractor_phone      || '';
+  document.getElementById('np-client-contact').value    = p.client_contact        || '';
+  document.getElementById('np-client-phone').value      = p.client_contact_phone  || '';
+  document.getElementById('np-lab-email').value         = p.lab_email             || '';
+
+  openM('m-new-project');
+}
+
 async function createProject() {
+  const editId = document.getElementById('np-id').value.trim();
   const name = document.getElementById('np-name').value.trim();
   const errEl = document.getElementById('np-err');
   errEl.textContent = '';
@@ -1143,14 +1841,33 @@ async function createProject() {
   const city    = document.getElementById('np-city').value.trim();
 
   let latitude = null, longitude = null;
-  if (address || city) {
-    try {
-      const q = encodeURIComponent([address, city, 'ישראל'].filter(Boolean).join(', '));
-      const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
-        headers: { 'Accept-Language': 'he' }
-      }).then(r => r.json());
-      if (geo.length > 0) { latitude = parseFloat(geo[0].lat); longitude = parseFloat(geo[0].lon); }
-    } catch(e) {}
+
+  if (editId) {
+    // In edit mode keep existing coordinates unless address changed
+    const existing = _allProjects.find(x => x.id === editId);
+    const addrChanged = existing && (existing.address !== address || existing.city !== city);
+    if (addrChanged && (address || city)) {
+      try {
+        const q = encodeURIComponent([address, city, 'ישראל'].filter(Boolean).join(', '));
+        const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
+          headers: { 'Accept-Language': 'he' }
+        }).then(r => r.json());
+        if (geo.length > 0) { latitude = parseFloat(geo[0].lat); longitude = parseFloat(geo[0].lon); }
+      } catch(e) {}
+    } else if (existing) {
+      latitude  = existing.latitude;
+      longitude = existing.longitude;
+    }
+  } else {
+    if (address || city) {
+      try {
+        const q = encodeURIComponent([address, city, 'ישראל'].filter(Boolean).join(', '));
+        const geo = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
+          headers: { 'Accept-Language': 'he' }
+        }).then(r => r.json());
+        if (geo.length > 0) { latitude = parseFloat(geo[0].lat); longitude = parseFloat(geo[0].lon); }
+      } catch(e) {}
+    }
   }
 
   const payload = {
@@ -1170,55 +1887,848 @@ async function createProject() {
     contractor_phone:      document.getElementById('np-contractor-phone').value.trim() || null,
     client_contact:        document.getElementById('np-client-contact').value.trim() || null,
     client_contact_phone:  document.getElementById('np-client-phone').value.trim() || null,
+    lab_email:             document.getElementById('np-lab-email').value.trim() || null,
   };
 
-  const { error } = await db.from('projects').insert(payload);
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+  if (editId) {
+    // UPDATE existing project
+    const { error } = await db.from('projects').update(payload).eq('id', editId);
+    if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+    // Update local cache
+    const idx = _allProjects.findIndex(x => x.id === editId);
+    if (idx !== -1) _allProjects[idx] = { ..._allProjects[idx], ...payload };
+    showToast('הפרויקט עודכן בהצלחה', 'success');
+  } else {
+    // INSERT new project
+    const { error } = await db.from('projects').insert({ ...payload, company_id: currentCompanyId });
+    if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+    showToast('הפרויקט נוצר בהצלחה', 'success');
+  }
 
   closeById('m-new-project');
-  document.querySelectorAll('#m-new-project input, #m-new-project textarea, #m-new-project select')
-    .forEach(el => { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; });
   await loadDashboard();
   await loadProjectSelect();
 }
 
-async function createFinding() {
-  const title = document.getElementById('nf-title').value.trim();
-  const project_id = document.getElementById('nf-project').value;
-  const severity = document.getElementById('nf-severity').value;
-  const status = document.getElementById('nf-status').value;
-  const location = document.getElementById('nf-location').value.trim();
-  const assigned_to = document.getElementById('nf-assigned').value.trim();
-  const due_date = document.getElementById('nf-due').value;
-  const errEl = document.getElementById('nf-err');
-  errEl.textContent = '';
+// ═══════════════════════════════════════════════════════════
+// NCR – PHASE A: CREATION
+// ═══════════════════════════════════════════════════════════
 
-  if (!title) { errEl.textContent = 'כותרת היא שדה חובה'; return; }
-  if (!project_id) { errEl.textContent = 'יש לבחור פרויקט'; return; }
+let _ncrPhotos = [];     // pending uploads for new NCR [{file, dataUrl, markup:null}]
+let _ncrEditPhotos = []; // existing photos in edit mode (from DB)
+let _ncrMarkupIdx  = -1; // index being marked
+let _ncrMarkupPhase = 'open'; // 'open' | 'close'
 
-  const payload = { title, project_id, severity, status };
-  if (location) payload.location = location;
-  if (assigned_to) payload.assigned_to = assigned_to;
-  if (due_date) payload.due_date = due_date;
-
-  const { error } = await db.from('findings').insert(payload);
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
-
-  closeById('m-new-nc');
-  document.getElementById('nf-title').value = '';
-  document.getElementById('nf-location').value = '';
-  document.getElementById('nf-assigned').value = '';
-  document.getElementById('nf-due').value = '';
-  await loadDashboard();
+function selectSeverity(sev) {
+  document.getElementById('nf-severity').value = sev;
+  ['low','medium','high','critical'].forEach(s => {
+    document.getElementById('nsb-' + s)?.classList.toggle('active', s === sev);
+  });
 }
 
-function openEditFinding(id) {
-  alert('עריכת ממצא #' + id + ' – בפיתוח');
+async function ncrOnProjectChange() {
+  const projectId = document.getElementById('nf-project').value;
+  const sel = document.getElementById('nf-work-item');
+  sel.innerHTML = '<option value="">— ללא —</option>';
+  if (!projectId) return;
+  const { data: items } = await db.from('work_items')
+    .select('id, structure, sub_structure, element, sub_element, section_from, section_to')
+    .eq('project_id', projectId).order('row_order');
+  (items || []).forEach(wi => {
+    const label = [wi.structure, wi.sub_structure, wi.element, wi.sub_element].filter(Boolean).join(' / ')
+                + (wi.section_from != null ? ` (${wi.section_from}–${wi.section_to})` : '');
+    const opt = document.createElement('option');
+    opt.value = wi.id; opt.textContent = label;
+    sel.appendChild(opt);
+  });
+}
+
+function ncrAddPhotos(input) {
+  const files = Array.from(input.files);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      _ncrPhotos.push({ file, dataUrl: e.target.result, markup: null });
+      _ncrRenderAttachGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function _ncrRenderAttachGrid() {
+  const grid = document.getElementById('nf-attach-grid');
+  if (!grid) return;
+  const all = [...(_ncrEditPhotos || []).map((p,i) => ({ ...p, src: p.url, idx: i, existing: true })),
+               ...(_ncrPhotos     || []).map((p,i) => ({ ...p, src: p.dataUrl, idx: i, existing: false }))];
+  grid.innerHTML = all.map(p => `
+    <div class="ncr-attach-thumb">
+      <img src="${p.src}" alt="">
+      <div class="ncr-thumb-ov">
+        <button onclick="${p.existing ? `ncrMarkupExisting(${p.idx})` : `ncrMarkupNew(${p.idx})`}" title="סמן"><i class="ti ti-edit"></i></button>
+        <button onclick="${p.existing ? `ncrRemoveExisting(${p.idx})` : `ncrRemoveNew(${p.idx})`}" title="מחק" style="color:#DC2626"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function ncrMarkupNew(idx)      { _ncrMarkupIdx = idx; _ncrMarkupPhase = 'open';  openMarkupCanvas(_ncrPhotos[idx].markup || _ncrPhotos[idx].dataUrl); }
+function ncrMarkupExisting(idx) { _ncrMarkupIdx = idx; _ncrMarkupPhase = 'existing'; openMarkupCanvas(_ncrEditPhotos[idx].markup_url || _ncrEditPhotos[idx].url); }
+function ncrRemoveNew(idx)      { _ncrPhotos.splice(idx, 1); _ncrRenderAttachGrid(); }
+function ncrRemoveExisting(idx) { _ncrEditPhotos.splice(idx, 1); _ncrRenderAttachGrid(); }
+
+function _ncrFormClear() {
+  ['nf-id','nf-title','nf-description','nf-location','nf-assigned','nf-contractor',
+   'nf-transferred','nf-due','nf-opened-by','nf-opened-date'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  ['nf-category','nf-discipline','nf-status'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.selectedIndex = 0;
+  });
+  const sel = document.getElementById('nf-work-item');
+  if (sel) sel.innerHTML = '<option value="">— ללא —</option>';
+  document.getElementById('nf-err').textContent = '';
+  document.getElementById('nf-attach-grid').innerHTML = '';
+  _ncrPhotos = []; _ncrEditPhotos = [];
+  selectSeverity('high');
+  // reset submit btn
+  document.getElementById('nf-submit-btn').innerHTML = '<i class="ti ti-alert-triangle"></i>פתח ממצא';
+  document.getElementById('nc-modal-ttl').textContent = 'אי-התאמה חדשה';
+}
+
+function openNewFinding() {
+  _ncrFormClear();
+  // Render project field (badge if active project, select if not)
+  _renderProjectField('nf-project-wrap', 'nf-project', 'ncrOnProjectChange()');
+  if (_activeProjectId) ncrOnProjectChange();
+  // Auto-fill current user
+  document.getElementById('nf-opened-by').value = _currentUserProfile?.full_name || '';
+  document.getElementById('nf-opened-date').value = new Date().toISOString().slice(0,10);
+  openM('m-new-nc');
+}
+
+function _ncFormPayload() {
+  return {
+    title:               document.getElementById('nf-title').value.trim(),
+    description:         document.getElementById('nf-description')?.value.trim() || null,
+    project_id:          document.getElementById('nf-project').value,
+    category:            document.getElementById('nf-category').value || null,
+    discipline:          document.getElementById('nf-discipline').value || null,
+    severity:            document.getElementById('nf-severity').value || 'high',
+    status:              document.getElementById('nf-status').value || 'open',
+    location:            document.getElementById('nf-location').value.trim() || null,
+    work_item_id:        document.getElementById('nf-work-item').value || null,
+    assigned_to:         document.getElementById('nf-assigned').value.trim() || null,
+    contractor:          document.getElementById('nf-contractor').value.trim() || null,
+    transferred_to:      document.getElementById('nf-transferred').value.trim() || null,
+    opened_by_name:      document.getElementById('nf-opened-by').value.trim() || null,
+    due_date:            document.getElementById('nf-due').value || null,
+    estimated_close_date:document.getElementById('nf-est-close')?.value || null,
+  };
+}
+
+async function submitNCR() {
+  const errEl = document.getElementById('nf-err');
+  errEl.textContent = '';
+  const p = _ncFormPayload();
+  if (!p.title) { errEl.textContent = 'כותרת היא שדה חובה'; return; }
+  if (!p.project_id) { errEl.textContent = 'יש לבחור פרויקט'; return; }
+
+  const editId = document.getElementById('nf-id').value;
+  const btn = document.getElementById('nf-submit-btn');
+  btn.disabled = true;
+
+  let findingId = editId;
+  let error;
+
+  if (editId) {
+    ({ error } = await db.from('findings').update(p).eq('id', editId));
+  } else {
+    const { data: ins, error: insErr } = await db.from('findings')
+      .insert({ ...p, company_id: currentCompanyId, created_by: currentUserId })
+      .select('id').single();
+    error = insErr;
+    if (ins) findingId = ins.id;
+  }
+
+  btn.disabled = false;
+  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+
+  // Upload pending photos
+  if (_ncrPhotos.length > 0 && findingId) {
+    const { data: sd } = await db.auth.getSession();
+    const token = sd?.session?.access_token;
+    for (const photo of _ncrPhotos) {
+      try {
+        const imgData = photo.markup || photo.dataUrl;
+        let blob;
+        if (imgData.startsWith('data:')) {
+          const res = await fetch(imgData); blob = await res.blob();
+        } else { blob = photo.file; }
+        const fname = `findings/${findingId}/photo_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+        const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${fname}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
+          body: blob
+        });
+        if (resp.ok) {
+          const url = `${SUPABASE_URL}/storage/v1/object/public/documents/${fname}`;
+          await db.from('finding_attachments').insert({
+            finding_id: findingId, url, company_id: currentCompanyId, phase: 'open', created_by: currentUserId
+          });
+        }
+      } catch(e) { console.warn('photo upload error', e); }
+    }
+  }
+
+  // Log activity
+  const actText = editId ? 'עדכן פרטי ממצא' : `פתח ממצא חדש — חומרה ${_sevLabel(p.severity)}`;
+  if (findingId) {
+    await db.from('finding_activity').insert({
+      finding_id: findingId, company_id: currentCompanyId,
+      action: editId ? 'updated' : 'created',
+      actor_name: _currentUserProfile?.full_name || 'משתמש',
+      notes: actText
+    });
+  }
+
+  closeById('m-new-nc');
+  await loadFindingsScreen();
+  await loadDashboard();
+  showToast(editId ? 'הממצא עודכן' : 'ממצא חדש נפתח', 'success');
+}
+
+// Keep old name as alias for backward compat
+async function submitFinding() { return submitNCR(); }
+
+// ═══════════════════════════════════════════════════════════
+// NCR – PHASE B: DETAIL VIEW & TIMELINE
+// ═══════════════════════════════════════════════════════════
+
+let _currentFindingId = null;
+
+async function openFindingDetail(id) {
+  _currentFindingId = id;
+  const { data: f } = await db.from('findings').select('*').eq('id', id).single();
+  if (!f) return;
+
+  const sev = f.severity || 'high';
+  // Header
+  document.getElementById('fd-header-band').className = 'ncr-header-band sev-' + sev;
+  document.getElementById('fd-title').textContent = f.title || '—';
+  const proj = _allProjects.find(p => p.id === f.project_id);
+  document.getElementById('fd-meta').textContent = [
+    proj?.name, f.contractor, f.location
+  ].filter(Boolean).join(' · ');
+
+  // Overdue badge
+  const odEl = document.getElementById('fd-overdue');
+  if (f.due_date && f.status !== 'closed') {
+    const days = Math.floor((Date.now() - new Date(f.due_date + 'T12:00')) / 86400000);
+    if (days > 0) odEl.innerHTML = `<span class="ncr-overdue">⏰ ${days} ימים חריגה</span>`;
+    else if (days >= -3) odEl.innerHTML = `<span class="ncr-ontime">🟡 ${-days} ימים ליעד</span>`;
+    else odEl.innerHTML = `<span class="ncr-ontime">✓ ${-days} ימים ליעד</span>`;
+  } else { odEl.innerHTML = ''; }
+
+  // Edit btn visibility
+  const canEdit = currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager';
+  document.getElementById('fd-edit-btn').style.display = canEdit ? '' : 'none';
+
+  // Reset tabs
+  fdTab('info');
+
+  // ── TAB: פרטים ──
+  const sevLabels = { low:'נמוכה', medium:'בינונית', high:'גבוהה', critical:'קריטית' };
+  const statusLabels = { open:'פתוח', in_progress:'בטיפול', closed:'סגור', closure_requested:'ממתין לאישור סגירה' };
+  const openedDate = f.created_at ? new Date(f.created_at).toLocaleDateString('he-IL') : '–';
+  const dueDate    = f.due_date ? new Date(f.due_date + 'T12:00').toLocaleDateString('he-IL') : '–';
+  const closedDate = f.closed_at ? new Date(f.closed_at).toLocaleDateString('he-IL') : null;
+
+  document.getElementById('fd-pane-info').innerHTML = `
+    <div class="ncr-info-grid">
+      <div class="ncr-info-item"><div class="ncr-info-lbl">חומרה</div><div class="ncr-info-val">${severityBadge(sev)}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">סטטוס</div><div class="ncr-info-val">${statusBadge(f.status)}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">פרויקט</div><div class="ncr-info-val">${proj?.name || '–'}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">קבלן</div><div class="ncr-info-val">${f.contractor || '–'}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">אחראי QC</div><div class="ncr-info-val">${f.assigned_to || '–'}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">קטגוריה</div><div class="ncr-info-val">${f.category || '–'}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">מיקום</div><div class="ncr-info-val">${f.location || '–'}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">דיסציפלינה</div><div class="ncr-info-val">${f.discipline || '–'}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">נפתח על ידי</div><div class="ncr-info-val">${f.opened_by_name || '–'}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">תאריך פתיחה</div><div class="ncr-info-val">${openedDate}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">יעד לסגירה</div><div class="ncr-info-val">${dueDate}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">הועבר לטיפול</div><div class="ncr-info-val">${f.transferred_to || '–'}</div></div>
+      ${f.description ? `<div class="ncr-info-item" style="grid-column:1/-1"><div class="ncr-info-lbl">תיאור</div><div class="ncr-info-val" style="line-height:1.6">${f.description}</div></div>` : ''}
+      ${closedDate ? `<div class="ncr-info-item" style="grid-column:1/-1;background:#F0FDF4"><div class="ncr-info-lbl">✓ נסגר ב</div><div class="ncr-info-val">${closedDate} ע"י ${f.closed_by_name || '–'}</div></div>` : ''}
+    </div>`;
+
+  // ── ACTION BUTTONS (Phase C) ──
+  const actDiv = document.getElementById('fd-actions');
+  actDiv.innerHTML = '';
+  if (f.status === 'open' || f.status === 'in_progress') {
+    if (currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager') {
+      actDiv.innerHTML += `<button class="btn" style="background:#065F46;color:#fff;border-color:#065F46" onclick="openNCRClosure('${f.id}')"><i class="ti ti-rosette-discount-check"></i>אשר סגירה</button>`;
+    } else {
+      actDiv.innerHTML += `<button class="btn" style="background:#D97706;color:#fff;border-color:#D97706" onclick="requestNCRClosure('${f.id}')"><i class="ti ti-send"></i>בקש סגירה</button>`;
+    }
+    if (canEdit) {
+      actDiv.innerHTML += `<button class="btn" onclick="fdEditFinding()"><i class="ti ti-pencil"></i>ערוך</button>`;
+    }
+  } else if (f.status === 'closure_requested') {
+    actDiv.innerHTML = `<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400E;flex:1">⏳ הוגשה בקשה לסגירה — ממתין לאישור מנהל</div>`;
+    if (currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager') {
+      actDiv.innerHTML += `<button class="btn" style="background:#065F46;color:#fff;border-color:#065F46" onclick="openNCRClosure('${f.id}')"><i class="ti ti-check"></i>אשר</button>`;
+    }
+  } else if (f.status === 'closed' && f.signature_url) {
+    actDiv.innerHTML = `<a href="${f.signature_url}" target="_blank" class="btn btn-sm"><i class="ti ti-writing-sign"></i>צפה בחתימה</a>`;
+  }
+
+  openM('m-finding-detail');
+
+  // Load media + timeline in background
+  _fdLoadMedia(f.id);
+  _fdLoadTimeline(f.id);
+}
+
+async function _fdLoadMedia(findingId) {
+  const { data: attachments } = await db.from('finding_attachments')
+    .select('*').eq('finding_id', findingId).order('created_at');
+  const pane = document.getElementById('fd-pane-media');
+  const countEl = document.getElementById('fd-media-count');
+  const count = (attachments || []).length;
+  countEl.textContent = count > 0 ? `(${count})` : '';
+  if (!count) {
+    pane.innerHTML = '<div style="text-align:center;padding:32px;color:#9AA3B0;font-size:13px"><i class="ti ti-photo-off" style="font-size:32px;display:block;margin-bottom:8px"></i>אין תמונות מצורפות</div>';
+    return;
+  }
+  const openPhotos  = (attachments || []).filter(a => a.phase === 'open');
+  const closePhotos = (attachments || []).filter(a => a.phase === 'close');
+  let html = '';
+  if (openPhotos.length) {
+    html += `<div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;margin-bottom:8px">תמונות פתיחה</div>`;
+    html += `<div class="ncr-attach-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">` +
+      openPhotos.map(a => `<div class="ncr-attach-thumb" onclick="window.open('${a.url}','_blank')"><img src="${a.url}" alt=""></div>`).join('') + `</div>`;
+  }
+  if (closePhotos.length) {
+    html += `<div style="font-size:10px;font-weight:700;color:#16A34A;text-transform:uppercase;margin-bottom:8px">תמונות סגירה (תיקון)</div>`;
+    html += `<div class="ncr-attach-grid" style="grid-template-columns:repeat(4,1fr)">` +
+      closePhotos.map(a => `<div class="ncr-attach-thumb" onclick="window.open('${a.url}','_blank')"><img src="${a.url}" alt=""></div>`).join('') + `</div>`;
+  }
+  pane.innerHTML = html;
+}
+
+async function _fdLoadTimeline(findingId) {
+  const { data: acts } = await db.from('finding_activity')
+    .select('*').eq('finding_id', findingId).order('created_at', { ascending: false });
+  const pane = document.getElementById('fd-pane-timeline');
+  if (!acts || !acts.length) {
+    pane.innerHTML = '<div style="text-align:center;padding:24px;color:#9AA3B0;font-size:12px">אין היסטוריה עדיין</div>';
+    return;
+  }
+  const dotClass = { created:'dot-open', closed:'dot-close', closure_requested:'dot-req', updated:'' };
+  pane.innerHTML = `<div class="ncr-timeline">` +
+    acts.map(a => {
+      const dt = new Date(a.created_at);
+      const dtStr = dt.toLocaleDateString('he-IL') + ' ' + dt.toLocaleTimeString('he-IL', { hour:'2-digit', minute:'2-digit' });
+      const dc = dotClass[a.action] || '';
+      return `<div class="ncr-tl-item">
+        <div class="ncr-tl-dot ${dc}"></div>
+        <div class="ncr-tl-time">${dtStr}</div>
+        <div class="ncr-tl-action">${a.actor_name || 'מערכת'} — ${a.notes || a.action}</div>
+      </div>`;
+    }).join('') + `</div>`;
+}
+
+function fdTab(tab) {
+  ['info','media','timeline'].forEach(t => {
+    document.getElementById('fd-tab-' + t)?.classList.toggle('active', t === tab);
+    document.getElementById('fd-pane-' + t) && (document.getElementById('fd-pane-' + t).style.display = t === tab ? '' : 'none');
+  });
+}
+
+function fdEditFinding() {
+  closeById('m-finding-detail');
+  setTimeout(() => openEditFinding(_currentFindingId), 150);
+}
+
+async function openEditFinding(id) {
+  const { data: f } = await db.from('findings').select('*').eq('id', id).single();
+  if (!f) return;
+  _ncrFormClear();
+  // In edit mode: show project as locked badge (always the finding's project)
+  const wrap = document.getElementById('nf-project-wrap');
+  const proj = _allProjects.find(x => x.id === f.project_id);
+  if (wrap && proj) {
+    wrap.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#F1F5F9;border:1.5px solid #E2E8F0;border-radius:8px">
+      <i class="ti ti-building" style="color:#6B7280;font-size:14px;flex-shrink:0"></i>
+      <span style="font-size:13px;font-weight:600;color:#374151;flex:1">${proj.name}</span>
+    </div>
+    <select id="nf-project" style="display:none"><option value="${proj.id}" selected>${proj.name}</option></select>`;
+  }
+  document.getElementById('nf-id').value         = f.id;
+  document.getElementById('nf-title').value       = f.title || '';
+  document.getElementById('nf-description').value = f.description || '';
+  await ncrOnProjectChange();
+  if (f.work_item_id) document.getElementById('nf-work-item').value = f.work_item_id;
+  document.getElementById('nf-category').value    = f.category || '';
+  document.getElementById('nf-discipline').value  = f.discipline || '';
+  document.getElementById('nf-status').value      = f.status || 'open';
+  document.getElementById('nf-location').value    = f.location || '';
+  document.getElementById('nf-assigned').value    = f.assigned_to || '';
+  document.getElementById('nf-contractor').value  = f.contractor || '';
+  document.getElementById('nf-transferred').value = f.transferred_to || '';
+  document.getElementById('nf-opened-by').value   = f.opened_by_name || '';
+  document.getElementById('nf-due').value         = f.due_date || '';
+  selectSeverity(f.severity || 'high');
+  // Load existing photos
+  const { data: attachments } = await db.from('finding_attachments')
+    .select('*').eq('finding_id', f.id).eq('phase', 'open').order('created_at');
+  _ncrEditPhotos = attachments || [];
+  _ncrRenderAttachGrid();
+  document.getElementById('nc-modal-ttl').textContent = `עריכת ממצא`;
+  document.getElementById('nf-submit-btn').innerHTML = '<i class="ti ti-device-floppy"></i>שמור שינויים';
+  openM('m-new-nc');
+}
+
+// ═══════════════════════════════════════════════════════════
+// NCR – PHOTO MARKUP TOOL
+// ═══════════════════════════════════════════════════════════
+
+let _markupTool = 'circle';
+let _markupImg  = null;
+let _markupShapes = [];
+let _markupDrawing = false;
+let _markupStart   = { x:0, y:0 };
+let _markupCurrent = null;
+
+function openMarkupCanvas(imgSrc) {
+  const canvas = document.getElementById('markup-canvas');
+  const ctx    = canvas.getContext('2d');
+  _markupShapes = [];
+  _markupImg    = new Image();
+  _markupImg.crossOrigin = 'anonymous';
+  _markupImg.onload = () => {
+    const maxW = 700, maxH = 500;
+    let w = _markupImg.naturalWidth, h = _markupImg.naturalHeight;
+    if (w > maxW) { h = h * maxW / w; w = maxW; }
+    if (h > maxH) { w = w * maxH / h; h = maxH; }
+    canvas.width = w; canvas.height = h;
+    _markupRedraw();
+  };
+  _markupImg.src = imgSrc;
+  openM('m-photo-markup');
+}
+
+function _markupRedraw() {
+  const canvas = document.getElementById('markup-canvas');
+  const ctx    = canvas.getContext('2d');
+  ctx.drawImage(_markupImg, 0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = '#FF0000'; ctx.lineWidth = 3; ctx.fillStyle = 'rgba(255,0,0,0.08)';
+  _markupShapes.forEach(s => _drawShape(ctx, s));
+  if (_markupCurrent) _drawShape(ctx, _markupCurrent);
+}
+
+function _drawShape(ctx, s) {
+  ctx.strokeStyle = '#FF0000'; ctx.lineWidth = 3; ctx.fillStyle = 'rgba(255,0,0,0.1)';
+  if (s.type === 'circle') {
+    const rx = Math.abs(s.x2 - s.x1) / 2, ry = Math.abs(s.y2 - s.y1) / 2;
+    const cx = (s.x1 + s.x2) / 2, cy = (s.y1 + s.y2) / 2;
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx || 5, ry || 5, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+  } else if (s.type === 'rect') {
+    ctx.strokeRect(s.x1, s.y1, s.x2 - s.x1, s.y2 - s.y1);
+    ctx.fillRect(s.x1, s.y1, s.x2 - s.x1, s.y2 - s.y1);
+  } else if (s.type === 'arrow') {
+    const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+    const len = Math.sqrt(dx * dx + dy * dy); if (len < 5) return;
+    const ang = Math.atan2(dy, dx);
+    ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(s.x2, s.y2);
+    ctx.lineTo(s.x2 - 16 * Math.cos(ang - 0.4), s.y2 - 16 * Math.sin(ang - 0.4));
+    ctx.lineTo(s.x2 - 16 * Math.cos(ang + 0.4), s.y2 - 16 * Math.sin(ang + 0.4));
+    ctx.closePath(); ctx.fillStyle = '#FF0000'; ctx.fill();
+  }
+}
+
+function _markupPos(e) {
+  const canvas = document.getElementById('markup-canvas');
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+  const client = e.touches ? e.touches[0] : e;
+  return { x: (client.clientX - rect.left) * scaleX, y: (client.clientY - rect.top) * scaleY };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const c = document.getElementById('markup-canvas');
+  if (!c) return;
+  c.addEventListener('mousedown',  e => { _markupDrawing = true; _markupStart = _markupPos(e); _markupCurrent = null; });
+  c.addEventListener('mousemove',  e => { if (!_markupDrawing) return; const p = _markupPos(e); _markupCurrent = { type: _markupTool, x1: _markupStart.x, y1: _markupStart.y, x2: p.x, y2: p.y }; _markupRedraw(); });
+  c.addEventListener('mouseup',    e => { if (!_markupDrawing) return; _markupDrawing = false; if (_markupCurrent) { _markupShapes.push(_markupCurrent); _markupCurrent = null; _markupRedraw(); } });
+  c.addEventListener('touchstart', e => { e.preventDefault(); _markupDrawing = true; _markupStart = _markupPos(e); }, { passive:false });
+  c.addEventListener('touchmove',  e => { e.preventDefault(); if (!_markupDrawing) return; const p = _markupPos(e); _markupCurrent = { type: _markupTool, x1: _markupStart.x, y1: _markupStart.y, x2: p.x, y2: p.y }; _markupRedraw(); }, { passive:false });
+  c.addEventListener('touchend',   e => { e.preventDefault(); _markupDrawing = false; if (_markupCurrent) { _markupShapes.push(_markupCurrent); _markupCurrent = null; _markupRedraw(); } }, { passive:false });
+});
+
+function setMarkupTool(t) {
+  _markupTool = t;
+  ['circle','arrow','rect'].forEach(tt => document.getElementById('mbt-' + tt)?.classList.toggle('active', tt === t));
+  const hints = { circle:'לחץ וגרור להוספת עיגול', arrow:'לחץ וגרור לשרטוט חץ', rect:'לחץ וגרור להוספת מסגרת' };
+  document.getElementById('markup-hint').textContent = hints[t];
+}
+
+function clearMarkup() { _markupShapes = []; _markupCurrent = null; _markupRedraw(); }
+
+function saveMarkup() {
+  const canvas = document.getElementById('markup-canvas');
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+  if (_ncrMarkupPhase === 'open' && _ncrMarkupIdx >= 0) {
+    _ncrPhotos[_ncrMarkupIdx].markup = dataUrl;
+    _ncrRenderAttachGrid();
+  } else if (_ncrMarkupPhase === 'existing' && _ncrMarkupIdx >= 0) {
+    _ncrEditPhotos[_ncrMarkupIdx].markup_url = dataUrl;
+    _ncrEditPhotos[_ncrMarkupIdx]._pendingMarkup = true;
+    _ncrRenderAttachGrid();
+  } else if (_ncrMarkupPhase === 'closure' && _ncrMarkupIdx >= 0) {
+    _closurePhotos[_ncrMarkupIdx].markup = dataUrl;
+    _closureRenderGrid();
+  }
+  closeById('m-photo-markup');
+}
+
+// ═══════════════════════════════════════════════════════════
+// NCR – PHASE C: CLOSURE + SIGNATURE
+// ═══════════════════════════════════════════════════════════
+
+let _closurePhotos = [];
+let _sigPad = { drawing: false, canvas: null, ctx: null, lastX: 0, lastY: 0, hasData: false };
+
+function _sigInit() {
+  const c = document.getElementById('signature-canvas');
+  if (!c || _sigPad.canvas === c) return;
+  _sigPad.canvas = c; _sigPad.ctx = c.getContext('2d');
+  _sigPad.ctx.strokeStyle = '#1A2B4A'; _sigPad.ctx.lineWidth = 2.5; _sigPad.ctx.lineCap = 'round'; _sigPad.ctx.lineJoin = 'round';
+  const on = (el, ev, fn, opt) => el.addEventListener(ev, fn, opt);
+  const pos = e => { const r = c.getBoundingClientRect(), cl = e.touches ? e.touches[0] : e, sx = c.width / r.width, sy = c.height / r.height; return { x: (cl.clientX - r.left) * sx, y: (cl.clientY - r.top) * sy }; };
+  on(c, 'mousedown',  e => { _sigPad.drawing = true; const p = pos(e); _sigPad.lastX = p.x; _sigPad.lastY = p.y; });
+  on(c, 'mousemove',  e => { if (!_sigPad.drawing) return; const p = pos(e); _sigPad.ctx.beginPath(); _sigPad.ctx.moveTo(_sigPad.lastX, _sigPad.lastY); _sigPad.ctx.lineTo(p.x, p.y); _sigPad.ctx.stroke(); _sigPad.lastX = p.x; _sigPad.lastY = p.y; _sigPad.hasData = true; });
+  on(c, 'mouseup',    () => { _sigPad.drawing = false; });
+  on(c, 'touchstart', e => { e.preventDefault(); _sigPad.drawing = true; const p = pos(e); _sigPad.lastX = p.x; _sigPad.lastY = p.y; }, { passive:false });
+  on(c, 'touchmove',  e => { e.preventDefault(); if (!_sigPad.drawing) return; const p = pos(e); _sigPad.ctx.beginPath(); _sigPad.ctx.moveTo(_sigPad.lastX, _sigPad.lastY); _sigPad.ctx.lineTo(p.x, p.y); _sigPad.ctx.stroke(); _sigPad.lastX = p.x; _sigPad.lastY = p.y; _sigPad.hasData = true; }, { passive:false });
+  on(c, 'touchend',   e => { e.preventDefault(); _sigPad.drawing = false; }, { passive:false });
+}
+
+function clearSignature() {
+  if (!_sigPad.ctx) return;
+  _sigPad.ctx.clearRect(0, 0, _sigPad.canvas.width, _sigPad.canvas.height);
+  _sigPad.hasData = false;
+}
+
+async function requestNCRClosure(id) {
+  const { error } = await db.from('findings').update({
+    status: 'closure_requested',
+    closure_requested_at: new Date().toISOString()
+  }).eq('id', id);
+  if (!error) {
+    await db.from('finding_activity').insert({
+      finding_id: id, company_id: currentCompanyId,
+      action: 'closure_requested',
+      actor_name: _currentUserProfile?.full_name || 'משתמש',
+      notes: 'ביקש סגירת ממצא — ממתין לאישור מנהל'
+    });
+    closeById('m-finding-detail');
+    await loadFindingsScreen();
+    showToast('בקשת הסגירה נשלחה לאישור', 'success');
+  }
+}
+
+function openNCRClosure(id) {
+  _closurePhotos = [];
+  document.getElementById('closure-ncr-id').value = id;
+  document.getElementById('closure-notes').value = '';
+  document.getElementById('closure-err').textContent = '';
+  document.getElementById('closure-attach-grid').innerHTML = '';
+  document.getElementById('closure-file-input').value = '';
+  const f = { title: document.getElementById('fd-title')?.textContent || '' };
+  document.getElementById('closure-ncr-title').textContent = f.title;
+  // Init signature pad after modal opens
+  setTimeout(_sigInit, 100);
+  clearSignature();
+  _sigPad.hasData = false;
+  openM('m-ncr-closure');
+}
+
+function closureAddPhotos(input) {
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => { _closurePhotos.push({ file, dataUrl: e.target.result, markup: null }); _closureRenderGrid(); };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function _closureRenderGrid() {
+  const grid = document.getElementById('closure-attach-grid');
+  if (!grid) return;
+  grid.innerHTML = _closurePhotos.map((p,i) => `
+    <div class="ncr-attach-thumb">
+      <img src="${p.markup || p.dataUrl}" alt="">
+      <div class="ncr-thumb-ov">
+        <button onclick="_ncrMarkupPhase='closure';_ncrMarkupIdx=${i};openMarkupCanvas('${p.markup || p.dataUrl}')"><i class="ti ti-edit"></i></button>
+        <button onclick="_closurePhotos.splice(${i},1);_closureRenderGrid()" style="color:#DC2626"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+async function submitClosure() {
+  const id    = document.getElementById('closure-ncr-id').value;
+  const notes = document.getElementById('closure-notes').value.trim();
+  const errEl = document.getElementById('closure-err');
+  errEl.textContent = '';
+  if (!notes) { errEl.textContent = 'יש לתאר את התיקון שבוצע'; return; }
+  if (!_sigPad.hasData) { errEl.textContent = 'נדרשת חתימה דיגיטלית'; return; }
+
+  const btn = document.querySelector('#m-ncr-closure button[onclick="submitClosure()"]');
+  if (btn) btn.disabled = true;
+
+  // Upload signature
+  let sigUrl = null;
+  try {
+    const sigDataUrl = _sigPad.canvas.toDataURL('image/png');
+    const sigBlob    = await (await fetch(sigDataUrl)).blob();
+    const { data: sd } = await db.auth.getSession();
+    const token = sd?.session?.access_token;
+    const sigPath = `findings/${id}/signature_${Date.now()}.png`;
+    const sigResp = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${sigPath}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'image/png', 'x-upsert': 'true' },
+      body: sigBlob
+    });
+    if (sigResp.ok) sigUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${sigPath}`;
+  } catch(e) { console.warn('signature upload error', e); }
+
+  // Upload closure photos
+  if (_closurePhotos.length) {
+    const { data: sd2 } = await db.auth.getSession();
+    const token2 = sd2?.session?.access_token;
+    for (const photo of _closurePhotos) {
+      try {
+        const imgData = photo.markup || photo.dataUrl;
+        const blob = await (await fetch(imgData)).blob();
+        const fname = `findings/${id}/close_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+        const resp  = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${fname}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token2}`, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
+          body: blob
+        });
+        if (resp.ok) await db.from('finding_attachments').insert({
+          finding_id: id, url: `${SUPABASE_URL}/storage/v1/object/public/documents/${fname}`,
+          company_id: currentCompanyId, phase: 'close', created_by: currentUserId
+        });
+      } catch(e) { console.warn('closure photo error', e); }
+    }
+  }
+
+  // Update finding
+  const closedAt = new Date().toISOString();
+  const { error } = await db.from('findings').update({
+    status: 'closed',
+    treatment: notes,
+    closed_at: closedAt,
+    closed_by_name: _currentUserProfile?.full_name || 'מנהל',
+    signature_url: sigUrl
+  }).eq('id', id);
+
+  if (error) { errEl.textContent = 'שגיאה: ' + error.message; if (btn) btn.disabled = false; return; }
+
+  // Log activity
+  await db.from('finding_activity').insert({
+    finding_id: id, company_id: currentCompanyId,
+    action: 'closed',
+    actor_name: _currentUserProfile?.full_name || 'מנהל',
+    notes: `אישר סגירה: ${notes}`
+  });
+
+  if (btn) btn.disabled = false;
+  closeById('m-ncr-closure');
+  closeById('m-finding-detail');
+  await loadFindingsScreen();
+  await loadDashboard();
+  showToast('הממצא נסגר בהצלחה', 'success');
+}
+
+function _sevLabel(s) {
+  return { low:'נמוכה', medium:'בינונית', high:'גבוהה', critical:'קריטית' }[s] || s;
+}
+
+let _currentUserProfile = null;
+
+// ─── COMPANY SETTINGS ────────────────────────────────────
+
+function loadCompanySettings() {
+  // Load from currentCompany (DB) — no more localStorage
+  const logo    = currentCompany?.logo_url || '';
+  const name    = currentCompany?.name     || '';
+  const img     = document.getElementById('logo-preview-img');
+  const ph      = document.getElementById('logo-placeholder');
+  const nameInp = document.getElementById('company-name-input');
+  const rmBtn   = document.getElementById('logo-remove-btn');
+  if (nameInp) nameInp.value = name;
+  if (logo && img) {
+    img.src = logo; img.style.display = '';
+    if (ph)    ph.style.display = 'none';
+    if (rmBtn) rmBtn.style.display = '';
+  } else {
+    if (img)   img.style.display = 'none';
+    if (ph)    ph.style.display = '';
+    if (rmBtn) rmBtn.style.display = 'none';
+  }
+}
+
+async function handleLogoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('הקובץ גדול מ-2MB', 'error'); return; }
+  if (!currentCompanyId) { showToast('לא נמצאה חברה מקושרת', 'error'); return; }
+
+  showToast('מעלה לוגו...', 'info');
+  const ext      = file.name.split('.').pop().toLowerCase();
+  const path     = `company-logos/${currentCompanyId}.${ext}`;
+  const { data: sd } = await db.auth.getSession();
+  const token    = sd?.session?.access_token;
+
+  const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${path}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': file.type, 'x-upsert': 'true' },
+    body: file,
+  });
+  if (!resp.ok) { showToast('שגיאה בהעלאת לוגו', 'error'); return; }
+
+  const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${path}`;
+  // Save to companies table
+  await db.from('companies').update({ logo_url: publicUrl }).eq('id', currentCompanyId);
+  // Update local cache
+  if (currentCompany) currentCompany.logo_url = publicUrl;
+  loadCompanySettings();
+  showToast('לוגו עודכן — לחץ שמור לאישור', 'info');
+}
+
+async function removeCompanyLogo() {
+  if (!currentCompanyId) return;
+  await db.from('companies').update({ logo_url: null }).eq('id', currentCompanyId);
+  if (currentCompany) currentCompany.logo_url = null;
+  const fileInput = document.getElementById('logo-file-input');
+  if (fileInput) fileInput.value = '';
+  loadCompanySettings();
+  showToast('לוגו הוסר', 'info');
+}
+
+async function saveCompanySettings() {
+  if (!currentCompanyId) return;
+  const name = document.getElementById('company-name-input')?.value?.trim() || '';
+  const { error } = await db.from('companies').update({ name }).eq('id', currentCompanyId);
+  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
+  if (currentCompany) currentCompany.name = name;
+  showToast('הגדרות חברה נשמרו ✓', 'success');
+}
+
+// ─── COMPANIES SCREEN (system admin) ─────────────────────
+
+async function loadCompaniesScreen() {
+  if (!currentSystemAdmin) return;
+  const tbody = document.getElementById('companies-tbody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><span class="spinner"></span> טוען...</td></tr>';
+
+  const [{ data: companies }, { data: profiles }, { data: projects }] = await Promise.all([
+    db.from('companies').select('*').order('created_at'),
+    db.from('profiles').select('company_id'),
+    db.from('projects').select('company_id'),
+  ]);
+
+  if (!companies?.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6">אין חברות</td></tr>';
+    return;
+  }
+
+  const planBadge = p => ({
+    free:  '<span class="badge b-gray">Free</span>',
+    basic: '<span class="badge b-open">Basic</span>',
+    pro:   '<span class="badge b-ok">Pro</span>',
+  }[p] || `<span class="badge b-gray">${p}</span>`);
+
+  tbody.innerHTML = companies.map(c => {
+    const userCount    = (profiles || []).filter(p => p.company_id === c.id).length;
+    const projectCount = (projects  || []).filter(p => p.company_id === c.id).length;
+    const created      = new Date(c.created_at).toLocaleDateString('he-IL');
+    return `<tr>
+      <td><b>${c.name}</b><div style="font-size:10px;color:#9AA3B0">${c.id.slice(-8)}</div></td>
+      <td>${planBadge(c.plan)}</td>
+      <td style="font-size:12px">${created}</td>
+      <td style="text-align:center">${userCount}</td>
+      <td style="text-align:center">${projectCount}</td>
+      <td>
+        <button class="btn btn-sm" onclick="copyToClipboard('${c.id}')" title="העתק ID"><i class="ti ti-copy"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function createCompany() {
+  const name      = document.getElementById('nc-name').value.trim();
+  const plan      = document.getElementById('nc-plan').value;
+  const email     = document.getElementById('nc-admin-email').value.trim();
+  const pass      = document.getElementById('nc-admin-pass').value.trim();
+  const fullName  = document.getElementById('nc-admin-name').value.trim();
+  const errEl     = document.getElementById('nc-err');
+  const btn       = document.getElementById('nc-submit-btn');
+  errEl.textContent = '';
+
+  if (!name)  { errEl.textContent = 'שם חברה הוא שדה חובה'; return; }
+  if (!email) { errEl.textContent = 'אימייל אדמין הוא שדה חובה'; return; }
+  if (!pass || pass.length < 6) { errEl.textContent = 'סיסמה חייבת להכיל לפחות 6 תווים'; return; }
+
+  btn.disabled = true; btn.textContent = 'יוצר...';
+
+  try {
+    // 1. Create company
+    const { data: co, error: coErr } = await db.from('companies').insert({ name, plan }).select().single();
+    if (coErr) throw new Error(coErr.message);
+
+    // 2. Create admin user
+    const { data: authData, error: authErr } = await db.auth.admin.createUser({
+      email, password: pass, email_confirm: true,
+    });
+    if (authErr) {
+      // rollback company
+      await db.from('companies').delete().eq('id', co.id);
+      throw new Error(authErr.message);
+    }
+
+    // 3. Create profile
+    await db.from('profiles').upsert({
+      id: authData.user.id, full_name: fullName || email.split('@')[0],
+      role: 'admin', company_id: co.id,
+    });
+
+    closeById('m-new-company');
+    ['nc-name','nc-admin-email','nc-admin-pass','nc-admin-name'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    showToast(`חברה "${name}" נוצרה ✓`, 'success');
+    await loadCompaniesScreen();
+  } catch(e) {
+    errEl.textContent = 'שגיאה: ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = 'צור חברה + אדמין';
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('הועתק ✓', 'success'));
 }
 
 // ─── USER MANAGEMENT ─────────────────────────────────────
 
 async function loadUsersScreen() {
+  loadCompanySettings();
   const tbody = document.getElementById('users-tbody');
   const { data: profiles, error } = await db.from('profiles').select('*').order('created_at', { ascending: false });
 
@@ -1307,7 +2817,7 @@ async function createUser() {
       btn.disabled = false; btn.textContent = 'צור משתמש'; return;
     }
 
-    await db.from('profiles').upsert({ id: data.user.id, full_name, role });
+    await db.from('profiles').upsert({ id: data.user.id, full_name, role, company_id: currentCompanyId });
 
     closeById('m-new-user');
     document.getElementById('nu-name').value = '';
@@ -1370,13 +2880,16 @@ const titles = {
   dashboard:       'דשבורד ראשי',
   projects:        'פרויקטים',
   nc:              'ממצאים',
+  inspections:     'הזמנות בדיקה',
   reports:         'דוחות',
   users:           'ניהול משתמשים',
+  companies:       'ניהול חברות',
   'project-board': 'לוח פרויקט',
 };
 
 function go(name, el) {
-  if (name === 'users' && currentUserRole !== 'admin') return;
+  if (name === 'users'     && currentUserRole !== 'admin' && !currentSystemAdmin) return;
+  if (name === 'companies' && !currentSystemAdmin) return;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const s = document.getElementById('s-' + name);
@@ -1384,7 +2897,13 @@ function go(name, el) {
   if (el) el.classList.add('active');
   document.getElementById('ttl').textContent = titles[name] || name;
   _showActiveProjSub();
-  if (name === 'users') loadUsersScreen();
+  if (name === 'dashboard') loadDashboard();
+  else if (name === 'projects') loadProjectsScreen();
+  else if (name === 'nc') loadFindingsScreen();
+  else if (name === 'inspections') loadInspectionsScreen();
+  else if (name === 'reports') { loadReportsScreen(); loadBuildingReport(); }
+  else if (name === 'users')     loadUsersScreen();
+  else if (name === 'companies') loadCompaniesScreen();
 }
 
 // ─── MODALS ───────────────────────────────────────────────
@@ -1411,6 +2930,70 @@ function setActiveProject(id) {
   document.getElementById('proj-sel').classList.add('active');
   document.getElementById('proj-picker').style.display = 'none';
   _showActiveProjSub();
+  // Update project fields in any open forms
+  _applyActiveProjectToForms();
+}
+
+// ─── PROJECT FIELD HELPER ────────────────────────────────
+// Renders a locked badge (when active project) or a select (when none)
+// wrapperId = the wrapper div id, selectId = the hidden select id, onChangeFn = callback name string
+function _renderProjectField(wrapperId, selectId, onChangeFn) {
+  const wrap = document.getElementById(wrapperId);
+  if (!wrap) return;
+  if (_activeProjectId) {
+    const p = _allProjects.find(x => x.id === _activeProjectId);
+    if (!p) return;
+    // Set the hidden select value for form payload
+    const sel = document.getElementById(selectId);
+    if (sel) sel.value = _activeProjectId;
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#E8F1FB;border:1.5px solid #BFDBFE;border-radius:8px">
+        <i class="ti ti-building" style="color:#185FA5;font-size:14px;flex-shrink:0"></i>
+        <span style="font-size:13px;font-weight:700;color:#185FA5;flex:1">${p.name}</span>
+        <button onclick="_clearActiveProjectField('${wrapperId}','${selectId}','${onChangeFn}')" style="font-size:10px;color:#9AA3B0;background:none;border:1px solid #CBD5E1;border-radius:5px;padding:2px 7px;cursor:pointer;font-family:inherit" title="שנה פרויקט">שנה</button>
+      </div>
+      <select id="${selectId}" style="display:none" onchange="${onChangeFn}"><option value="${_activeProjectId}">${p.name}</option></select>`;
+  } else {
+    // Show regular select
+    const existingSel = document.getElementById(selectId);
+    if (existingSel && existingSel.tagName === 'SELECT') {
+      wrap.innerHTML = '';
+      wrap.appendChild(existingSel);
+      return;
+    }
+    wrap.innerHTML = `<select class="form-in" id="${selectId}" onchange="${onChangeFn}"><option value="">בחר פרויקט...</option></select>`;
+    // Populate options
+    const newSel = document.getElementById(selectId);
+    _allProjects.forEach(pr => {
+      const o = document.createElement('option'); o.value = pr.id; o.textContent = pr.name; newSel.appendChild(o);
+    });
+  }
+}
+
+function _clearActiveProjectField(wrapperId, selectId, onChangeFn) {
+  // Show the select with all projects, keep current value
+  const wrap = document.getElementById(wrapperId);
+  wrap.innerHTML = `<select class="form-in" id="${selectId}" onchange="${onChangeFn}"><option value="">בחר פרויקט...</option></select>`;
+  const sel = document.getElementById(selectId);
+  _allProjects.forEach(pr => {
+    const o = document.createElement('option'); o.value = pr.id; o.textContent = pr.name; sel.appendChild(o);
+  });
+  sel.value = _activeProjectId || '';
+  // Trigger the change callback
+  if (onChangeFn) { try { eval(onChangeFn.replace('()', '()')); } catch(e) {} }
+}
+
+function _applyActiveProjectToForms() {
+  // Apply to NCR form if open
+  if (document.getElementById('m-new-nc')?.classList.contains('open')) {
+    _renderProjectField('nf-project-wrap', 'nf-project', 'ncrOnProjectChange()');
+    if (_activeProjectId) ncrOnProjectChange();
+  }
+  // Apply to inspection form if open
+  if (document.getElementById('m-new-inspection')?.classList.contains('open')) {
+    _renderProjectField('insp-project-wrap', 'insp-project', 'loadInspectionWorkItems();_updateInspSubmitBtn()');
+    if (_activeProjectId) { loadInspectionWorkItems(); _updateInspSubmitBtn(); }
+  }
 }
 
 function _showActiveProjSub() {
@@ -1483,6 +3066,7 @@ async function openProjectBoard(projectId) {
     .select('*, checklist_instances(id, task_name, task_order, is_checked, checked_by, checked_at)')
     .eq('project_id', projectId)
     .order('row_order');
+
 
   if (error || !data || data.length === 0) {
     document.getElementById('board-tree').innerHTML = `
@@ -1577,20 +3161,40 @@ function _renderBoardSubProject(items) {
         for (const wi of wItems) {
           const { total: wT, checked: wC, pct: wP } = progOf([wi]);
           const isDone = wT > 0 && wC === wT;
-          html += `<div class="board-wi${isDone?' wi-done':''}" id="wi-${wi.id}">
+          const isStop     = wi.is_stop_point;
+          const stopRel    = wi.stop_released;
+          const stopClass  = isStop ? (stopRel ? ' wi-stop wi-stop-released' : ' wi-stop') : '';
+          const stopIcon   = isStop
+            ? (stopRel
+                ? `<i class="ti ti-octagon-check" style="color:#2E7D32;font-size:15px;flex-shrink:0" title="נקודת עצירה – שוחרר"></i>`
+                : `<i class="ti ti-octagon" style="color:#C0392B;font-size:15px;flex-shrink:0" title="נקודת עצירה – ממתין לאישור"></i>`)
+            : '';
+          html += `<div class="board-wi${isDone?' wi-done':''}${stopClass}" id="wi-${wi.id}">
             <div class="board-wi-row" onclick="toggleBoardChecklist('${wi.id}')">
               ${wiIcon(wi)}
               <div style="flex:1;min-width:0">
                 <div class="board-wi-name">${wi.sub_element}</div>
                 ${wi.section_from!=null?`<div class="board-wi-meta">חתך ${wi.section_from}–${wi.section_to}</div>`:''}
               </div>
+              ${stopIcon}
               <span class="badge b-gray" style="font-size:9px;flex-shrink:0">${wi.execution_type}</span>
               <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
                 <div class="prog"><div class="prog-fill" id="wprog-${wi.id}" style="width:${wP}%"></div></div>
                 <span class="board-wi-cnt" id="wcnt-${wi.id}">${wC}/${wT}</span>
               </div>
+              <button class="stop-mark-btn${isStop?' active':''}" onclick="event.stopPropagation();toggleStopPoint('${wi.id}',${isStop})" title="${isStop?'הסר נקודת עצירה':'סמן כנקודת עצירה'}"><i class="ti ti-octagon" style="font-size:11px"></i></button>
+              <button class="insp-order-btn" onclick="event.stopPropagation();openNewInspection('${_boardProjectId}','${wi.id}')" title="הזמן בדיקה"><i class="ti ti-calendar-plus" style="font-size:12px"></i></button>
               <i class="ti ti-chevron-left b-chevron" id="wchev-${wi.id}" style="font-size:13px"></i>
             </div>
+            ${isStop && !stopRel ? `<div class="stop-banner" id="stop-banner-${wi.id}">
+              <i class="ti ti-octagon" style="font-size:16px;flex-shrink:0"></i>
+              <span style="flex:1"><b>נקודת עצירה</b> – נדרש אישור בקר לפני המשך</span>
+              <button class="stop-release-btn" onclick="openStopRelease('${wi.id}','${wi.sub_element.replace(/'/g,"\\'")}')"><i class="ti ti-check"></i>שחרר</button>
+            </div>` : ''}
+            ${isStop && stopRel ? `<div class="stop-banner released" id="stop-banner-${wi.id}">
+              <i class="ti ti-octagon-check" style="font-size:16px;flex-shrink:0"></i>
+              <span><b>שוחרר</b>${wi.stop_released_at ? ' – ' + new Date(wi.stop_released_at).toLocaleDateString('he-IL') : ''}${wi.stop_release_notes ? ': ' + wi.stop_release_notes : ''}</span>
+            </div>` : ''}
             <div class="board-cl" id="cl-${wi.id}" style="display:none">
               ${wi.checklist_instances.length === 0
                 ? '<div style="padding:12px 14px;font-size:12px;color:#9AA3B0">אין משימות לסוג ביצוע זה</div>'
@@ -1826,13 +3430,16 @@ async function confirmImport() {
     for (const [type_name, tasks] of Object.entries(templates))
       for (const t of tasks) tRows.push({ type_name, task_order: t.task_order, task_name: t.task_name });
     if (tRows.length > 0)
-      await db.from('checklist_templates').upsert(tRows, { onConflict: 'type_name,task_order' });
+      await db.from('checklist_templates').upsert(
+        tRows.map(r => ({ ...r, company_id: currentCompanyId })),
+        { onConflict: 'company_id,type_name,task_order' }
+      );
 
     // 2. Delete existing work items for this project
     await db.from('work_items').delete().eq('project_id', _importProjectId);
 
     // 3. Insert work items in batch
-    const toInsert = workItems.map(item => ({ ...item, project_id: _importProjectId }));
+    const toInsert = workItems.map(item => ({ ...item, project_id: _importProjectId, company_id: currentCompanyId }));
     const { data: inserted, error: wiErr } = await db.from('work_items').insert(toInsert).select('id, execution_type');
     if (wiErr) throw new Error(wiErr.message);
 
@@ -1840,7 +3447,7 @@ async function confirmImport() {
     const ciRows = [];
     for (const wi of inserted)
       for (const t of (templates[wi.execution_type] || []))
-        ciRows.push({ work_item_id: wi.id, task_name: t.task_name, task_order: t.task_order });
+        ciRows.push({ work_item_id: wi.id, task_name: t.task_name, task_order: t.task_order, company_id: currentCompanyId });
 
     for (let i = 0; i < ciRows.length; i += 500) {
       const { error: ce } = await db.from('checklist_instances').insert(ciRows.slice(i, i + 500));
@@ -1925,9 +3532,1427 @@ async function openChecklistModal(workItemId, itemName, execType) {
   alert(`צ'קליסט: ${itemName}\nסוג ביצוע: ${execType}\n\n(מסך סימון מפורט – בפיתוח)`);
 }
 
+// ─── STOP POINTS ─────────────────────────────────────────
+
+async function toggleStopPoint(wiId, currentVal) {
+  const newVal = !currentVal;
+  const { error } = await db.from('work_items')
+    .update({ is_stop_point: newVal, ...(newVal ? {} : { stop_released: false, stop_released_at: null, stop_released_by: null, stop_release_result: null, stop_release_notes: null }) })
+    .eq('id', wiId);
+  if (error) return;
+  // Re-render the board to reflect change
+  await openProjectBoard(_boardProjectId);
+}
+
+function openStopRelease(wiId, wiName) {
+  document.getElementById('sp-wi-id').value   = wiId;
+  document.getElementById('sp-wi-name').textContent = wiName;
+  document.getElementById('sp-date').value    = new Date().toISOString().slice(0, 10);
+  document.getElementById('sp-result').selectedIndex = 0;
+  document.getElementById('sp-notes').value   = '';
+  document.getElementById('sp-err').textContent = '';
+  document.getElementById('sp-submit-btn').disabled = false;
+  openM('m-stop-release');
+}
+
+async function submitStopRelease() {
+  const wiId  = document.getElementById('sp-wi-id').value;
+  const date  = document.getElementById('sp-date').value;
+  const result= document.getElementById('sp-result').value;
+  const notes = document.getElementById('sp-notes').value.trim();
+  const errEl = document.getElementById('sp-err');
+  errEl.textContent = '';
+  if (!date) { errEl.textContent = 'יש לבחור תאריך'; return; }
+
+  const btn = document.getElementById('sp-submit-btn');
+  btn.disabled = true;
+
+  const { error } = await db.from('work_items').update({
+    stop_released:      true,
+    stop_released_at:   new Date(date).toISOString(),
+    stop_released_by:   currentUserId,
+    stop_release_result: result,
+    stop_release_notes: notes || null,
+  }).eq('id', wiId);
+
+  btn.disabled = false;
+  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+
+  closeById('m-stop-release');
+  await openProjectBoard(_boardProjectId);
+}
+
+async function loadStopPointsAlert() {
+  const { data, error } = await db.from('work_items')
+    .select('id, sub_element, project_id')
+    .eq('is_stop_point', true)
+    .eq('stop_released', false);
+  if (error) return;
+
+  const alertEl = document.getElementById('stop-points-alert');
+  if (!data || data.length === 0) { alertEl.style.display = 'none'; return; }
+
+  const projMap = Object.fromEntries(_allProjects.map(p => [p.id, p.name]));
+  alertEl.style.display = '';
+  alertEl.innerHTML = `<div class="alert" style="background:#FFF1F0;border-color:#FFADA8;color:#9B2226;align-items:flex-start">
+    <i class="ti ti-octagon" style="font-size:18px;flex-shrink:0;margin-top:1px"></i>
+    <div>
+      <b>${data.length} נקודות עצירה פתוחות הדורשות אישור בקר:</b>
+      <div style="margin-top:6px;display:flex;flex-direction:column;gap:3px">
+        ${data.slice(0, 5).map(wi => `<div style="font-size:12px">• ${projMap[wi.project_id] || '–'} – ${wi.sub_element}</div>`).join('')}
+        ${data.length > 5 ? `<div style="font-size:11px;color:#C0392B">ועוד ${data.length - 5} נוספות...</div>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── BUILDING REPORT ─────────────────────────────────────
+
+async function loadBuildingReport() {
+  const tbody   = document.getElementById('rpt-bldg-tbody');
+  const summary = document.getElementById('rpt-bldg-summary');
+  const thProj  = document.getElementById('rpt-bldg-th-proj');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><span class="spinner"></span> טוען...</td></tr>';
+  summary.style.display = 'none';
+
+  const pid = document.getElementById('rpt-bldg-proj').value;
+  thProj.style.display = pid ? 'none' : '';
+
+  let q = db.from('work_items')
+    .select('id, project_id, sub_project, structure, checklist_instances(id, is_checked)')
+    .order('sub_project').order('structure').order('row_order');
+  if (pid) q = q.eq('project_id', pid);
+
+  const { data: items, error } = await q;
+  if (error) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="8" style="color:#C0392B">שגיאה: ${error.message}</td></tr>`;
+    return;
+  }
+  if (!items || items.length === 0) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="8">לא נמצאו פריטי עבודה – ייבא עץ מבנה לפרויקט</td></tr>';
+    return;
+  }
+
+  const projMap = Object.fromEntries(_allProjects.map(p => [p.id, p.name]));
+
+  // Group: project_id → sub_project → structure
+  const groups = {};
+  for (const wi of items) {
+    const k = `${wi.project_id}||${wi.sub_project || '–'}||${wi.structure || '–'}`;
+    if (!groups[k]) groups[k] = {
+      project_id: wi.project_id,
+      sub_project: wi.sub_project || '–',
+      structure:   wi.structure   || '–',
+      wis: []
+    };
+    groups[k].wis.push(wi);
+  }
+
+  const calcGroup = g => {
+    const totalCI   = g.wis.reduce((s, wi) => s + wi.checklist_instances.length, 0);
+    const checkedCI = g.wis.reduce((s, wi) => s + wi.checklist_instances.filter(c => c.is_checked).length, 0);
+    const pct       = totalCI > 0 ? Math.round(checkedCI / totalCI * 100) : 0;
+    const completed = g.wis.filter(wi => {
+      const ci = wi.checklist_instances;
+      return ci.length > 0 && ci.every(c => c.is_checked);
+    }).length;
+    const inProg = g.wis.filter(wi => {
+      const ci = wi.checklist_instances;
+      return ci.length > 0 && ci.some(c => c.is_checked) && !ci.every(c => c.is_checked);
+    }).length;
+    const pending = g.wis.length - completed - inProg;
+    return { total: g.wis.length, completed, inProg, pending, pct, totalCI, checkedCI };
+  };
+
+  const progColor = pct => pct === 100 ? '#2E7D32' : pct > 50 ? '#185FA5' : pct > 0 ? '#C97B1A' : '#C8CDD6';
+
+  const rows = Object.values(groups);
+
+  // Overall summary when single project
+  if (pid) {
+    const totCI   = items.reduce((s, wi) => s + wi.checklist_instances.length, 0);
+    const chkCI   = items.reduce((s, wi) => s + wi.checklist_instances.filter(c => c.is_checked).length, 0);
+    const ovPct   = totCI > 0 ? Math.round(chkCI / totCI * 100) : 0;
+    const ovColor = progColor(ovPct);
+    const allComp = items.filter(wi => wi.checklist_instances.length > 0 && wi.checklist_instances.every(c => c.is_checked)).length;
+    summary.style.display = '';
+    summary.innerHTML = `
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div class="detail-stat" style="flex:1;min-width:100px"><div class="ds-val">${items.length}</div><div class="ds-lbl">סה"כ פריטים</div></div>
+        <div class="detail-stat" style="flex:1;min-width:100px"><div class="ds-val" style="color:#2E7D32">${allComp}</div><div class="ds-lbl">הושלמו</div></div>
+        <div class="detail-stat" style="flex:1;min-width:100px"><div class="ds-val" style="color:#C97B1A">${rows.length}</div><div class="ds-lbl">מבנים</div></div>
+        <div class="detail-stat" style="flex:2;min-width:200px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="prog" style="flex:1;height:10px;border-radius:99px">
+              <div class="prog-fill" style="width:${ovPct}%;background:${ovColor}"></div>
+            </div>
+            <span style="font-size:22px;font-weight:700;color:${ovColor}">${ovPct}%</span>
+          </div>
+          <div class="ds-lbl" style="margin-top:4px">התקדמות כוללת (${chkCI}/${totCI} משימות)</div>
+        </div>
+      </div>`;
+  }
+
+  // Table rows – group header when sub_project changes
+  let lastSP = null;
+  tbody.innerHTML = rows.map(g => {
+    const { total, completed, inProg, pending, pct } = calcGroup(g);
+    const color  = progColor(pct);
+    const spHdr  = !pid && g.sub_project !== lastSP
+      ? `<tr style="background:#F0F4FA"><td colspan="8" style="padding:7px 14px;font-size:11px;font-weight:700;color:#0F2744;letter-spacing:.03em">
+           <i class="ti ti-git-branch" style="color:#6BB5F8;margin-left:5px"></i>${g.sub_project}
+         </td></tr>`
+      : '';
+    if (!pid) lastSP = g.sub_project;
+
+    return `${spHdr}<tr>
+      ${pid ? '' : `<td style="font-size:12px;padding-right:24px">${projMap[g.project_id] || '–'}</td>`}
+      <td style="font-size:12px;color:#6B7280">${pid ? g.sub_project : ''}</td>
+      <td><b>${g.structure}</b></td>
+      <td style="text-align:center"><b>${total}</b></td>
+      <td style="text-align:center">${completed > 0 ? `<span class="badge b-ok">${completed}</span>` : `<span style="color:#C8CDD6">0</span>`}</td>
+      <td style="text-align:center">${inProg    > 0 ? `<span class="badge b-warn">${inProg}</span>` : `<span style="color:#C8CDD6">0</span>`}</td>
+      <td style="text-align:center">${pending   > 0 ? `<span class="badge b-gray">${pending}</span>` : `<span style="color:#C8CDD6">0</span>`}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:7px">
+          <div class="prog" style="width:90px">
+            <div class="prog-fill" style="width:${pct}%;background:${color}"></div>
+          </div>
+          <span style="font-size:12px;font-weight:700;color:${color};min-width:32px">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Totals row
+  if (rows.length > 1) {
+    const totTotal = rows.reduce((s, g) => s + calcGroup(g).total, 0);
+    const totComp  = rows.reduce((s, g) => s + calcGroup(g).completed, 0);
+    const totInP   = rows.reduce((s, g) => s + calcGroup(g).inProg, 0);
+    const totPend  = rows.reduce((s, g) => s + calcGroup(g).pending, 0);
+    const allCI    = items.reduce((s, wi) => s + wi.checklist_instances.length, 0);
+    const chkCI    = items.reduce((s, wi) => s + wi.checklist_instances.filter(c => c.is_checked).length, 0);
+    const totPct   = allCI > 0 ? Math.round(chkCI / allCI * 100) : 0;
+    const totColor = progColor(totPct);
+    tbody.innerHTML += `<tr style="background:#FAFBFC;border-top:2px solid #E8EBF0;font-weight:700">
+      ${pid ? '' : '<td></td>'}
+      <td colspan="2" style="font-size:12px;color:#0F2744">סה"כ</td>
+      <td style="text-align:center"><b>${totTotal}</b></td>
+      <td style="text-align:center"><b style="color:#2E7D32">${totComp}</b></td>
+      <td style="text-align:center"><b style="color:#C97B1A">${totInP}</b></td>
+      <td style="text-align:center"><b style="color:#6B7280">${totPend}</b></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:7px">
+          <div class="prog" style="width:90px">
+            <div class="prog-fill" style="width:${totPct}%;background:${totColor}"></div>
+          </div>
+          <span style="font-size:12px;font-weight:700;color:${totColor};min-width:32px">${totPct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }
+}
+
+// ─── INSPECTION ORDERS ───────────────────────────────────
+
+function inspStatusBadge(s) {
+  return ({
+    pending:   '<span class="badge b-pending">פתוח</span>',
+    completed: '<span class="badge b-ok">סגור</span>',
+    cancelled: '<span class="badge" style="background:#FEE2E2;color:#991B1B">בוטל</span>',
+  })[s] || '<span class="badge b-pending">פתוח</span>';
+}
+
+function inspResultBadge(r) {
+  if (!r) return '–';
+  return ({
+    pass:    '<span class="badge b-pass">עבר ✓</span>',
+    fail:    '<span class="badge b-fail">נכשל ✗</span>',
+    partial: '<span class="badge b-partial">חלקי ~</span>',
+  })[r] || `<span class="badge b-gray">${r}</span>`;
+}
+
+async function loadInspectionsScreen() {
+  // Populate project filter if empty
+  const filterSel = document.getElementById('insp-filter-proj');
+  if (filterSel.options.length <= 1 && _allProjects.length > 0) {
+    _allProjects.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id; o.textContent = p.name;
+      filterSel.appendChild(o);
+    });
+  }
+
+  const tbody = document.getElementById('inspections-tbody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><span class="spinner"></span> טוען...</td></tr>';
+
+  let q = db.from('inspection_orders').select('*').order('scheduled_date', { ascending: false }).order('created_at', { ascending: false });
+  const pid = filterSel.value;
+  if (pid) q = q.eq('project_id', pid);
+
+  const { data: orders, error } = await q;
+  if (error) { tbody.innerHTML = `<tr class="loading-row"><td colspan="9" style="color:#C0392B">שגיאה: ${error.message}</td></tr>`; return; }
+
+  const list = orders || [];
+  if (list.length === 0) { tbody.innerHTML = '<tr class="loading-row"><td colspan="8">אין הזמנות בדיקה עדיין</td></tr>'; return; }
+
+  const projMap = Object.fromEntries(_allProjects.map(p => [p.id, p.name]));
+  tbody.innerHTML = list.map(o => {
+    const loc  = o.location || '–';
+    const date = o.scheduled_date ? new Date(o.scheduled_date + 'T12:00:00').toLocaleDateString('he-IL') : '–';
+    const time = o.scheduled_time ? o.scheduled_time.slice(0,5) : '';
+
+    // אייקון תעודה: ירוק+לחיץ אם הגיעה, אחרת שעון אפור
+    const certIcon = o.certificate_url
+      ? `<a href="${o.certificate_url}" target="_blank"
+           class="btn btn-sm" style="color:#16A34A;border-color:#86EFAC"
+           title="פתח תעודת מעבדה"><i class="ti ti-file-certificate" style="font-size:15px"></i></a>`
+      : `<button class="btn btn-sm" style="color:#CBD5E1;cursor:default" disabled
+           title="ממתין לתעודת מעבדה"><i class="ti ti-clock" style="font-size:15px"></i></button>`;
+
+    return `<tr>
+      <td><b style="font-size:11px;color:#9AA3B0">${o.id.slice(-6).toUpperCase()}</b></td>
+      <td style="font-size:12px">${projMap[o.project_id] || '–'}</td>
+      <td style="max-width:160px;font-size:12px">${loc}</td>
+      <td style="font-size:12px">${o.inspector_name || '–'}</td>
+      <td style="font-size:12px">${o.contractor || '–'}</td>
+      <td style="direction:ltr;text-align:right;font-size:12px">${date}${time ? `<div style="font-size:10px;color:#9AA3B0">${time}</div>` : ''}</td>
+      <td>${inspStatusBadge(o.status)}</td>
+      <td style="display:flex;gap:4px;align-items:center">
+        ${certIcon}
+        <button class="btn btn-sm" onclick="openEditInspection('${o.id}')" title="עריכה"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-sm btn-p" onclick="openInspectionPDF('${o.id}')" title="הפק PDF הזמנה"><i class="ti ti-file-type-pdf"></i></button>
+        <button class="btn btn-sm" onclick="sendToLab('${o.id}')" title="שלח למעבדה" style="color:#185FA5"><i class="ti ti-mail-forward"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadInspectionWorkItems(selectedId) {
+  const projectId = document.getElementById('insp-project').value;
+  const sel = document.getElementById('insp-work-item');
+  sel.innerHTML = '<option value="">— ללא פריט ספציפי —</option>';
+  if (!projectId) return;
+
+  const { data: items } = await db.from('work_items')
+    .select('id, structure, sub_structure, element, sub_element, section_from, section_to, execution_type')
+    .eq('project_id', projectId)
+    .order('row_order');
+
+  (items || []).forEach(wi => {
+    const parts = [wi.structure, wi.sub_structure, wi.element, wi.sub_element].filter(Boolean);
+    const label = parts.join(' / ') + (wi.section_from != null ? ` (${wi.section_from}–${wi.section_to})` : '');
+    const opt = document.createElement('option');
+    opt.value = wi.id;
+    opt.textContent = label;
+    opt.dataset.loc = parts.join(' / ') + (wi.section_from != null ? ` חתך ${wi.section_from}–${wi.section_to}` : '');
+    sel.appendChild(opt);
+  });
+  if (selectedId) sel.value = selectedId;
+
+  // Auto-fill location when work item is selected
+  sel.onchange = () => {
+    const chosen = sel.options[sel.selectedIndex];
+    if (chosen.dataset.loc) document.getElementById('insp-location').value = chosen.dataset.loc;
+    else document.getElementById('insp-location').value = '';
+  };
+
+  _updateInspSubmitBtn();
+}
+
+function _inspFormClear() {
+  ['insp-id','insp-location','insp-inspector','insp-contractor','insp-notes','insp-result-notes',
+   'insp-lab','insp-producer','insp-material','insp-quantity'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  ['insp-date','insp-time'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['insp-project','insp-work-item','insp-status','insp-result','insp-side','insp-time-prec'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.selectedIndex = 0;
+  });
+  document.getElementById('insp-work-item').innerHTML = '<option value="">— ללא פריט ספציפי —</option>';
+  document.getElementById('insp-err').textContent = '';
+  document.getElementById('insp-result-section').style.display = 'none';
+  const _cs = document.getElementById('insp-cert-section');
+  if (_cs) _cs.style.display = 'none';
+  const _nc = document.getElementById('insp-no-cert-msg');
+  if (_nc) _nc.style.display = 'none';
+  document.getElementById('insp-modal-ttl').firstChild.textContent = 'הזמנת בדיקה חדשה';
+  const _sb = document.getElementById('insp-submit-btn');
+  _sb.innerHTML = '<i class="ti ti-calendar-check"></i>צור הזמנה';
+  _sb.onclick = null;
+  _sb.setAttribute('onclick', 'submitInspection()');
+  const _sob = document.getElementById('insp-save-only-btn');
+  if (_sob) _sob.style.display = 'none';
+  const _hint = document.getElementById('insp-lab-hint');
+  if (_hint) _hint.style.display = 'none';
+}
+
+function _inspFormPayload() {
+  const wiSel = document.getElementById('insp-work-item');
+  const chosen = wiSel.options[wiSel.selectedIndex];
+  const loc = document.getElementById('insp-location').value.trim() ||
+              (chosen.dataset.loc || null);
+  return {
+    project_id:    document.getElementById('insp-project').value || null,
+    work_item_id:  wiSel.value || null,
+    location:      loc || null,
+    inspector_name: document.getElementById('insp-inspector').value.trim() || null,
+    contractor:    document.getElementById('insp-contractor').value.trim() || null,
+    scheduled_date: document.getElementById('insp-date').value || null,
+    scheduled_time: document.getElementById('insp-time').value || null,
+    notes:         document.getElementById('insp-notes').value.trim() || null,
+    status:         document.getElementById('insp-status').value || 'pending',
+    result:         document.getElementById('insp-result').value || null,
+    result_notes:   document.getElementById('insp-result-notes').value.trim() || null,
+    lab_name:       document.getElementById('insp-lab').value.trim() || null,
+    producer:       document.getElementById('insp-producer').value.trim() || null,
+    material:       document.getElementById('insp-material').value.trim() || null,
+    quantity:       document.getElementById('insp-quantity').value.trim() || null,
+    side:           document.getElementById('insp-side').value || null,
+    time_precision: document.getElementById('insp-time-prec').value || 'משוער',
+  };
+}
+
+async function openNewInspection(projectId, workItemId) {
+  _inspFormClear();
+
+  // Use passed projectId, or fall back to active project
+  const resolvedProjectId = projectId || _activeProjectId || null;
+
+  // Render project field
+  _renderProjectField('insp-project-wrap', 'insp-project', 'loadInspectionWorkItems();_updateInspSubmitBtn()');
+
+  if (resolvedProjectId) {
+    const sel = document.getElementById('insp-project');
+    if (sel) sel.value = resolvedProjectId;
+    await loadInspectionWorkItems(workItemId); // also calls _updateInspSubmitBtn
+    if (workItemId) {
+      document.getElementById('insp-work-item').value = workItemId;
+      const chosen = document.getElementById('insp-work-item').options[document.getElementById('insp-work-item').selectedIndex];
+      if (chosen.dataset.loc) document.getElementById('insp-location').value = chosen.dataset.loc;
+    }
+  } else {
+    _updateInspSubmitBtn();
+  }
+
+  // Default date = today
+  document.getElementById('insp-date').value = new Date().toISOString().slice(0, 10);
+
+  openM('m-new-inspection');
+}
+
+async function openEditInspection(id) {
+  const { data: o, error } = await db.from('inspection_orders').select('*').eq('id', id).single();
+  if (error || !o) return;
+
+  _inspFormClear();
+
+  // In edit mode: lock project as badge
+  const inspWrap = document.getElementById('insp-project-wrap');
+  const inspProj = _allProjects.find(x => x.id === o.project_id);
+  if (inspWrap && inspProj) {
+    inspWrap.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#F1F5F9;border:1.5px solid #E2E8F0;border-radius:8px">
+      <i class="ti ti-building" style="color:#6B7280;font-size:14px;flex-shrink:0"></i>
+      <span style="font-size:13px;font-weight:600;color:#374151;flex:1">${inspProj.name}</span>
+    </div>
+    <select id="insp-project" style="display:none"><option value="${inspProj.id}" selected>${inspProj.name}</option></select>`;
+  }
+
+  document.getElementById('insp-id').value            = o.id;
+  await loadInspectionWorkItems(o.work_item_id);
+  document.getElementById('insp-work-item').value     = o.work_item_id || '';
+  document.getElementById('insp-location').value      = o.location || '';
+  document.getElementById('insp-inspector').value     = o.inspector_name || '';
+  document.getElementById('insp-contractor').value    = o.contractor || '';
+  document.getElementById('insp-date').value          = o.scheduled_date || '';
+  document.getElementById('insp-time').value          = o.scheduled_time ? o.scheduled_time.slice(0,5) : '';
+  document.getElementById('insp-notes').value          = o.notes || '';
+  document.getElementById('insp-lab').value            = o.lab_name || '';
+  document.getElementById('insp-producer').value       = o.producer || '';
+  document.getElementById('insp-material').value       = o.material || '';
+  document.getElementById('insp-quantity').value       = o.quantity || '';
+  document.getElementById('insp-side').value           = o.side || '';
+  document.getElementById('insp-time-prec').value      = o.time_precision || 'משוער';
+  document.getElementById('insp-status').value         = o.status || 'pending';
+  document.getElementById('insp-result').value         = o.result || '';
+  document.getElementById('insp-result-notes').value   = o.result_notes || '';
+
+  document.getElementById('insp-result-section').style.display = '';
+  document.getElementById('insp-modal-ttl').firstChild.textContent = 'עריכת הזמנת בדיקה';
+  const _esb = document.getElementById('insp-submit-btn');
+  _esb.innerHTML = '<i class="ti ti-device-floppy"></i>שמור שינויים';
+  _esb.setAttribute('onclick', 'submitInspection()');
+  const _sob = document.getElementById('insp-save-only-btn');
+  if (_sob) _sob.style.display = 'none';
+
+  // תעודת מעבדה
+  const certSection  = document.getElementById('insp-cert-section');
+  const noCertMsg    = document.getElementById('insp-no-cert-msg');
+  if (o.certificate_url) {
+    certSection.style.display  = 'flex';
+    noCertMsg.style.display    = 'none';
+    document.getElementById('insp-cert-link').href = o.certificate_url;
+    // הצג תאריך עדכון אם אפשר לחלץ מה-URL
+    const tsMatch = o.certificate_url.match(/_(\d{13})\.pdf/);
+    if (tsMatch) {
+      const d = new Date(parseInt(tsMatch[1]));
+      document.getElementById('insp-cert-date').textContent =
+        'הועלתה ' + d.toLocaleDateString('he-IL') + ' ' + d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+    } else {
+      document.getElementById('insp-cert-date').textContent = '';
+    }
+  } else {
+    certSection.style.display  = 'none';
+    noCertMsg.style.display    = '';
+  }
+
+  openM('m-new-inspection');
+}
+
+// ─── QUICK RESULT ─────────────────────────────────────────
+
+async function openQuickResult(orderId) {
+  const { data: o, error } = await db.from('inspection_orders')
+    .select('id, status, result, result_notes, inspector_name, scheduled_date, project_id')
+    .eq('id', orderId).single();
+  if (error || !o) { showToast('שגיאה בטעינת ההזמנה', 'error'); return; }
+
+  document.getElementById('qr-id').value       = o.id;
+  document.getElementById('qr-status').value   = o.status || 'pending';
+  document.getElementById('qr-result').value   = o.result || '';
+  document.getElementById('qr-notes').value    = o.result_notes || '';
+  document.getElementById('qr-err').textContent = '';
+
+  const proj    = _allProjects.find(p => p.id === o.project_id);
+  const dateStr = o.scheduled_date ? new Date(o.scheduled_date + 'T12:00').toLocaleDateString('he-IL') : '';
+  document.getElementById('qr-desc').textContent =
+    [proj?.name, o.inspector_name, dateStr].filter(Boolean).join(' · ');
+
+  // אם סטטוס ממתין → עבור אוטומטית ל"בוצע"
+  if (o.status === 'pending') {
+    document.getElementById('qr-status').value = 'completed';
+  }
+
+  openM('m-quick-result');
+}
+
+async function saveQuickResult() {
+  const id     = document.getElementById('qr-id').value;
+  const status = document.getElementById('qr-status').value;
+  const result = document.getElementById('qr-result').value;
+  const notes  = document.getElementById('qr-notes').value.trim();
+  const errEl  = document.getElementById('qr-err');
+  errEl.textContent = '';
+
+  const { error } = await db.from('inspection_orders')
+    .update({ status, result: result || null, result_notes: notes || null })
+    .eq('id', id);
+
+  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+
+  closeById('m-quick-result');
+  await loadInspectionsScreen();
+}
+
+function _updateInspSubmitBtn() {
+  // אם הפרויקט שנבחר מוגדר עם מייל מעבדה — הכפתור הראשי הופך ל"צור ושלח"
+  const isEditMode = !!document.getElementById('insp-id').value;
+  if (isEditMode) return; // במצב עריכה אין שינוי בכפתורים
+
+  const projectId  = document.getElementById('insp-project').value;
+  const project    = _allProjects.find(p => p.id === projectId);
+  const hasLabMail = !!(project?.lab_email);
+
+  const sb   = document.getElementById('insp-submit-btn');
+  const sob  = document.getElementById('insp-save-only-btn');
+  const hint = document.getElementById('insp-lab-hint');
+
+  if (!projectId) {
+    if (hint) hint.style.display = 'none';
+  } else if (hasLabMail) {
+    sb.innerHTML = '<i class="ti ti-mail-forward"></i>צור ושלח למעבדה';
+    sb.setAttribute('onclick', 'submitInspectionAndSend()');
+    if (sob) { sob.style.display = ''; sob.setAttribute('onclick', 'submitInspection()'); }
+    if (hint) {
+      hint.style.display = 'flex';
+      hint.innerHTML = '<i class="ti ti-mail-check" style="color:#16A34A;font-size:13px"></i><span style="color:#166534">הזמנה תישלח אוטומטית ל-' + project.lab_email + '</span>';
+    }
+  } else {
+    sb.innerHTML = '<i class="ti ti-calendar-check"></i>צור הזמנה';
+    sb.setAttribute('onclick', 'submitInspection()');
+    if (sob) sob.style.display = 'none';
+    if (hint) {
+      hint.style.display = project ? 'flex' : 'none';
+      hint.innerHTML = '<i class="ti ti-mail-off" style="color:#D97706;font-size:13px"></i><span style="color:#92400E">לפרויקט זה לא מוגדר מייל מעבדה — </span><span style="color:#185FA5;cursor:pointer;text-decoration:underline" onclick="closeById(\'m-new-inspection\');setTimeout(()=>openProjectDetail(\''+projectId+'\'),150)">הגדר בפרטי הפרויקט</span>';
+    }
+  }
+}
+
+async function submitInspectionAndSend() {
+  // ── שלב 1: ולידציה סינכרונית לפני פתיחת popup ──────────
+  const errEl = document.getElementById('insp-err');
+  errEl.textContent = '';
+  const p = _inspFormPayload();
+  if (!p.project_id)      { errEl.textContent = 'יש לבחור פרויקט'; return; }
+  if (!p.inspector_name)  { errEl.textContent = 'שם הבודק הוא שדה חובה'; return; }
+  if (!p.scheduled_date)  { errEl.textContent = 'תאריך בדיקה הוא שדה חובה'; return; }
+
+  const project = _allProjects.find(pr => pr.id === p.project_id);
+  if (!project?.lab_email) { errEl.textContent = 'לא הוגדר מייל מעבדה לפרויקט — עדכן בפרטי הפרויקט'; return; }
+
+  // ── שלב 2: פתח popup לפני כל await ──────────────────────
+  const win = window.open('', '_blank', 'width=860,height=700,left=100,top=100');
+  if (!win) { errEl.textContent = 'אנא אפשר חלונות קופצים בדפדפן'; return; }
+  win.document.write('<html dir="rtl"><body style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:Arial,sans-serif;font-size:15px;color:#1A2B4A;background:#EEF4FB">שומר הזמנה…</body></html>');
+  win.document.close();
+
+  // ── שלב 3: שמור ב-DB ─────────────────────────────────────
+  const btn = document.getElementById('insp-submit-btn');
+  btn.disabled = true;
+
+  const { data: newOrder, error: insErr } = await db
+    .from('inspection_orders')
+    .insert({ ...p, created_by: currentUserId, company_id: currentCompanyId })
+    .select()
+    .single();
+
+  if (insErr || !newOrder) {
+    btn.disabled = false;
+    win.close();
+    errEl.textContent = 'שגיאה: ' + (insErr?.message || 'לא ניתן לשמור הזמנה');
+    return;
+  }
+
+  // ── שלב 4: ייצר PDF ────────────────────────────────────────
+  const orderNum    = newOrder.id.slice(-6).toUpperCase();
+  const storagePath = `inspection-orders/order_${orderNum}.pdf`;
+
+  let pdfUrl = null;
+
+  try {
+    let workItem = null, checks = [];
+    if (newOrder.work_item_id) {
+      const { data: wi } = await db.from('work_items').select('*').eq('id', newOrder.work_item_id).single();
+      workItem = wi;
+      const { data: ci } = await db.from('checklist_instances')
+        .select('*').eq('work_item_id', newOrder.work_item_id).order('task_order');
+      checks = ci || [];
+    }
+
+    const html = buildInspectionOrderHTML(newOrder, project, workItem, checks);
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+
+    const ab = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('timeout')), 30000);
+      function handler(e) {
+        if (e.source !== win) return;
+        window.removeEventListener('message', handler);
+        clearTimeout(timer);
+        if (e.data?.type === 'qafield_pdf')       resolve(e.data.data);
+        if (e.data?.type === 'qafield_pdf_error') reject(new Error(e.data.error));
+      }
+      window.addEventListener('message', handler);
+    });
+
+    const pdfBlob = new Blob([ab], { type: 'application/pdf' });
+    const { data: sd } = await db.auth.getSession();
+    const token = sd?.session?.access_token;
+    const resp = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/documents/${storagePath}`,
+      { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/pdf', 'x-upsert': 'true' }, body: pdfBlob }
+    );
+    if (resp.ok) {
+      pdfUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${storagePath}`;
+      await db.from('inspection_orders').update({ pdf_url: pdfUrl }).eq('id', newOrder.id);
+    }
+  } catch(e) {
+    console.warn('submitInspectionAndSend: PDF error', e);
+  }
+
+  win.close();
+  btn.disabled = false;
+
+  // ── שלב 5: בנה mailto ────────────────────────────────────
+  const dateStr  = newOrder.scheduled_date
+    ? new Date(newOrder.scheduled_date + 'T12:00').toLocaleDateString('he-IL') : '–';
+  const timeStr  = newOrder.scheduled_time || '';
+  const pdfLine  = pdfUrl ? `\nטופס הזמנת הבדיקה (PDF):\n${pdfUrl}\n` : '';
+
+  const uploadParams = new URLSearchParams({
+    lab_upload: '',
+    order:      orderNum,
+    project:    project.name,
+    date:       dateStr + (timeStr ? ' ' + timeStr : ''),
+    location:   newOrder.location        || '',
+    inspector:  newOrder.inspector_name  || '',
+    contractor: newOrder.contractor      || '',
+  });
+  const uploadUrl = window.location.origin + window.location.pathname + '?' + uploadParams.toString();
+
+  const subject = encodeURIComponent(`בקשת בדיקת מעבדה — הזמנה #${orderNum} | ${project.name}`);
+  const body    = encodeURIComponent(
+    `שלום,\n\nהועברה לטיפולכם בקשת בדיקת מעבדה:\n\n` +
+    `פרויקט: ${project.name}\n` +
+    `מספר הזמנה: #${orderNum}\n` +
+    `מיקום: ${newOrder.location || '–'}\n` +
+    `תאריך: ${dateStr}${timeStr ? ' ' + timeStr : ''}\n` +
+    `בודק: ${newOrder.inspector_name || '–'}\n` +
+    `קבלן: ${newOrder.contractor || '–'}\n` +
+    (newOrder.notes ? `הערות: ${newOrder.notes}\n` : '') +
+    pdfLine +
+    `\n----\nלחצו על הקישור הבא כדי להעלות את תעודת המעבדה:\n${uploadUrl}\n\n` +
+    `(מספר ההזמנה ממולא אוטומטית — אין צורך להקליד)\n\n` +
+    `בברכה`
+  );
+
+  // ── שלב 6: סגור מודל, רענן טבלה, פתח Outlook ────────────
+  closeById('m-new-inspection');
+  await loadInspectionsScreen();
+
+  window.location.href = `mailto:${project.lab_email}?subject=${subject}&body=${body}`;
+}
+
+async function submitInspection() {
+  const errEl = document.getElementById('insp-err');
+  errEl.textContent = '';
+  const p = _inspFormPayload();
+  if (!p.project_id) { errEl.textContent = 'יש לבחור פרויקט'; return; }
+  if (!p.inspector_name) { errEl.textContent = 'שם הבודק הוא שדה חובה'; return; }
+  if (!p.scheduled_date) { errEl.textContent = 'תאריך בדיקה הוא שדה חובה'; return; }
+
+  const editId = document.getElementById('insp-id').value;
+  const btn = document.getElementById('insp-submit-btn');
+  btn.disabled = true;
+
+  let error;
+  if (editId) {
+    ({ error } = await db.from('inspection_orders').update(p).eq('id', editId));
+  } else {
+    ({ error } = await db.from('inspection_orders').insert({ ...p, created_by: currentUserId, company_id: currentCompanyId }));
+  }
+
+  btn.disabled = false;
+  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+
+  closeById('m-new-inspection');
+  await loadInspectionsScreen();
+}
+
+// ─── INSPECTION PDF ──────────────────────────────────────
+
+async function openInspectionPDF(orderId) {
+  // פתח חלון מיד — לפני כל await, אחרת Chrome חוסם פופ-אפ
+  const win = window.open('', '_blank', 'width=860,height=700');
+  if (!win) { showToast('אנא אפשר חלונות קופצים בדפדפן', 'error'); return; }
+  win.document.write('<html dir="rtl"><body style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:Arial,sans-serif;font-size:16px;color:#1A2B4A;background:#EEF4FB">טוען נתונים…</body></html>');
+  win.document.close();
+
+  const { data: order, error } = await db.from('inspection_orders').select('*').eq('id', orderId).single();
+  if (error || !order) { win.close(); alert('שגיאה בטעינת ההזמנה'); return; }
+
+  const project  = _allProjects.find(p => p.id === order.project_id);
+  const orderNum = order.id.slice(-6).toUpperCase();
+
+  let workItem = null, checks = [];
+  if (order.work_item_id) {
+    const { data: wi } = await db.from('work_items').select('*').eq('id', order.work_item_id).single();
+    workItem = wi;
+    const { data: ci } = await db.from('checklist_instances')
+      .select('*').eq('work_item_id', order.work_item_id).order('task_order');
+    checks = ci || [];
+  }
+
+  const html         = buildInspectionOrderHTML(order, project, workItem, checks);
+  const downloadName = `הזמנת_בדיקה_${orderNum}.pdf`;
+  const storagePath  = `inspection-orders/order_${orderNum}.pdf`;
+
+  // כתוב את ה-HTML לחלון — הוא כולל סקריפטים שייצרו PDF וישלחו חזרה
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+
+  showToast('מייצר PDF…', 'info');
+
+  // המתן ל-postMessage עם ה-PDF מהחלון הצאצא
+  let pdfBlob;
+  try {
+    const ab = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('timeout — לא התקבל PDF תוך 30 שניות')), 30000);
+      function handler(e) {
+        if (e.source !== win) return;
+        window.removeEventListener('message', handler);
+        clearTimeout(timer);
+        if (e.data?.type === 'qafield_pdf')       resolve(e.data.data);
+        if (e.data?.type === 'qafield_pdf_error') reject(new Error(e.data.error));
+      }
+      window.addEventListener('message', handler);
+    });
+    pdfBlob = new Blob([ab], { type: 'application/pdf' });
+  } catch(e) {
+    if (!win.closed) win.close();
+    showToast('שגיאה ביצירת PDF: ' + e.message, 'error');
+    console.error('PDF generation error:', e);
+    return;
+  }
+
+  // ── הורד מיידית ──
+  const dlUrl = URL.createObjectURL(pdfBlob);
+  const a = document.createElement('a');
+  a.href = dlUrl; a.download = downloadName;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(dlUrl); a.remove(); }, 1500);
+
+  // ── שמור ל-Storage ותייק להזמנה ──
+  try {
+    const { data: sd } = await db.auth.getSession();
+    const token = sd?.session?.access_token;
+    if (!token) throw new Error('אין session');
+
+    const resp = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/documents/${storagePath}`,
+      { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/pdf', 'x-upsert': 'true' }, body: pdfBlob }
+    );
+
+    if (resp.ok) {
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${storagePath}`;
+      await db.from('inspection_orders').update({ pdf_url: publicUrl }).eq('id', orderId);
+      showToast('PDF הורד ותויק להזמנה ✓', 'success');
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      showToast('PDF הורד — שגיאה בתיוק: ' + (err.message || resp.status), 'error');
+    }
+  } catch(e) {
+    showToast('PDF הורד — שגיאה בשמירה: ' + e.message, 'error');
+  } finally {
+    loadInspectionsScreen();
+  }
+}
+
+
+// הורדת קובץ PDF שמור
+async function downloadOrderFile(url, orderNum) {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('שגיאת רשת');
+    const blob = await resp.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `הזמנת_בדיקה_${orderNum}.pdf`;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  } catch(e) {
+    window.open(url, '_blank');
+  }
+}
+
+function buildInspectionOrderHTML(order, project, wi, checks) {
+  const fmtDate     = d => d ? new Date(d + 'T12:00').toLocaleDateString('he-IL') : '–';
+  const fmtTime     = t => t ? t.slice(0, 5) : '–';
+  const orderNum    = order.id.slice(-6).toUpperCase();
+  const today       = new Date().toLocaleDateString('he-IL');
+  const statusHe    = { pending:'ממתינה', completed:'בוצעה', cancelled:'בוטלה' }[order.status] || order.status || '–';
+  const companyLogo = currentCompany?.logo_url || '';
+  const companyName = currentCompany?.name     || '';
+  const locationText = order.location || (wi ? [wi.structure, wi.sub_structure, wi.element].filter(Boolean).join(' / ') : '–');
+
+  const locationTableBody = wi
+    ? `<tr>
+        <td>${wi.sub_project   || '–'}</td>
+        <td>${wi.structure     || '–'}</td>
+        <td>${wi.sub_structure || '–'}</td>
+        <td>${wi.element       || '–'}</td>
+        <td style="text-align:center">${wi.section_from ?? '–'}</td>
+        <td style="text-align:center">${wi.section_to   ?? '–'}</td>
+        <td style="text-align:center">${order.side || '–'}</td>
+      </tr>`
+    : '<tr><td colspan="7" style="text-align:center;color:#718096;padding:10px">לא נבחר פריט עבודה</td></tr>';
+
+  const checkRows = checks.length > 0
+    ? checks.map(c => `<tr>
+        <td style="text-align:center;color:#718096">–</td>
+        <td>${c.task_name}</td>
+        <td style="text-align:center">1</td>
+        <td style="text-align:center">${c.is_checked ? '&#10003;' : ''}</td>
+        <td></td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" style="text-align:center;color:#718096;padding:12px">אין בדיקות מוגדרות לפריט זה</td></tr>';
+
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>הזמנת_בדיקה_${orderNum}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;font-size:10pt;direction:rtl;color:#1e293b;background:#fff;padding:20px 26px}
+
+  /* HEADER */
+  .page-hdr{background:#1A2B4A;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-radius:4px;margin-bottom:12px}
+  .hdr-right{display:flex;align-items:center;gap:12px}
+  .company-logo{max-height:52px;max-width:130px;object-fit:contain;border-radius:3px;background:#fff;padding:3px}
+  .brand-name{font-size:15pt;font-weight:900;letter-spacing:1px}
+  .brand-sub{font-size:9pt;color:#93C5FD;margin-top:2px}
+  .company-name-hdr{font-size:12pt;font-weight:800;letter-spacing:.5px}
+  .order-block{text-align:left}
+  .order-num{font-size:18pt;font-weight:900;letter-spacing:3px;font-family:monospace}
+  .order-tag{font-size:7.5pt;color:#93C5FD;letter-spacing:1px}
+
+  /* DOC TITLE */
+  .doc-title{background:#EBF4FF;border:1px solid #BEE3F8;border-radius:3px;padding:7px 14px;margin-bottom:12px;font-size:10.5pt;font-weight:700;color:#1A2B4A;text-align:center}
+
+  /* TABLES */
+  table{width:100%;border-collapse:collapse;margin-bottom:11px;font-size:9.5pt}
+  td,th{border:1px solid #BEE3F8;padding:5px 9px;text-align:right;vertical-align:middle}
+
+  /* DETAILS TABLE */
+  .lbl{background:#EBF4FF;font-weight:700;color:#1A2B4A;width:132px;white-space:nowrap}
+
+  /* LOCATION & CHECKLIST HEADERS */
+  .tbl-hdr{background:#1A2B4A;color:#fff;font-weight:700;text-align:center;font-size:9.5pt;padding:7px}
+  .col-hdr{background:#DBEAFE;font-weight:700;color:#1A2B4A;text-align:center;white-space:nowrap}
+
+  /* FOOTER */
+  .page-ftr{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #BEE3F8;padding-top:8px;margin-top:6px;font-size:8pt;color:#718096}
+
+  @media print{body{padding:7mm 9mm}@page{size:A4;margin:7mm 9mm}}
+</style>
+</head>
+<body>
+
+<div class="page-hdr">
+  <div class="hdr-right">
+    ${companyLogo ? `<img class="company-logo" src="${companyLogo}" alt="לוגו">` : ''}
+    <div>
+      ${companyName ? `<div class="company-name-hdr">${companyName}</div>` : '<div class="brand-name">QAField</div>'}
+      <div class="brand-sub">${companyName ? 'מונע על-ידי QAField' : 'מערכת ניהול איכות ובטיחות בנייה'}</div>
+    </div>
+  </div>
+  <div class="order-block">
+    <div class="order-tag">מספר הזמנה</div>
+    <div class="order-num">#${orderNum}</div>
+  </div>
+</div>
+
+<div class="doc-title">
+  הזמנת בדיקה שוטפת מס ${orderNum} על-ידי ${order.inspector_name || '–'} בתאריך ${fmtDate(order.scheduled_date)}
+</div>
+
+<table>
+  <tr>
+    <td class="lbl">תאריך ביצוע מבוקש</td><td>${fmtDate(order.scheduled_date)}</td>
+    <td class="lbl">מבדקה מבצעת</td><td>${order.lab_name || '–'}</td>
+  </tr>
+  <tr>
+    <td class="lbl">שעת ביצוע מבוקשת</td><td>${fmtTime(order.scheduled_time)}</td>
+    <td class="lbl">קבלן</td><td>${order.contractor || '–'}</td>
+  </tr>
+  <tr>
+    <td class="lbl">דיוק בשעת הנטילה</td><td>${order.time_precision || 'משוער'}</td>
+    <td class="lbl">יצרן</td><td>${order.producer || '–'}</td>
+  </tr>
+  <tr>
+    <td class="lbl">כמות</td><td>${order.quantity || '–'}</td>
+    <td class="lbl">חומר נבדק</td><td>${order.material || '–'}</td>
+  </tr>
+  <tr>
+    <td class="lbl">שם המזמין</td><td>${order.inspector_name || '–'}</td>
+    <td class="lbl">שם הפרויקט</td><td>${project?.name || '–'}</td>
+  </tr>
+  <tr>
+    <td class="lbl">סטאטוס</td><td>${statusHe}</td>
+    <td class="lbl">נתוני מיקום</td><td>${locationText}</td>
+  </tr>
+</table>
+
+<table>
+  <thead>
+    <tr>
+      <th class="col-hdr">תת פרויקט</th>
+      <th class="col-hdr">מבנה</th>
+      <th class="col-hdr">חלק המבנה</th>
+      <th class="col-hdr">אלמנט</th>
+      <th class="col-hdr" style="width:55px">מ</th>
+      <th class="col-hdr" style="width:55px">עד</th>
+      <th class="col-hdr" style="width:65px">צד</th>
+    </tr>
+  </thead>
+  <tbody>${locationTableBody}</tbody>
+</table>
+
+<table>
+  <thead>
+    <tr><td colspan="5" class="tbl-hdr">בדיקות לביצוע</td></tr>
+    <tr>
+      <th class="col-hdr" style="width:88px">נוהל</th>
+      <th class="col-hdr">שם בדיקה</th>
+      <th class="col-hdr" style="width:88px">כמות תעודות</th>
+      <th class="col-hdr" style="width:95px">בקרה סטטיסטית</th>
+      <th class="col-hdr" style="width:100px">תעודת ייחוס</th>
+    </tr>
+  </thead>
+  <tbody>${checkRows}</tbody>
+</table>
+
+<div class="page-ftr">
+  <span>הופק: ${today}</span>
+  <span>QAField — מערכת ניהול איכות ובטיחות בנייה</span>
+  <span>#${orderNum}</span>
+</div>
+
+<div id="_qa_overlay" style="position:fixed;inset:0;background:rgba(26,43,74,.85);display:flex;align-items:center;justify-content:center;z-index:9999">
+  <div style="color:#fff;font-family:Arial;font-size:15px;font-weight:700;letter-spacing:.5px">מייצר PDF…</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+<script>
+window.addEventListener('load', async function() {
+  const overlay = document.getElementById('_qa_overlay');
+  try {
+    overlay.style.display = 'none';
+    await new Promise(r => setTimeout(r, 500));
+    const { jsPDF } = window.jspdf;
+    const canvas = await html2canvas(document.body, {
+      scale: 2, useCORS: true, allowTaint: false,
+      backgroundColor: '#ffffff', logging: false,
+      width: 794, windowWidth: 794,
+    });
+    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
+    const imgD = canvas.toDataURL('image/jpeg', 0.93);
+    const ih = (canvas.height / canvas.width) * pw;
+    if (ih <= ph) {
+      pdf.addImage(imgD, 'JPEG', 0, 0, pw, ih);
+    } else {
+      let y = 0, p = 0;
+      while (y < ih && p < 15) {
+        if (p > 0) pdf.addPage();
+        pdf.addImage(imgD, 'JPEG', 0, -y, pw, ih);
+        y += ph; p++;
+      }
+    }
+    const ab = pdf.output('arraybuffer');
+    if (window.opener) {
+      window.opener.postMessage({ type: 'qafield_pdf', data: ab }, '*', [ab]);
+    }
+    window.close();
+  } catch(err) {
+    if (overlay) overlay.style.display = 'none';
+    if (window.opener) {
+      window.opener.postMessage({ type: 'qafield_pdf_error', error: err.message }, '*');
+    }
+    window.print();
+  }
+});
+<\/script>
+</body></html>`;
+}
+
+// ─── TOAST ───────────────────────────────────────────────
+
+function showToast(msg, type = 'info') {
+  const colors = { success: '#2E7D32', error: '#C0392B', info: '#185FA5' };
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position:'fixed', bottom:'28px', left:'50%', transform:'translateX(-50%)',
+    background: colors[type] || colors.info, color:'#fff',
+    padding:'10px 22px', borderRadius:'8px', fontSize:'13px',
+    fontWeight:'600', boxShadow:'0 4px 16px rgba(0,0,0,.22)',
+    zIndex:'99999', opacity:'0', transition:'opacity .25s',
+    direction:'rtl', whiteSpace:'nowrap',
+  });
+  document.body.appendChild(t);
+  requestAnimationFrame(() => { t.style.opacity = '1'; });
+  setTimeout(() => {
+    t.style.opacity = '0';
+    setTimeout(() => t.remove(), 300);
+  }, 3000);
+}
+
+// ─── SEND TO LAB ─────────────────────────────────────────
+
+async function sendToLab(orderId) {
+  // פותחים חלון לפני כל await — נדרש למניעת חסימת popup
+  // אם יש כבר pdf_url נסגור אותו מיד, אחרת נשתמש בו לייצור PDF
+  const win = window.open('', '_blank', 'width=860,height=700,left=100,top=100');
+  if (!win) { showToast('אנא אפשר חלונות קופצים בדפדפן', 'error'); return; }
+  win.document.write('<html dir="rtl"><body style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:Arial,sans-serif;font-size:15px;color:#1A2B4A;background:#EEF4FB">מכין הזמנה לשליחה…</body></html>');
+  win.document.close();
+
+  const { data: order, error } = await db.from('inspection_orders').select('*').eq('id', orderId).single();
+  if (error || !order) { win.close(); showToast('שגיאה בטעינת ההזמנה', 'error'); return; }
+
+  const project = _allProjects.find(p => p.id === order.project_id);
+  if (!project?.lab_email) {
+    win.close();
+    showToast('לא הוגדר מייל מעבדה לפרויקט זה — עדכן בפרטי הפרויקט', 'error');
+    return;
+  }
+
+  let pdfUrl = order.pdf_url;
+
+  if (!pdfUrl) {
+    // אין PDF שמור — ניצור ונעלה ל-Storage
+    const orderNum    = order.id.slice(-6).toUpperCase();
+    const storagePath = `inspection-orders/order_${orderNum}.pdf`;
+
+    let workItem = null, checks = [];
+    if (order.work_item_id) {
+      const { data: wi } = await db.from('work_items').select('*').eq('id', order.work_item_id).single();
+      workItem = wi;
+      const { data: ci } = await db.from('checklist_instances')
+        .select('*').eq('work_item_id', order.work_item_id).order('task_order');
+      checks = ci || [];
+    }
+
+    const html = buildInspectionOrderHTML(order, project, workItem, checks);
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    showToast('מייצר PDF להזמנה…', 'info');
+
+    try {
+      const ab = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('timeout')), 30000);
+        function handler(e) {
+          if (e.source !== win) return;
+          window.removeEventListener('message', handler);
+          clearTimeout(timer);
+          if (e.data?.type === 'qafield_pdf')       resolve(e.data.data);
+          if (e.data?.type === 'qafield_pdf_error') reject(new Error(e.data.error));
+        }
+        window.addEventListener('message', handler);
+      });
+      const pdfBlob = new Blob([ab], { type: 'application/pdf' });
+      const { data: sd } = await db.auth.getSession();
+      const token = sd?.session?.access_token;
+      const resp = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/documents/${storagePath}`,
+        { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/pdf', 'x-upsert': 'true' }, body: pdfBlob }
+      );
+      if (resp.ok) {
+        pdfUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${storagePath}`;
+        await db.from('inspection_orders').update({ pdf_url: pdfUrl }).eq('id', orderId);
+      } else {
+        console.warn('sendToLab: PDF upload failed', await resp.text());
+      }
+    } catch(e) {
+      console.error('sendToLab PDF error:', e);
+    }
+  }
+
+  win.close();
+
+  // בנה וכתוב mailto
+  const orderNum  = order.id.slice(-6).toUpperCase();
+  const dateStr   = order.scheduled_date
+    ? new Date(order.scheduled_date + 'T12:00').toLocaleDateString('he-IL') : '–';
+  const timeStr   = order.scheduled_time || '';
+  const pdfLine   = pdfUrl
+    ? `\nטופס הזמנת הבדיקה (PDF):\n${pdfUrl}\n`
+    : '';
+
+  // בנה URL עם פרטי ההזמנה מוטמעים — ללא קריאת DB בדף הציבורי
+  const uploadParams = new URLSearchParams({
+    lab_upload: '',
+    order:      orderNum,
+    project:    project.name,
+    date:       dateStr + (timeStr ? ' ' + timeStr : ''),
+    location:   order.location   || '',
+    inspector:  order.inspector_name || '',
+    contractor: order.contractor || '',
+  });
+  const uploadUrl = window.location.origin + window.location.pathname + '?' + uploadParams.toString();
+
+  const subject = encodeURIComponent(`בקשת בדיקת מעבדה — הזמנה #${orderNum} | ${project.name}`);
+  const body    = encodeURIComponent(
+    `שלום,\n\nהועברה לטיפולכם בקשת בדיקת מעבדה:\n\n` +
+    `פרויקט: ${project.name}\n` +
+    `מספר הזמנה: #${orderNum}\n` +
+    `מיקום: ${order.location || '–'}\n` +
+    `תאריך: ${dateStr}${timeStr ? ' ' + timeStr : ''}\n` +
+    `בודק: ${order.inspector_name || '–'}\n` +
+    `קבלן: ${order.contractor || '–'}\n` +
+    (order.notes ? `הערות: ${order.notes}\n` : '') +
+    pdfLine +
+    `\n----\nלחצו על הקישור הבא כדי להעלות את תעודת המעבדה:\n${uploadUrl}\n\n` +
+    `(מספר ההזמנה ממולא אוטומטית — אין צורך להקליד)\n\n` +
+    `בברכה`
+  );
+
+  window.location.href = `mailto:${project.lab_email}?subject=${subject}&body=${body}`;
+}
+
+// ─── LAB UPLOAD PAGE ─────────────────────────────────────
+
+let _labFile = null;
+window._labOrderLocked = false;
+
+function showLabUploadPage() {
+  document.body.innerHTML = `
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;display:flex;align-items:center;justify-content:center;min-height:100vh;direction:rtl}
+.lab-card{background:#fff;border-radius:16px;padding:40px;width:500px;max-width:95vw;box-shadow:0 4px 24px rgba(0,0,0,.10)}
+.lab-brand{color:#185FA5;font-size:20px;font-weight:800;letter-spacing:-.3px}
+.lab-brand-sub{color:#9AA3B0;font-size:12px;margin-bottom:28px}
+.lab-ttl{font-size:22px;font-weight:700;color:#1A2332;margin-bottom:6px}
+.lab-desc{font-size:13px;color:#6B7280;margin-bottom:24px;line-height:1.6}
+.lbl{font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px}
+.inp{width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:14px;outline:none;transition:border .2s}
+.inp:focus{border-color:#185FA5}
+.drop-zone{border:2px dashed #CBD5E1;border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;margin:14px 0;position:relative;background:#FAFBFC}
+.drop-zone:hover,.drop-zone.over{border-color:#185FA5;background:#EFF6FF}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{font-size:36px;margin-bottom:8px}
+.dz-text{color:#6B7280;font-size:14px}
+.dz-fname{color:#185FA5;font-weight:600;font-size:14px;margin-top:6px;word-break:break-all}
+.auto-tag{display:inline-block;background:#D1FAE5;color:#065F46;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;vertical-align:middle}
+.inp-row{display:flex;align-items:flex-end;gap:10px}
+.inp-row .inp{flex:1;text-transform:uppercase;direction:ltr;text-align:left;letter-spacing:.1em;font-size:16px;font-weight:600}
+.hint{font-size:11px;color:#9AA3B0;margin-top:4px}
+.btn-up{width:100%;padding:13px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s;margin-top:10px}
+.btn-up:hover:not(:disabled){background:#1A4E7A}
+.btn-up:disabled{opacity:.45;cursor:default}
+.sbox{margin-top:16px;padding:12px 16px;border-radius:8px;font-size:13px;line-height:1.5;display:none}
+.s-ok{background:#D1FAE5;color:#065F46;display:block}
+.s-err{background:#FEE2E2;color:#991B1B;display:block}
+.s-info{background:#DBEAFE;color:#1E40AF;display:block}
+.divider{border:none;border-top:1px solid #F1F5F9;margin:20px 0}
+.footer-note{font-size:11px;color:#9AA3B0;text-align:center;margin-top:16px}
+.order-box{background:#F0F7FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:14px 16px;margin-bottom:20px}
+.order-box-ttl{font-size:11px;font-weight:700;color:#1E40AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.order-row{display:flex;gap:6px;font-size:12px;color:#374151;margin-bottom:4px}
+.order-row:last-child{margin-bottom:0}
+.order-lbl{font-weight:600;color:#6B7280;min-width:70px}
+</style>
+<div class="lab-card">
+  <div class="lab-brand">QAField</div>
+  <div class="lab-brand-sub">מערכת ניהול איכות ובטיחות בנייה</div>
+  <div class="lab-ttl">העלאת תעודת מעבדה</div>
+  <div id="lab-order-box" class="order-box" style="display:none"></div>
+  <div class="lab-desc" id="lab-main-desc">בחרו את קובץ התעודה (PDF). המערכת תנסה לזהות את מספר ההזמנה אוטומטית מתוך הקובץ.</div>
+
+  <div class="drop-zone" id="lab-drop">
+    <input type="file" id="lab-file-input" accept="application/pdf" onchange="labFileSelected(this)">
+    <div class="dz-icon">📄</div>
+    <div class="dz-text" id="dz-text-msg">גרור PDF לכאן או לחץ לבחירה</div>
+    <div class="dz-fname" id="lab-file-name" style="display:none"></div>
+  </div>
+
+  <div style="margin-bottom:16px">
+    <label class="lbl">מספר הזמנה <span id="lab-auto-tag" class="auto-tag" style="display:none">זוהה אוטומטית</span><span id="lab-locked-tag" class="auto-tag" style="display:none;background:#DBEAFE;color:#1E40AF">מזוהה מהקישור</span></label>
+    <div class="inp-row">
+      <input class="inp" id="lab-order-num" type="text" placeholder="ABC123" maxlength="6" oninput="labUpdateSubmit()">
+    </div>
+    <div class="hint" id="lab-order-hint">6 תווים — כפי שמופיע בהזמנת הבדיקה שקיבלתם</div>
+  </div>
+
+  <button class="btn-up" id="lab-submit-btn" onclick="labSubmit()" disabled>העלה תעודה</button>
+  <div class="sbox" id="lab-status"></div>
+  <hr class="divider">
+  <div class="footer-note">העלאה מאובטחת · QAField © 2026</div>
+</div>`;
+
+  // Drag & drop
+  const dz = document.getElementById('lab-drop');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type === 'application/pdf') { _labFile = f; labUpdateFileUI(f); if (!_labOrderLocked) labExtractOrderNum(f); }
+    else if (f) labShowStatus('יש לבחור קובץ PDF בלבד', 'err');
+  });
+
+  // Pre-fill order number from URL param (?lab_upload&order=XXXXXX&project=...&date=...&location=...&inspector=...&contractor=...)
+  const _urlParams    = new URLSearchParams(window.location.search);
+  const _urlOrder     = _urlParams.get('order');
+  const _urlProject   = _urlParams.get('project')    || '';
+  const _urlDate      = _urlParams.get('date')        || '';
+  const _urlLocation  = _urlParams.get('location')   || '';
+  const _urlInspector = _urlParams.get('inspector')  || '';
+  const _urlContractor= _urlParams.get('contractor') || '';
+
+  if (_urlOrder) {
+    // Lock order number field
+    const inp = document.getElementById('lab-order-num');
+    if (inp) {
+      inp.value    = _urlOrder.toUpperCase().slice(0, 6);
+      inp.readOnly = true;
+      inp.style.cssText += ';background:#F0F9FF;color:#1E40AF;font-weight:700;cursor:default';
+      document.getElementById('lab-locked-tag').style.display = '';
+      document.getElementById('lab-order-hint').textContent   = 'מספר ההזמנה זוהה אוטומטית מהקישור שנשלח אליכם';
+      window._labOrderLocked = true;
+      labUpdateSubmit();
+    }
+
+    // Show order details box
+    const rows = [
+      ['הזמנה',   `#${_urlOrder}`],
+      _urlProject    ? ['פרויקט',   _urlProject]    : null,
+      _urlDate       ? ['תאריך',    _urlDate]        : null,
+      _urlLocation   ? ['מיקום',    _urlLocation]   : null,
+      _urlInspector  ? ['בודק',     _urlInspector]  : null,
+      _urlContractor ? ['קבלן',     _urlContractor] : null,
+    ].filter(Boolean);
+
+    const box = document.getElementById('lab-order-box');
+    if (box) {
+      box.innerHTML =
+        `<div class="order-box-ttl">פרטי הזמנת הבדיקה</div>` +
+        rows.map(([lbl, val]) =>
+          `<div class="order-row"><span class="order-lbl">${lbl}:</span><span>${val}</span></div>`
+        ).join('');
+      box.style.display = '';
+    }
+
+    // Update description
+    const desc = document.getElementById('lab-main-desc');
+    if (desc) desc.textContent = 'הזמנה זו זוהתה אוטומטית. בחרו את קובץ התעודה והעלו.';
+  }
+}
+
+function labFileSelected(input) {
+  const f = input?.files?.[0];
+  if (!f) return;
+  _labFile = f;
+  labUpdateFileUI(f);
+  labExtractOrderNum(f);
+}
+
+function labUpdateFileUI(f) {
+  const nameEl   = document.getElementById('lab-file-name');
+  const textMsg  = document.getElementById('dz-text-msg');
+  if (nameEl)  { nameEl.textContent = f.name; nameEl.style.display = ''; }
+  if (textMsg) { textMsg.style.display = 'none'; }
+  labUpdateSubmit();
+}
+
+function labUpdateSubmit() {
+  const hasFile  = !!_labFile;
+  const inp      = document.getElementById('lab-order-num');
+  const hasOrder = inp && inp.value.trim().length >= 5;
+  const btn      = document.getElementById('lab-submit-btn');
+  if (btn) btn.disabled = !(hasFile && hasOrder);
+}
+
+async function labExtractOrderNum(file) {
+  try {
+    if (!window.pdfjsLib) {
+      await new Promise((resolve, reject) => {
+        const s  = document.createElement('script');
+        s.src    = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const ab   = await file.arrayBuffer();
+    const pdf  = await pdfjsLib.getDocument({ data: ab }).promise;
+    let text   = '';
+    for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
+      const page    = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(x => x.str).join(' ') + ' ';
+    }
+
+    // Look for #XXXXXX or standalone 6-char hex block
+    const match = text.match(/[#\s\-\/]([A-Fa-f0-9]{6})(?:[^A-Fa-f0-9]|$)/);
+    if (match) {
+      const inp = document.getElementById('lab-order-num');
+      if (inp && !inp.value) {
+        inp.value = match[1].toUpperCase();
+        const tag = document.getElementById('lab-auto-tag');
+        if (tag) tag.style.display = '';
+        labUpdateSubmit();
+      }
+    }
+  } catch(e) {
+    // חילוץ נכשל בשקט — המשתמש ימלא ידנית
+  }
+}
+
+async function labSubmit() {
+  const rawNum  = document.getElementById('lab-order-num').value.trim().toUpperCase();
+  if (!rawNum || rawNum.length < 5) { labShowStatus('יש להזין מספר הזמנה תקין (5-6 תווים)', 'err'); return; }
+  if (!_labFile)                     { labShowStatus('יש לבחור קובץ PDF', 'err'); return; }
+
+  const btn         = document.getElementById('lab-submit-btn');
+  btn.disabled      = true;
+  btn.textContent   = 'מעלה...';
+  labShowStatus('מחפש הזמנה...', 'info');
+
+  try {
+    // Upload to Supabase Storage with anon key
+    const storagePath = `certificates/cert_${rawNum}_${Date.now()}.pdf`;
+    const resp = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/documents/${storagePath}`,
+      {
+        method:  'POST',
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'apikey':        SUPABASE_KEY,
+          'Content-Type':  'application/pdf',
+          'x-upsert':      'true',
+        },
+        body: _labFile,
+      }
+    );
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || `שגיאה ${resp.status} בהעלאת הקובץ`);
+    }
+
+    labShowStatus('שומר ברשומה...', 'info');
+
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${storagePath}`;
+
+    // Update inspection_orders via SECURITY DEFINER RPC (bypasses RLS)
+    const { data: rpc, error: rpcErr } = await db.rpc('submit_lab_certificate', {
+      p_order_short_id: rawNum,
+      p_cert_url:       publicUrl,
+    });
+
+    if (rpcErr) throw new Error(rpcErr.message);
+    if (!rpc?.success) throw new Error(rpc?.error || 'הזמנה לא נמצאה במערכת');
+
+    labShowStatus(`✓ התעודה הועלתה בהצלחה! הזמנה #${rawNum} עודכנה.`, 'ok');
+    btn.textContent = 'הועלה ✓';
+    _labFile = null;
+    document.getElementById('lab-file-name').style.display   = 'none';
+    document.getElementById('dz-text-msg').style.display     = '';
+    document.getElementById('lab-order-num').value           = '';
+    document.getElementById('lab-auto-tag').style.display    = 'none';
+
+  } catch(e) {
+    labShowStatus('שגיאה: ' + e.message, 'err');
+    btn.disabled    = false;
+    btn.textContent = 'העלה תעודה';
+  }
+}
+
+function labShowStatus(msg, type) {
+  const el = document.getElementById('lab-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className   = 'sbox s-' + type;
+}
+
 // ─── BOOT ────────────────────────────────────────────────
 
-checkSession();
+if (window.location.search.includes('lab_upload')) {
+  showLabUploadPage();
+} else {
+  checkSession();
+}
 </script>
 </body>
 </html>
