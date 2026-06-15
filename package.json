@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "start": "npx serve . -p 3000"
+  },
+  "devDependencies": {
+    "xlsx": "^0.18.5"
+  },
+  "dependencies": {
+    "docx": "^9.6.1"
+  }
+}
