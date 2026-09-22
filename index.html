@@ -517,11 +517,11 @@ tr:hover td{background:var(--acc-bg)!important;transition:background .15s}
 .brd-wi-chev{font-size:11px;color:var(--t5);transition:transform .15s;flex-shrink:0}
 .brd-wi-chev.open{transform:rotate(-90deg)}
 /* Checklist in details */
-.brd-cl-wrap{padding:0 0 16px;overflow-x:auto}
+.brd-cl-wrap{padding:0 0 16px}
 .brd-cl-tbl{width:100%;border-collapse:collapse;border:1px solid var(--bdr);table-layout:fixed}
 .brd-cl-tbl thead tr{background:var(--bg-b)}
-.brd-cl-tbl th{padding:10px 14px;font-size:10.5px;white-space:nowrap;color:var(--t3);font-weight:700;border-bottom:2px solid var(--bdr);border-left:1px solid var(--bdr);letter-spacing:.02em;text-align:left}
-.brd-cl-tbl td{padding:10px 14px;font-size:12.5px;border-bottom:1px solid var(--bdr);border-left:1px solid var(--bdr);vertical-align:middle;text-align:left}
+.brd-cl-tbl th{padding:8px 10px;font-size:10.5px;color:var(--t3);font-weight:700;border-bottom:2px solid var(--bdr);border-left:1px solid var(--bdr);letter-spacing:.02em;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brd-cl-tbl td{padding:10px 14px;font-size:12.5px;border-bottom:1px solid var(--bdr);border-left:1px solid var(--bdr);vertical-align:middle;text-align:right}
 .brd-cl-tbl th:first-child,.brd-cl-task{border-left:none!important}
 .brd-cl-tbl tr:last-child td{border-bottom:none}
 .brd-cl-tbl tbody tr:hover td{background:var(--acc-bg)!important}
@@ -574,9 +574,14 @@ tr:hover td{background:var(--acc-bg)!important;transition:background .15s}
 #nsb-high.active   {border-color:#DC2626;background:#FEE2E2;color:#991B1B}
 #nsb-critical.active{border-color:#7C1F1F;background:#FECACA;color:#450A0A}
 .ncr-sev-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.nc-filter-btn{border:1.5px solid var(--bdr);border-radius:20px;padding:5px 14px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;color:var(--t3);background:var(--bg);transition:all .15s}
+.nc-filter-btn:hover{background:var(--bg-c);color:var(--t1)}
+.nc-filter-btn.active{border-color:var(--acc);background:var(--acc-bg);color:var(--acc-d)}
+.nc-sum-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid}
 .ncr-sec{background:var(--bg-b);border-radius:10px;padding:14px 16px;margin-bottom:10px;border:1px solid #EEF0F4}
 .ncr-sec-label{font-size:10px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;display:flex;align-items:center;gap:5px}
-.ncr-title-input{width:100%;padding:8px 0;font-size:15px;font-weight:700;font-family:inherit;border:none;background:none;outline:none;color:#1A2332;direction:rtl}
+.ncr-title-input{width:100%;padding:9px 12px;font-size:15px;font-weight:700;font-family:inherit;border:1.5px solid var(--bdr);border-radius:8px;background:var(--bg);outline:none;color:#1A2332;direction:rtl;margin-bottom:8px}
+.ncr-title-input:focus{border-color:var(--acc)}
 .ncr-title-input::placeholder{color:var(--t5);font-weight:400}
 .ncr-attach-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
 .ncr-attach-thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#E8EDF4;border:2px solid transparent}
@@ -859,8 +864,9 @@ body.theme-light .theme-opt-check{color:#10B981!important}
       <div class="nav-item active" onclick="go('dashboard',this)"><i class="ti ti-layout-dashboard"></i>דשבורד</div>
       <div class="nav-item" onclick="go('inspections',this)"><i class="ti ti-calendar-check"></i>הזמנות בדיקה</div>
       <div class="nav-item" id="nav-nc" onclick="go('nc',this)"><i class="ti ti-alert-triangle"></i>אי-התאמות</div>
-      <div class="nav-item" id="nav-board" onclick="goBoardNav(this)"><i class="ti ti-layout-board"></i>לוח פרויקט</div>
-      <div class="nav-item" id="nav-my-tasks" onclick="go('my-tasks',this)"><i class="ti ti-list-check"></i>המשימות שלי</div>
+      <div class="nav-item" id="nav-board" onclick="goBoardNav(this)"><i class="ti ti-layout-board"></i>עץ מבנה</div>
+      <div class="nav-item" id="nav-docs" onclick="goDocsNav(this)"><i class="ti ti-folder"></i>מסמכים</div>
+
       <div class="nav-item" onclick="go('reports',this)"><i class="ti ti-chart-bar"></i>דוחות</div>
       <div class="nav-item" onclick="go('projects',this)"><i class="ti ti-building"></i>פרויקטים</div>
     </div>
@@ -1015,13 +1021,26 @@ body.theme-light .theme-opt-check{color:#10B981!important}
       <!-- FINDINGS / NC -->
       <div class="screen" id="s-nc">
         <div class="sec-hdr">
-          <h2>ממצאים</h2>
-          <button class="btn btn-p" onclick="openNewFinding()"><i class="ti ti-plus"></i>ממצא חדש</button>
+          <h2>אי-התאמות</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="exportFindingsExcel()"><i class="ti ti-file-spreadsheet"></i>ייצוא Excel</button>
+            <button class="btn btn-p" onclick="openNewFinding()"><i class="ti ti-plus"></i>אי התאמה חדשה</button>
+          </div>
         </div>
         <div id="nc-alert" style="display:none"></div>
+        <!-- Summary strip -->
+        <div id="nc-summary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"></div>
+        <!-- Grade filter pills -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          <button class="nc-filter-btn active" id="ncf-all"      onclick="setNcFilter('all')"     >הכל</button>
+          <button class="nc-filter-btn"        id="ncf-low"      onclick="setNcFilter('low')"     >דרגה 1</button>
+          <button class="nc-filter-btn"        id="ncf-medium"   onclick="setNcFilter('medium')"  >דרגה 2</button>
+          <button class="nc-filter-btn"        id="ncf-high"     onclick="setNcFilter('high')"    >דרגה 3</button>
+          <button class="nc-filter-btn"        id="ncf-critical" onclick="setNcFilter('critical')">קריטי</button>
+        </div>
         <div class="card" style="padding:0">
           <table>
-            <thead><tr><th>כותרת</th><th>פרויקט</th><th>חומרה</th><th>סטטוס</th><th>קבלן</th><th>יעד</th><th></th></tr></thead>
+            <thead><tr><th>מס'</th><th>כותרת</th><th>פרויקט</th><th>מיקום</th><th>דרגה</th><th>סטטוס</th><th>קבלן</th><th>יעד</th><th></th></tr></thead>
             <tbody id="nc-tbody">
               <tr class="loading-row"><td colspan="10"><span class="spinner"></span> טוען...</td></tr>
             </tbody>
@@ -1038,11 +1057,15 @@ body.theme-light .theme-opt-check{color:#10B981!important}
               <i class="ti ti-search" style="position:absolute;right:9px;top:50%;transform:translateY(-50%);color:#9AA3B0;font-size:14px;pointer-events:none"></i>
               <input class="form-in" id="insp-search" type="text" placeholder="חיפוש..." oninput="_filterInspTable()" style="padding:6px 30px 6px 10px;width:200px;font-size:12px">
             </div>
-            <select class="form-in" id="insp-filter-proj" onchange="loadInspectionsScreen()" style="width:180px;padding:6px 10px;font-size:12px">
-              <option value="">כל הפרויקטים</option>
-            </select>
             <button class="btn btn-p" onclick="openNewInspection()"><i class="ti ti-plus"></i>הזמנה חדשה</button>
           </div>
+        </div>
+        <div id="insp-scope-note" style="font-size:11px;color:#9AA3B0;margin-bottom:8px"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          <button class="nc-filter-btn active" id="inspf-all"       onclick="setInspFilter('all')"      >הכל</button>
+          <button class="nc-filter-btn"        id="inspf-pending"   onclick="setInspFilter('pending')"  >ממתין</button>
+          <button class="nc-filter-btn"        id="inspf-completed" onclick="setInspFilter('completed')">הושלם</button>
+          <button class="nc-filter-btn"        id="inspf-nocert"    onclick="setInspFilter('nocert')"   >ללא תעודה</button>
         </div>
         <div class="card" style="padding:0;overflow-x:auto">
           <table style="min-width:1100px">
@@ -1118,7 +1141,7 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <!-- Control bar: breadcrumb + hero progress + KPI chips -->
         <div class="brd-ctrl-bar">
           <div class="brd-breadcrumb" id="brd-breadcrumb">
-            <span class="brd-bc-item brd-bc-cur">לוח פרויקט</span>
+            <span class="brd-bc-item brd-bc-cur">עץ מבנה</span>
           </div>
           <div class="brd-hero">
             <div class="brd-circ-wrap">
@@ -1158,6 +1181,14 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <!-- Sub-project tabs (shown only when multiple sub-projects) -->
         <div class="board-tabs" id="board-tabs"></div>
 
+        <!-- General NCR action bar -->
+        <div style="padding:8px 16px;border-bottom:1px solid var(--bdr);background:var(--bg-b);display:flex;align-items:center;gap:8px">
+          <button class="brd-det-btn" onclick="openNewFinding()" style="font-size:12px">
+            <i class="ti ti-alert-triangle" style="color:#F59E0B"></i>אי התאמה כללית
+          </button>
+          <span style="font-size:11px;color:var(--t4)">— לא קשורה לשכבה ספציפית</span>
+        </div>
+
         <!-- Split view: tree (right) + details (left) -->
         <div class="brd-split">
           <!-- Tree panel -->
@@ -1180,6 +1211,28 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <span id="board-prog-txt" style="display:none">–</span>
         <div style="display:none"><div class="prog-fill" id="board-prog-bar" style="width:0%"></div></div>
         <b id="board-prog-pct" style="display:none">0%</b>
+      </div>
+
+      <!-- DOCUMENTS / FOLDERS -->
+      <div class="screen" id="s-docs">
+        <div class="sec-hdr">
+          <h2>מסמכים</h2>
+          <button class="btn btn-p" onclick="docsAddFolder(null)"><i class="ti ti-folder-plus"></i>תיקייה חדשה</button>
+        </div>
+        <div id="docs-scope-note" style="font-size:11px;color:#9AA3B0;margin-bottom:10px"></div>
+        <div class="brd-split">
+          <!-- Folder tree panel -->
+          <div class="brd-tree-pnl">
+            <div id="docs-tree"></div>
+          </div>
+          <!-- Files panel -->
+          <div class="brd-det-pnl" id="docs-files-pnl">
+            <div class="brd-det-empty">
+              <i class="ti ti-hand-click" style="font-size:30px;display:block;margin-bottom:10px;color:#C8CDD6"></i>
+              בחר תיקייה מהעץ לצפייה בקבצים
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- REPORTS -->
@@ -1591,7 +1644,7 @@ body.theme-light .theme-opt-check{color:#10B981!important}
     <div class="detail-section-hdr">ממצאים</div>
     <div class="detail-findings-wrap">
       <table>
-        <thead><tr><th>#</th><th>כותרת</th><th>חומרה</th><th>סטטוס</th><th>אחראי</th><th>תאריך יעד</th></tr></thead>
+        <thead><tr><th>#</th><th>כותרת</th><th>דרגה</th><th>סטטוס</th><th>קבלן</th><th>תאריך יעד</th></tr></thead>
         <tbody id="detail-findings-tbody"><tr class="loading-row"><td colspan="6">–</td></tr></tbody>
       </table>
     </div>
@@ -1604,7 +1657,7 @@ body.theme-light .theme-opt-check{color:#10B981!important}
     <div id="detail-members-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px"></div>
 
     <div class="modal-foot">
-      <button class="btn btn-p" onclick="closeById('m-project-detail');openProjectBoard(_currentDetailId)"><i class="ti ti-layout-board"></i>לוח פרויקט</button>
+      <button class="btn btn-p" onclick="closeById('m-project-detail');openProjectBoard(_currentDetailId)"><i class="ti ti-layout-board"></i>עץ מבנה</button>
       <button class="btn" onclick="openImportExcel(_currentDetailId)"><i class="ti ti-table-import"></i>ייבא עץ מבנה</button>
       <button class="btn" id="detail-work-tree-btn" onclick="openWorkTree(_currentDetailId)" style="display:none"><i class="ti ti-list-tree"></i>עץ מבנה <span id="detail-wi-count" class="badge b-open" style="margin-right:4px"></span></button>
       <button class="btn" id="detail-edit-btn" onclick="closeById('m-project-detail');openEditProject(_currentDetailId)" style="display:none"><i class="ti ti-pencil"></i>ערוך פרויקט</button>
@@ -1692,17 +1745,27 @@ body.theme-light .theme-opt-check{color:#10B981!important}
       <!-- כותרת + תיאור -->
       <div class="ncr-sec">
         <input class="ncr-title-input" id="nf-title" type="text" placeholder="כותרת אי-ההתאמה *">
-        <textarea class="form-in" id="nf-description" rows="3" style="margin-top:8px;resize:vertical" placeholder="פירוט המצב בשטח..."></textarea>
+        <textarea class="form-in" id="nf-description" rows="3" style="margin-top:8px;resize:vertical" placeholder="תיאור התקלה..."></textarea>
+      </div>
+
+      <!-- טיפול נדרש + תאריך התחלה -->
+      <div class="ncr-sec">
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px">
+          <div><label class="form-lbl">טיפול נדרש</label>
+            <input class="form-in" id="nf-required-treatment" type="text" placeholder="הפעולה הנדרשת לתיקון..."></div>
+          <div><label class="form-lbl">תאריך התחלה</label>
+            <input class="form-in" id="nf-start-date" type="date"></div>
+        </div>
       </div>
 
       <!-- חומרה -->
       <div class="ncr-sec">
         <div class="ncr-sec-label"><i class="ti ti-alert-triangle"></i>חומרה *</div>
         <div class="ncr-sev-row">
-          <button class="ncr-sev-btn" id="nsb-low"         onclick="selectSeverity('low')"     ><span class="ncr-sev-dot" style="background:#9CA3AF"></span>נמוכה</button>
-          <button class="ncr-sev-btn" id="nsb-medium"      onclick="selectSeverity('medium')"  ><span class="ncr-sev-dot" style="background:#D97706"></span>בינונית</button>
-          <button class="ncr-sev-btn active" id="nsb-high" onclick="selectSeverity('high')"    ><span class="ncr-sev-dot" style="background:#DC2626"></span>גבוהה</button>
-          <button class="ncr-sev-btn" id="nsb-critical"    onclick="selectSeverity('critical')"><span class="ncr-sev-dot" style="background:#7C1F1F"></span>קריטית</button>
+          <button class="ncr-sev-btn" id="nsb-low"         onclick="selectSeverity('low')"     ><span class="ncr-sev-dot" style="background:#9CA3AF"></span>דרגה 1</button>
+          <button class="ncr-sev-btn" id="nsb-medium"      onclick="selectSeverity('medium')"  ><span class="ncr-sev-dot" style="background:#D97706"></span>דרגה 2</button>
+          <button class="ncr-sev-btn active" id="nsb-high" onclick="selectSeverity('high')"    ><span class="ncr-sev-dot" style="background:#DC2626"></span>דרגה 3</button>
+          <button class="ncr-sev-btn" id="nsb-critical"    onclick="selectSeverity('critical')"><span class="ncr-sev-dot" style="background:#7C1F1F"></span>קריטי</button>
         </div>
       </div>
 
@@ -1726,30 +1789,8 @@ body.theme-light .theme-opt-check{color:#10B981!important}
       <!-- אחריות -->
       <div class="ncr-sec">
         <div class="ncr-sec-label"><i class="ti ti-users"></i>אחריות</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div><label class="form-lbl">קבלן אחראי</label>
-            <input class="form-in" id="nf-contractor" type="text" placeholder="שם הקבלן..."></div>
-          <div><label class="form-lbl">אחראי QC</label>
-            <input class="form-in" id="nf-assigned" type="text" placeholder="שם האחראי..."></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-          <div><label class="form-lbl">קטגוריה</label>
-            <select class="form-in" id="nf-category">
-              <option value="">— בחר —</option>
-              <option>עבודות עפר</option><option>בטון</option><option>תשתיות יבשות</option>
-              <option>תשתיות רטובות</option><option>אספלט</option><option>בנייה</option>
-              <option>מדרכות</option><option>נוף ופיתוח</option><option>גדרות ומעקות</option>
-              <option>שלטוט</option><option>כללי</option>
-            </select></div>
-          <div><label class="form-lbl">דיסציפלינה</label>
-            <select class="form-in" id="nf-discipline">
-              <option value="">— בחר —</option>
-              <option value="QC">QC – בקרת איכות</option><option value="בטיחות">בטיחות</option>
-              <option value="סביבה">סביבה</option><option value="הנדסה">הנדסה</option>
-              <option value="חשמל">חשמל</option><option value="מים וביוב">מים וביוב</option>
-              <option value="ניקוז">ניקוז</option><option value="תקשורת">תקשורת</option>
-            </select></div>
-        </div>
+        <div><label class="form-lbl">קבלן אחראי</label>
+          <select class="form-in" id="nf-contractor" onchange="_ncrContractorChange(this)"></select></div>
       </div>
 
       <!-- תאריכים + פותח -->
@@ -1764,11 +1805,8 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
           <div><label class="form-lbl">סטטוס</label>
-            <select class="form-in" id="nf-status">
-              <option value="open">פתוח</option>
-              <option value="in_progress">בטיפול</option>
-              <option value="closed">סגור</option>
-            </select></div>
+            <input class="form-in" id="nf-status-display" type="text" value="פתוח" disabled style="background:#F3F4F6;color:#6B7280">
+            <input type="hidden" id="nf-status" value="open"></div>
           <div><label class="form-lbl">הועבר לטיפול</label>
             <input class="form-in" id="nf-transferred" type="text" placeholder="גורם מטפל..."></div>
         </div>
@@ -2222,13 +2260,15 @@ async function initApp(user) {
   }
 
   showApp();
-  // תמיד נחיתה על הדשבורד — ניקוי active מכל סקרין/nav ומיקום מחדש
+  // נחיתה על רשימת פרויקטים
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('s-dashboard').classList.add('active');
-  document.querySelector('.nav-item[onclick*="dashboard"]')?.classList.add('active');
+  document.getElementById('s-projects').classList.add('active');
+  document.querySelector('.nav-item[onclick*="projects"]')?.classList.add('active');
+  document.getElementById('ttl').textContent = 'פרויקטים';
+  document.getElementById('topbar-sub').textContent = '';
 
-  await Promise.all([loadDashboard(), loadProjectSelect()]);
+  await Promise.all([loadProjectsScreen(), loadProjectSelect()]);
   // שחזור פרויקט שנבחר בפעם הקודמת
   const _savedProj = localStorage.getItem('qafield_proj_' + currentUserId);
   if (_savedProj && _allProjects.find(x => x.id === _savedProj)) {
@@ -2491,7 +2531,7 @@ function _renderActivityFeed(find, insp, projMap) {
         text: `נסגר: ${f.title || '–'}`, sub: projMap[f.project_id] || '' });
     } else {
       events.push({ ts: f.created_at, icon: 'ti-alert-circle', bg: '#FFF7ED', clr: '#D97706',
-        text: `ממצא חדש: ${f.title || '–'}`, sub: projMap[f.project_id] || '' });
+        text: `אי התאמה חדשה: ${f.title || '–'}`, sub: projMap[f.project_id] || '' });
     }
   });
 
@@ -2556,7 +2596,7 @@ async function loadProjectsScreen(projects, findings) {
         <td>${p.project_manager || '–'}${p.project_manager_phone ? `<div style="font-size:10px;color:#9AA3B0">${p.project_manager_phone}</div>` : ''}</td>
         <td>${projectStatusBadge(p.status)}</td>
         <td>${openCount > 0 ? `<span class="badge b-warn">${openCount}</span>` : '<span class="badge b-ok">0</span>'}</td>
-        <td style="display:flex;gap:4px"><button class="btn btn-sm" onclick="event.stopPropagation();openProjectDetail('${p.id}')"><i class="ti ti-eye"></i></button><button class="btn btn-sm btn-p" onclick="event.stopPropagation();openProjectBoard('${p.id}')" title="לוח פרויקט"><i class="ti ti-layout-board"></i></button></td>
+        <td style="display:flex;gap:4px"><button class="btn btn-sm" onclick="event.stopPropagation();openProjectDetail('${p.id}')"><i class="ti ti-eye"></i></button><button class="btn btn-sm btn-p" onclick="event.stopPropagation();openProjectBoard('${p.id}')" title="עץ מבנה"><i class="ti ti-layout-board"></i></button></td>
       </tr>`;
     }).join('');
   } else {
@@ -2706,7 +2746,7 @@ async function openProjectDetail(id) {
         <td>${f.title || '–'}</td>
         <td>${severityBadge(f.severity)}</td>
         <td>${statusBadge(f.status)}</td>
-        <td>${f.assigned_to || '–'}</td>
+        <td>${f.contractor || '–'}</td>
         <td>${f.due_date ? new Date(f.due_date).toLocaleDateString('he-IL') : '–'}</td>
       </tr>`).join('')
     : '<tr class="loading-row"><td colspan="6">אין ממצאים לפרויקט זה</td></tr>';
@@ -2796,50 +2836,112 @@ async function confirmAddMember() {
   loadProjectMembers(_addMemberProjectId);
 }
 
+let _ncFilter = 'all';
+let _ncAllFindings = [];
+
+function setNcFilter(f) {
+  _ncFilter = f;
+  document.querySelectorAll('.nc-filter-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('ncf-' + f);
+  if (btn) btn.classList.add('active');
+  _renderFindingsTable(_ncAllFindings);
+}
+
 async function loadFindingsScreen(findings, projects) {
   const find = findings || (await db.from('findings').select('*').order('created_at', { ascending: false })).data || [];
   const proj = projects || (await db.from('projects').select('id, name')).data || [];
   const projMap = Object.fromEntries((proj).map(p => [p.id, p.name]));
+  _ncAllFindings = find.map(f => ({ ...f, _projName: projMap[f.project_id] || '–' }));
 
-  const tbody = document.getElementById('nc-tbody');
   const alertEl = document.getElementById('nc-alert');
+  const summaryEl = document.getElementById('nc-summary');
 
-  const critCount = find.filter(f => f.severity === 'critical' && f.status !== 'closed').length;
+  // סיכום לפי דרגה — פתוחות בלבד
+  const open = find.filter(f => f.status !== 'closed');
+  const counts = { all: open.length, low: 0, medium: 0, high: 0, critical: 0 };
+  open.forEach(f => { if (counts[f.severity] !== undefined) counts[f.severity]++; });
+
+  const critCount = counts.critical;
   if (critCount > 0) {
     alertEl.style.display = '';
-    alertEl.innerHTML = `<div class="alert a-danger"><i class="ti ti-alert-triangle"></i>${critCount} ממצאים קריטיים פתוחים הדורשים טיפול מיידי</div>`;
-  } else {
-    alertEl.style.display = 'none';
-  }
+    alertEl.innerHTML = `<div class="alert a-danger"><i class="ti ti-alert-triangle"></i>${critCount} אי-התאמות קריטיות פתוחות הדורשות טיפול מיידי</div>`;
+  } else { alertEl.style.display = 'none'; }
 
-  const sevBg = { low:'#F3F4F6', medium:'#FEF3C7', high:'#FEE2E2', critical:'#FDF2F8' };
+  summaryEl.innerHTML = [
+    { label:'סה"כ פתוחות', val:counts.all,      bg:'#EFF6FF', bdr:'#BFDBFE', clr:'#1D4ED8' },
+    { label:'דרגה 1',      val:counts.low,      bg:'#F3F4F6', bdr:'#9CA3AF', clr:'#4B5563' },
+    { label:'דרגה 2',      val:counts.medium,   bg:'#FEF3C7', bdr:'#F59E0B', clr:'#92400E' },
+    { label:'דרגה 3',      val:counts.high,     bg:'#FEE2E2', bdr:'#EF4444', clr:'#991B1B' },
+    { label:'קריטי',       val:counts.critical, bg:'#FDF2F8', bdr:'#9B2C2C', clr:'#7C1F1F' },
+  ].map(c => `<span class="nc-sum-chip" style="background:${c.bg};border-color:${c.bdr};color:${c.clr}">${c.label}<strong>${c.val}</strong></span>`).join('');
+
+  _renderFindingsTable(_ncAllFindings);
+}
+
+// Due-date urgency color: red once overdue, amber ("yellow") inside the last week, else default.
+function _dueDateColor(f) {
+  if (!f.due_date || f.status === 'closed') return null;
+  const diffDays = (new Date(f.due_date + 'T12:00') - new Date()) / 86400000;
+  if (diffDays < 0) return '#DC2626';
+  if (diffDays < 7) return '#D97706';
+  return null;
+}
+
+function _renderFindingsTable(find) {
+  const tbody = document.getElementById('nc-tbody');
+  const sevBg     = { low:'#F3F4F6', medium:'#FEF3C7', high:'#FEE2E2', critical:'#FDF2F8' };
   const sevBorder = { low:'#9CA3AF', medium:'#F59E0B', high:'#EF4444', critical:'#9B2C2C' };
-  if (find.length > 0) {
-    tbody.innerHTML = find.map(f => {
+  const filtered  = _ncFilter === 'all' ? find : find.filter(f => f.severity === _ncFilter);
+  if (filtered.length > 0) {
+    tbody.innerHTML = filtered.map(f => {
       const due      = f.due_date ? new Date(f.due_date + 'T12:00').toLocaleDateString('he-IL') : '–';
-      const projName = projMap[f.project_id] || '–';
+      const dueClr   = _dueDateColor(f);
       const sev      = f.severity || 'low';
       const bg       = f.status !== 'closed' ? (sevBg[sev] || '') : '';
-      const overdue  = f.due_date && f.status !== 'closed' && new Date(f.due_date + 'T12:00') < new Date()
-        ? `<span style="font-size:10px;color:#DC2626;font-weight:700"> ⏰</span>` : '';
       return `<tr style="cursor:pointer;${bg ? `background:${bg}` : ''}" onclick="openFindingDetail('${f.id}')">
-        <td style="border-right:3px solid ${sevBorder[sev]};padding-right:12px">
-          <b style="font-size:12px">${f.title || '–'}</b>
-          ${f.location ? `<div style="font-size:10px;color:#9AA3B0;margin-top:1px">${f.location}</div>` : ''}
-        </td>
-        <td>${projName}</td>
+        <td style="border-right:3px solid ${sevBorder[sev]};padding-right:12px;font-size:11px;color:#6B7280">${f.serial_number ?? '–'}</td>
+        <td><b style="font-size:12px">${f.title || '–'}</b></td>
+        <td>${f._projName}</td>
+        <td style="font-size:11px;color:#6B7280">${f.location || '–'}</td>
         <td>${severityBadge(sev)}</td>
         <td>${statusBadge(f.status)}</td>
         <td style="font-size:11px;color:#6B7280">${f.contractor || '–'}</td>
-        <td style="font-size:11px">${due}${overdue}</td>
+        <td style="font-size:11px${dueClr ? `;color:${dueClr};font-weight:700` : ''}">${due}</td>
         <td onclick="event.stopPropagation()">
           <button class="btn btn-sm" onclick="openEditFinding('${f.id}')" title="ערוך"><i class="ti ti-pencil"></i></button>
         </td>
       </tr>`;
     }).join('');
   } else {
-    tbody.innerHTML = emptyTR(7,'ti-clipboard-x','אין ממצאים פתוחים','כל הממצאים נסגרו או לא נפתחו עדיין');
+    tbody.innerHTML = emptyTR(9,'ti-clipboard-x','אין אי-התאמות','לא נמצאו אי-התאמות בדרגה זו');
   }
+}
+
+function exportFindingsExcel() {
+  const sevLabels    = { low:'דרגה 1', medium:'דרגה 2', high:'דרגה 3', critical:'קריטי' };
+  const statusLabels = { open:'פתוח', closed:'סגור' };
+  const filtered = _ncFilter === 'all' ? _ncAllFindings : _ncAllFindings.filter(f => f.severity === _ncFilter);
+  const rows = filtered.map(f => ({
+    "מס' מקורי":      f.serial_number ?? '',
+    "כותרת":          f.title || '',
+    "פרויקט":         f._projName || '',
+    "מיקום":          f.location || '',
+    "פותח":           f.opened_by_name || '',
+    "דרגה":           sevLabels[f.severity] || f.severity || '',
+    "תיאור התקלה":    f.description || '',
+    "טיפול נדרש":     f.required_treatment || '',
+    "תאריך התחלה":    f.start_date || '',
+    "תאריך יעד לביצוע": f.due_date || '',
+    "פירוט הביצוע":   f.treatment || '',
+    "קבלן":           f.contractor || '',
+    "סטטוס":          statusLabels[f.status] || f.status || '',
+  }));
+  if (!rows.length) { showToast('אין אי-התאמות לייצוא', 'info'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'אי-התאמות');
+  const stamp = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `אי-התאמות_${stamp}.xlsx`);
 }
 
 async function loadReportsScreen(findings) {
@@ -2856,7 +2958,7 @@ async function loadReportsScreen(findings) {
   }
 
   const severities = ['critical', 'high', 'medium', 'low'];
-  const labels = { critical: 'קריטי', high: 'גבוה', medium: 'בינוני', low: 'נמוך' };
+  const labels = { critical: 'קריטי', high: 'דרגה 3', medium: 'דרגה 2', low: 'דרגה 1' };
   const tbody = document.getElementById('report-tbody');
 
   if (find.length > 0) {
@@ -2886,15 +2988,6 @@ async function loadProjectSelect() {
     opt.value = p.id;
     opt.textContent = p.name || p.id;
     sel.appendChild(opt);
-  });
-
-  // Also populate inspections filter
-  const filterSel = document.getElementById('insp-filter-proj');
-  filterSel.innerHTML = '<option value="">כל הפרויקטים</option>';
-  (projects || []).forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id; opt.textContent = p.name || p.id;
-    filterSel.appendChild(opt);
   });
 }
 
@@ -3012,7 +3105,7 @@ async function createProject() {
     if (idx !== -1) _allProjects[idx] = { ..._allProjects[idx], ...payload };
     showToast('הפרויקט עודכן בהצלחה', 'success');
   } else {
-    // INSERT new project
+    // INSERT new project — default folder tree is seeded server-side by trg_seed_default_folders
     const { error } = await db.from('projects').insert({ ...payload, company_id: currentCompanyId });
     if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
     showToast('הפרויקט נוצר בהצלחה', 'success');
@@ -3043,7 +3136,7 @@ async function ncrOnProjectChange() {
   const projectId = document.getElementById('nf-project').value;
   const sel = document.getElementById('nf-work-item');
   sel.innerHTML = '<option value="">— ללא —</option>';
-  if (!projectId) return;
+  if (!projectId) { await _loadContractorsForProject(null); return; }
   const { data: items } = await db.from('work_items')
     .select('id, structure, sub_structure, element, sub_element, section_from, section_to')
     .eq('project_id', projectId).order('row_order');
@@ -3054,6 +3147,47 @@ async function ncrOnProjectChange() {
     opt.value = wi.id; opt.textContent = label;
     sel.appendChild(opt);
   });
+  await _loadContractorsForProject(projectId);
+}
+
+const _NCR_ADD_CONTRACTOR = '__add_new__';
+
+// Populates nf-contractor: the project's main contractor first (pre-selected),
+// then any extra contractors added for this project, then an "add new" action.
+async function _loadContractorsForProject(projectId, selectName) {
+  const sel = document.getElementById('nf-contractor');
+  sel.innerHTML = '';
+  if (!projectId) { sel.innerHTML = '<option value="">— בחר פרויקט תחילה —</option>'; return; }
+  const proj = _allProjects.find(x => x.id === projectId);
+  const mainContractor = proj?.contractor || null;
+  const { data: extra } = await db.from('contractors')
+    .select('name').eq('project_id', projectId).order('created_at');
+  const names = [];
+  if (mainContractor) names.push(mainContractor);
+  (extra || []).forEach(c => { if (!names.includes(c.name)) names.push(c.name); });
+  if (!names.length) names.push('— ללא —');
+  names.forEach(n => {
+    const opt = document.createElement('option');
+    opt.value = n === '— ללא —' ? '' : n; opt.textContent = n;
+    sel.appendChild(opt);
+  });
+  const addOpt = document.createElement('option');
+  addOpt.value = _NCR_ADD_CONTRACTOR; addOpt.textContent = '+ הוסף קבלן חדש...';
+  sel.appendChild(addOpt);
+  sel.value = selectName && names.includes(selectName) ? selectName : (mainContractor || sel.options[0]?.value || '');
+}
+
+async function _ncrContractorChange(sel) {
+  if (sel.value !== _NCR_ADD_CONTRACTOR) return;
+  const projectId = document.getElementById('nf-project').value;
+  if (!projectId) { sel.value = ''; return; }
+  const name = prompt('שם הקבלן החדש:');
+  if (!name || !name.trim()) { await _loadContractorsForProject(projectId); return; }
+  const { error } = await db.from('contractors')
+    .insert({ company_id: currentCompanyId, project_id: projectId, name: name.trim() });
+  if (error) { showToast('שגיאה בהוספת קבלן: ' + error.message, 'error'); await _loadContractorsForProject(projectId); return; }
+  await _loadContractorsForProject(projectId, name.trim());
+  showToast('קבלן נוסף', 'success');
 }
 
 function ncrAddPhotos(input) {
@@ -3090,13 +3224,12 @@ function ncrRemoveNew(idx)      { _ncrPhotos.splice(idx, 1); _ncrRenderAttachGri
 function ncrRemoveExisting(idx) { _ncrEditPhotos.splice(idx, 1); _ncrRenderAttachGrid(); }
 
 function _ncrFormClear() {
-  ['nf-id','nf-title','nf-description','nf-location','nf-assigned','nf-contractor',
-   'nf-transferred','nf-due','nf-opened-by','nf-opened-date'].forEach(id => {
+  ['nf-id','nf-title','nf-description','nf-location','nf-contractor','nf-required-treatment',
+   'nf-start-date','nf-transferred','nf-due','nf-opened-by','nf-opened-date'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
-  ['nf-category','nf-discipline','nf-status'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.selectedIndex = 0;
-  });
+  document.getElementById('nf-status').value = 'open';
+  document.getElementById('nf-status-display').value = 'פתוח';
   const sel = document.getElementById('nf-work-item');
   if (sel) sel.innerHTML = '<option value="">— ללא —</option>';
   document.getElementById('nf-err').textContent = '';
@@ -3148,14 +3281,14 @@ function _ncFormPayload() {
     title:               document.getElementById('nf-title').value.trim(),
     description:         document.getElementById('nf-description')?.value.trim() || null,
     project_id:          document.getElementById('nf-project').value,
-    category:            document.getElementById('nf-category').value || null,
-    discipline:          document.getElementById('nf-discipline').value || null,
     severity:            document.getElementById('nf-severity').value || 'high',
     status:              document.getElementById('nf-status').value || 'open',
     location:            document.getElementById('nf-location').value.trim() || null,
     work_item_id:        document.getElementById('nf-work-item').value || null,
-    assigned_to:         document.getElementById('nf-assigned').value.trim() || null,
-    contractor:          document.getElementById('nf-contractor').value.trim() || null,
+    required_treatment: document.getElementById('nf-required-treatment').value.trim() || null,
+    start_date:          document.getElementById('nf-start-date').value || null,
+    contractor:          (document.getElementById('nf-contractor').value !== _NCR_ADD_CONTRACTOR
+                            ? document.getElementById('nf-contractor').value.trim() : '') || null,
     transferred_to:      document.getElementById('nf-transferred').value.trim() || null,
     opened_by_name:      document.getElementById('nf-opened-by').value.trim() || null,
     due_date:            document.getElementById('nf-due').value || null,
@@ -3164,10 +3297,20 @@ function _ncFormPayload() {
 }
 
 async function submitNCR() {
+  // Force the currently-focused field to commit its value first — on some mobile
+  // keyboards (predictive text), the last word isn't written to the DOM until blur,
+  // so tapping submit right after typing can read a stale/short value.
+  document.activeElement?.blur?.();
   const errEl = document.getElementById('nf-err');
   errEl.textContent = '';
   const p = _ncFormPayload();
-  if (!p.title) { errEl.textContent = 'כותרת היא שדה חובה'; return; }
+  if (!p.title) {
+    console.warn('submitNCR: title missing', { rawValue: document.getElementById('nf-title').value });
+    errEl.textContent = 'כותרת היא שדה חובה';
+    document.getElementById('nf-title').style.borderBottom = '1.5px solid #DC2626';
+    return;
+  }
+  document.getElementById('nf-title').style.borderBottom = '';
   if (!p.project_id) { errEl.textContent = 'יש לבחור פרויקט'; return; }
 
   const editId = document.getElementById('nf-id').value;
@@ -3218,7 +3361,7 @@ async function submitNCR() {
   }
 
   // Log activity
-  const actText = editId ? 'עדכן פרטי ממצא' : `פתח ממצא חדש — חומרה ${_sevLabel(p.severity)}`;
+  const actText = editId ? 'עדכן פרטי ממצא' : `פתחה אי התאמה חדשה — ${_sevLabel(p.severity)}`;
   if (findingId) {
     await db.from('finding_activity').insert({
       finding_id: findingId, company_id: currentCompanyId,
@@ -3231,7 +3374,7 @@ async function submitNCR() {
   closeById('m-new-nc');
   await loadFindingsScreen();
   await loadDashboard();
-  showToast(editId ? 'הממצא עודכן' : 'ממצא חדש נפתח', 'success');
+  showToast(editId ? 'הממצא עודכן' : 'אי התאמה חדשה נפתחה', 'success');
 }
 
 // Keep old name as alias for backward compat
@@ -3274,48 +3417,42 @@ async function openFindingDetail(id) {
   fdTab('info');
 
   // ── TAB: פרטים ──
-  const sevLabels = { low:'נמוכה', medium:'בינונית', high:'גבוהה', critical:'קריטית' };
-  const statusLabels = { open:'פתוח', in_progress:'בטיפול', closed:'סגור', closure_requested:'ממתין לאישור סגירה' };
+  const sevLabels = { low:'דרגה 1', medium:'דרגה 2', high:'דרגה 3', critical:'קריטי' };
+  const statusLabels = { open:'פתוח', closed:'סגור' };
   const openedDate = f.created_at ? new Date(f.created_at).toLocaleDateString('he-IL') : '–';
   const dueDate    = f.due_date ? new Date(f.due_date + 'T12:00').toLocaleDateString('he-IL') : '–';
+  const startDate  = f.start_date ? new Date(f.start_date + 'T12:00').toLocaleDateString('he-IL') : '–';
   const closedDate = f.closed_at ? new Date(f.closed_at).toLocaleDateString('he-IL') : null;
+  const dueClr     = _dueDateColor(f);
 
   document.getElementById('fd-pane-info').innerHTML = `
     <div class="ncr-info-grid">
-      <div class="ncr-info-item"><div class="ncr-info-lbl">חומרה</div><div class="ncr-info-val">${severityBadge(sev)}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">מס' סידורי</div><div class="ncr-info-val">${f.serial_number ?? '–'}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">דרגה</div><div class="ncr-info-val">${severityBadge(sev)}</div></div>
       <div class="ncr-info-item"><div class="ncr-info-lbl">סטטוס</div><div class="ncr-info-val">${statusBadge(f.status)}</div></div>
       <div class="ncr-info-item"><div class="ncr-info-lbl">פרויקט</div><div class="ncr-info-val">${proj?.name || '–'}</div></div>
       <div class="ncr-info-item"><div class="ncr-info-lbl">קבלן</div><div class="ncr-info-val">${f.contractor || '–'}</div></div>
-      <div class="ncr-info-item"><div class="ncr-info-lbl">אחראי QC</div><div class="ncr-info-val">${f.assigned_to || '–'}</div></div>
-      <div class="ncr-info-item"><div class="ncr-info-lbl">קטגוריה</div><div class="ncr-info-val">${f.category || '–'}</div></div>
       <div class="ncr-info-item"><div class="ncr-info-lbl">מיקום</div><div class="ncr-info-val">${f.location || '–'}</div></div>
-      <div class="ncr-info-item"><div class="ncr-info-lbl">דיסציפלינה</div><div class="ncr-info-val">${f.discipline || '–'}</div></div>
-      <div class="ncr-info-item"><div class="ncr-info-lbl">נפתח על ידי</div><div class="ncr-info-val">${f.opened_by_name || '–'}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">פותח</div><div class="ncr-info-val">${f.opened_by_name || '–'}</div></div>
       <div class="ncr-info-item"><div class="ncr-info-lbl">תאריך פתיחה</div><div class="ncr-info-val">${openedDate}</div></div>
-      <div class="ncr-info-item"><div class="ncr-info-lbl">יעד לסגירה</div><div class="ncr-info-val">${dueDate}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">תאריך התחלה</div><div class="ncr-info-val">${startDate}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">יעד לביצוע</div><div class="ncr-info-val"${dueClr ? ` style="color:${dueClr};font-weight:700"` : ''}>${dueDate}</div></div>
       <div class="ncr-info-item"><div class="ncr-info-lbl">הועבר לטיפול</div><div class="ncr-info-val">${f.transferred_to || '–'}</div></div>
-      ${f.description ? `<div class="ncr-info-item" style="grid-column:1/-1"><div class="ncr-info-lbl">תיאור</div><div class="ncr-info-val" style="line-height:1.6">${f.description}</div></div>` : ''}
+      ${f.description ? `<div class="ncr-info-item" style="grid-column:1/-1"><div class="ncr-info-lbl">תיאור התקלה</div><div class="ncr-info-val" style="line-height:1.6">${f.description}</div></div>` : ''}
+      ${f.required_treatment ? `<div class="ncr-info-item" style="grid-column:1/-1"><div class="ncr-info-lbl">טיפול נדרש</div><div class="ncr-info-val" style="line-height:1.6">${f.required_treatment}</div></div>` : ''}
+      ${f.treatment ? `<div class="ncr-info-item" style="grid-column:1/-1;background:#F0FDF4"><div class="ncr-info-lbl">פירוט הביצוע</div><div class="ncr-info-val" style="line-height:1.6">${f.treatment}</div></div>` : ''}
       ${closedDate ? `<div class="ncr-info-item" style="grid-column:1/-1;background:#F0FDF4"><div class="ncr-info-lbl">✓ נסגר ב</div><div class="ncr-info-val">${closedDate} ע"י ${f.closed_by_name || '–'}</div></div>` : ''}
     </div>`;
 
-  // ── ACTION BUTTONS (Phase C) ──
+  // ── ACTION BUTTONS ──
   const actDiv = document.getElementById('fd-actions');
   actDiv.innerHTML = '';
-  if (f.status === 'open' || f.status === 'in_progress') {
-    if (currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager') {
-      actDiv.innerHTML += `<button class="btn" style="background:#065F46;color:#fff;border-color:#065F46" onclick="openNCRClosure('${f.id}')"><i class="ti ti-rosette-discount-check"></i>אשר סגירה</button>`;
-    } else {
-      actDiv.innerHTML += `<button class="btn" style="background:#D97706;color:#fff;border-color:#D97706" onclick="requestNCRClosure('${f.id}')"><i class="ti ti-send"></i>בקש סגירה</button>`;
-    }
+  if (f.status !== 'closed') {
+    actDiv.innerHTML += `<button class="btn" style="background:#065F46;color:#fff;border-color:#065F46" onclick="openNCRClosure('${f.id}')"><i class="ti ti-rosette-discount-check"></i>סגור אי-התאמה</button>`;
     if (canEdit) {
       actDiv.innerHTML += `<button class="btn" onclick="fdEditFinding()"><i class="ti ti-pencil"></i>ערוך</button>`;
     }
-  } else if (f.status === 'closure_requested') {
-    actDiv.innerHTML = `<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400E;flex:1">⏳ הוגשה בקשה לסגירה — ממתין לאישור מנהל</div>`;
-    if (currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager') {
-      actDiv.innerHTML += `<button class="btn" style="background:#065F46;color:#fff;border-color:#065F46" onclick="openNCRClosure('${f.id}')"><i class="ti ti-check"></i>אשר</button>`;
-    }
-  } else if (f.status === 'closed' && f.signature_url) {
+  } else if (f.signature_url) {
     actDiv.innerHTML = `<a href="${f.signature_url}" target="_blank" class="btn btn-sm"><i class="ti ti-writing-sign"></i>צפה בחתימה</a>`;
   }
 
@@ -3406,12 +3543,12 @@ async function openEditFinding(id) {
   document.getElementById('nf-description').value = f.description || '';
   await ncrOnProjectChange();
   if (f.work_item_id) document.getElementById('nf-work-item').value = f.work_item_id;
-  document.getElementById('nf-category').value    = f.category || '';
-  document.getElementById('nf-discipline').value  = f.discipline || '';
   document.getElementById('nf-status').value      = f.status || 'open';
+  document.getElementById('nf-status-display').value = f.status === 'closed' ? 'סגור' : 'פתוח';
   document.getElementById('nf-location').value    = f.location || '';
-  document.getElementById('nf-assigned').value    = f.assigned_to || '';
-  document.getElementById('nf-contractor').value  = f.contractor || '';
+  document.getElementById('nf-required-treatment').value = f.required_treatment || '';
+  document.getElementById('nf-start-date').value  = f.start_date || '';
+  await _loadContractorsForProject(f.project_id, f.contractor || '');
   document.getElementById('nf-transferred').value = f.transferred_to || '';
   document.getElementById('nf-opened-by').value   = f.opened_by_name || '';
   document.getElementById('nf-due').value         = f.due_date || '';
@@ -3694,7 +3831,7 @@ async function submitClosure() {
 }
 
 function _sevLabel(s) {
-  return { low:'נמוכה', medium:'בינונית', high:'גבוהה', critical:'קריטית' }[s] || s;
+  return { low:'דרגה 1', medium:'דרגה 2', high:'דרגה 3', critical:'קריטי' }[s] || s;
 }
 
 let _currentUserProfile = null;
@@ -4338,9 +4475,9 @@ function roleAdminBadge(r) {
 function severityBadge(s) {
   return ({
     critical: '<span class="badge b-fail">קריטי</span>',
-    high:     '<span class="badge b-fail">גבוה</span>',
-    medium:   '<span class="badge b-warn">בינוני</span>',
-    low:      '<span class="badge b-gray">נמוך</span>',
+    high:     '<span class="badge b-fail">דרגה 3</span>',
+    medium:   '<span class="badge b-warn">דרגה 2</span>',
+    low:      '<span class="badge b-gray">דרגה 1</span>',
   })[s] || `<span class="badge b-gray">${s || '–'}</span>`;
 }
 
@@ -4367,12 +4504,12 @@ function projectStatusBadge(s) {
 const titles = {
   dashboard:       'דשבורד ראשי',
   projects:        'פרויקטים',
-  nc:              'ממצאים',
+  nc:              'אי-התאמות',
   inspections:     'הזמנות בדיקה',
   reports:         'דוחות',
   users:           'ניהול משתמשים',
   companies:       'ניהול חברות',
-  'project-board': 'לוח פרויקט',
+  'project-board': 'עץ מבנה',
   'my-tasks':      'המשימות שלי',
 };
 
@@ -4415,14 +4552,28 @@ let _activeProjectId = null;
 function setActiveProject(id) {
   const p = _allProjects.find(x => x.id === id);
   if (!p) return;
+  const changed = _activeProjectId !== id;
   _activeProjectId = id;
   localStorage.setItem('qafield_proj_' + currentUserId, id);
   document.getElementById('proj-sel-name').textContent = p.name;
   document.getElementById('proj-sel').classList.add('active');
   document.getElementById('proj-picker').style.display = 'none';
   _showActiveProjSub();
-  // Update project fields in any open forms
   _applyActiveProjectToForms();
+  // רענן את המסך הנוכחי עם הפרויקט החדש
+  if (changed) _reloadActiveScreen();
+}
+
+function _reloadActiveScreen() {
+  const active = document.querySelector('.screen.active');
+  if (!active) return;
+  const id = active.id;
+  if (id === 's-dashboard')      loadDashboard();
+  else if (id === 's-nc')        loadFindingsScreen();
+  else if (id === 's-reports')   loadReportsScreen();
+  else if (id === 's-inspections') loadInspectionsScreen();
+  else if (id === 's-docs')        loadDocsScreen();
+  else if (id === 's-project-board') openProjectBoard(_activeProjectId);
 }
 
 // ─── PROJECT FIELD HELPER ────────────────────────────────
@@ -4441,7 +4592,7 @@ function _renderProjectField(wrapperId, selectId, onChangeFn) {
       <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#E8F1FB;border:1.5px solid #BFDBFE;border-radius:8px">
         <i class="ti ti-building" style="color:#3B82F6;font-size:14px;flex-shrink:0"></i>
         <span style="font-size:13px;font-weight:700;color:#3B82F6;flex:1">${p.name}</span>
-        <button onclick="_clearActiveProjectField('${wrapperId}','${selectId}','${onChangeFn}')" style="font-size:10px;color:#9AA3B0;background:none;border:1px solid #CBD5E1;border-radius:5px;padding:2px 7px;cursor:pointer;font-family:inherit" title="שנה פרויקט">שנה</button>
+        <span style="font-size:10px;color:#9AA3B0" title="להחלפה השתמש בבורר הפרויקט העליון">נעול לפרויקט הפעיל</span>
       </div>
       <select id="${selectId}" style="display:none" onchange="${onChangeFn}"><option value="${_activeProjectId}">${p.name}</option></select>`;
   } else {
@@ -4529,6 +4680,193 @@ function goBoardNav(el) {
   openProjectBoard(_activeProjectId);
 }
 
+// ─── DOCUMENTS / FOLDERS ─────────────────────────────────
+
+function goDocsNav(el) {
+  if (!_activeProjectId) {
+    const sel = document.getElementById('proj-sel');
+    sel.style.outline = '2px solid #C97B1A';
+    setTimeout(() => sel.style.outline = '', 1500);
+    toggleProjPicker({ stopPropagation: () => {} });
+    return;
+  }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('s-docs').classList.add('active');
+  el.classList.add('active');
+  document.getElementById('ttl').textContent = 'מסמכים';
+  loadDocsScreen();
+}
+
+// Default folder tree is seeded server-side (trg_seed_default_folders on projects) —
+// see migration history; no client-side seeding call needed.
+
+let _docsFolders = [];
+let _docsSelectedFolder = null;
+
+async function loadDocsScreen() {
+  const noteEl = document.getElementById('docs-scope-note');
+  const p = _activeProjectId ? _allProjects.find(x => x.id === _activeProjectId) : null;
+  if (noteEl) noteEl.textContent = p ? `מסמכי הפרויקט: ${p.name}` : 'יש לבחור פרויקט פעיל מלמעלה';
+  if (!_activeProjectId) { document.getElementById('docs-tree').innerHTML = ''; return; }
+
+  const { data } = await db.from('folders')
+    .select('*').eq('project_id', _activeProjectId).order('row_order');
+  _docsFolders = data || [];
+  _docsSelectedFolder = null;
+  _renderDocsTree();
+  document.getElementById('docs-files-pnl').innerHTML = `
+    <div class="brd-det-empty">
+      <i class="ti ti-hand-click" style="font-size:30px;display:block;margin-bottom:10px;color:#C8CDD6"></i>
+      בחר תיקייה מהעץ לצפייה בקבצים
+    </div>`;
+}
+
+function _renderDocsTree() {
+  const tree = document.getElementById('docs-tree');
+  const roots = _docsFolders.filter(f => !f.parent_id);
+  const childrenOf = pid => _docsFolders.filter(f => f.parent_id === pid);
+  const renderNode = f => {
+    const kids = childrenOf(f.id);
+    const sel = f.id === _docsSelectedFolder ? ' sel' : '';
+    return `<div class="docs-folder-node">
+      <div class="proj-picker-item${sel}" style="border-bottom:none;border-radius:6px" onclick="selectDocsFolder('${f.id}')">
+        <i class="ti ti-folder" style="color:#F59E0B"></i>
+        <span style="flex:1">${f.name}</span>
+        <button onclick="event.stopPropagation();docsDeleteFolder('${f.id}')" title="מחק תיקייה" style="background:none;border:none;cursor:pointer;color:#CBD5E1;padding:2px"><i class="ti ti-trash" style="font-size:12px"></i></button>
+      </div>
+      ${kids.length ? `<div style="padding-right:20px">${kids.map(renderNode).join('')}</div>` : ''}
+    </div>`;
+  };
+  tree.innerHTML = roots.map(renderNode).join('');
+}
+
+async function selectDocsFolder(id) {
+  _docsSelectedFolder = id;
+  _renderDocsTree();
+  const folder = _docsFolders.find(f => f.id === id);
+  const pnl = document.getElementById('docs-files-pnl');
+  pnl.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:700"><i class="ti ti-folder-open" style="color:#F59E0B"></i> ${folder?.name || ''}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="docsAddFolder('${id}')"><i class="ti ti-folder-plus"></i>תת-תיקייה</button>
+        <label class="btn btn-sm btn-p" style="cursor:pointer">
+          <i class="ti ti-upload"></i>העלה קובץ
+          <input type="file" style="display:none" onchange="docsUploadFile(this,'${id}')" multiple>
+        </label>
+      </div>
+    </div>
+    <div id="docs-files-list"><span class="spinner"></span> טוען...</div>`;
+  const { data: files } = await db.from('project_files')
+    .select('*').eq('folder_id', id).order('created_at', { ascending: false });
+  const listEl = document.getElementById('docs-files-list');
+  if (!files || !files.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:24px;color:#9AA3B0;font-size:12px">אין קבצים בתיקייה זו</div>';
+    return;
+  }
+  listEl.innerHTML = files.map(f => `
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bdr)">
+      <i class="ti ti-file" style="color:#6B7280"></i>
+      <a href="${f.url}" target="_blank" style="flex:1;font-size:12px;color:#374151;text-decoration:none">${f.name}</a>
+      <span style="font-size:10px;color:#9AA3B0">${f.uploaded_by_name || ''}</span>
+      <button class="btn btn-sm" onclick="docsDeleteFile('${f.id}','${id}')" title="מחק"><i class="ti ti-trash" style="color:#DC2626"></i></button>
+    </div>`).join('');
+}
+
+async function docsAddFolder(parentId) {
+  if (!_activeProjectId) return;
+  const name = prompt(parentId ? 'שם תת-התיקייה:' : 'שם התיקייה החדשה:');
+  if (!name || !name.trim()) return;
+  // TODO: gate folder creation by permission once role rules for documents are defined.
+  const { error } = await db.from('folders').insert({
+    company_id: currentCompanyId, project_id: _activeProjectId, parent_id: parentId || null,
+    name: name.trim(), is_default: false, created_by: currentUserId
+  });
+  if (error) { showToast('שגיאה ביצירת תיקייה: ' + error.message, 'error'); return; }
+  await loadDocsScreen();
+  showToast('תיקייה נוצרה', 'success');
+}
+
+// TODO: gate folder deletion by permission once role rules for documents are defined.
+async function docsDeleteFolder(id) {
+  const folder = _docsFolders.find(f => f.id === id);
+  const hasKids = _docsFolders.some(f => f.parent_id === id);
+  const msg = hasKids
+    ? `למחוק את "${folder?.name}"? זה ימחק גם את כל תת-התיקיות והקבצים שבתוכה.`
+    : `למחוק את "${folder?.name}"? כל הקבצים שבתוכה יימחקו.`;
+  if (!confirm(msg)) return;
+  const { error } = await db.from('folders').delete().eq('id', id);
+  if (error) { showToast('שגיאה במחיקת תיקייה: ' + error.message, 'error'); return; }
+  if (_docsSelectedFolder === id) {
+    _docsSelectedFolder = null;
+    document.getElementById('docs-files-pnl').innerHTML = `
+      <div class="brd-det-empty">
+        <i class="ti ti-hand-click" style="font-size:30px;display:block;margin-bottom:10px;color:#C8CDD6"></i>
+        בחר תיקייה מהעץ לצפייה בקבצים
+      </div>`;
+  }
+  await loadDocsScreen();
+  showToast('התיקייה נמחקה', 'success');
+}
+
+// Uploads one file with the given bearer token; returns the fetch Response.
+async function _docsUploadOnce(token, path, file) {
+  return fetch(`${SUPABASE_URL}/storage/v1/object/documents/${path}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
+    body: file
+  });
+}
+
+async function docsUploadFile(input, folderId) {
+  const files = Array.from(input.files || []);
+  if (!files.length) return;
+  for (const file of files) {
+    try {
+      // Storage keys must stay ASCII-safe — Supabase rejects spaces/Hebrew in object keys.
+      // The real filename (any language) lives in project_files.name for display/download.
+      const ext = (file.name.match(/\.[a-zA-Z0-9]+$/) || [''])[0];
+      const safeKey = `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
+      const path = `project-files/${_activeProjectId}/${folderId}/${safeKey}`;
+
+      // The access token can be stale (e.g. tab was backgrounded past its expiry) —
+      // retry once with a freshly-refreshed session before giving up, since that's
+      // the most common cause of an intermittent upload failure. Supabase Storage
+      // returns different HTTP statuses for different auth failures (400 for a
+      // malformed/garbage JWT, 401 for a validly-expired one), so retry on any
+      // non-ok response rather than matching one specific status code.
+      let { data: sd } = await db.auth.getSession();
+      let resp = await _docsUploadOnce(sd?.session?.access_token, path, file);
+      if (!resp.ok) {
+        const { data: refreshed } = await db.auth.refreshSession();
+        resp = await _docsUploadOnce(refreshed?.session?.access_token, path, file);
+      }
+      if (!resp.ok) {
+        const body = await resp.text().catch(() => '');
+        throw new Error(`upload failed (${resp.status}) ${body}`.trim());
+      }
+      const url = `${SUPABASE_URL}/storage/v1/object/public/documents/${path}`;
+      await db.from('project_files').insert({
+        company_id: currentCompanyId, project_id: _activeProjectId, folder_id: folderId,
+        name: file.name, url, size_bytes: file.size,
+        uploaded_by: currentUserId, uploaded_by_name: _currentUserProfile?.full_name || ''
+      });
+    } catch (e) {
+      console.warn('docsUploadFile failed', file.name, e);
+      showToast('שגיאה בהעלאת ' + file.name, 'error');
+    }
+  }
+  selectDocsFolder(folderId);
+}
+
+async function docsDeleteFile(fileId, folderId) {
+  if (!confirm('למחוק את הקובץ?')) return;
+  const { error } = await db.from('project_files').delete().eq('id', fileId);
+  if (error) { showToast('שגיאה במחיקה: ' + error.message, 'error'); return; }
+  selectDocsFolder(folderId);
+}
+
 // ─── PROJECT BOARD ───────────────────────────────────────
 
 let _boardProjectId  = null;
@@ -4550,7 +4888,7 @@ async function openProjectBoard(projectId) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('s-project-board').classList.add('active');
   document.getElementById('nav-board').classList.add('active');
-  document.getElementById('ttl').textContent = 'לוח פרויקט';
+  document.getElementById('ttl').textContent = 'עץ מבנה';
   document.getElementById('topbar-sub').textContent = p?.name || '';
 
   // Reset UI
@@ -4857,7 +5195,7 @@ function _renderBoardDetails(wi, contextLabel) {
       <i class="ti ti-calendar-plus" style="color:#3B82F6"></i>הזמן בדיקה
     </button>
     <button class="brd-det-btn" onclick="openNewFindingFromWI('${wi.id}')">
-      <i class="ti ti-alert-triangle" style="color:#F59E0B"></i>ממצא חדש
+      <i class="ti ti-alert-triangle" style="color:#F59E0B"></i>אי התאמה חדשה
     </button>
   </div>`;
 
@@ -4938,13 +5276,21 @@ function _renderBoardDetails(wi, contextLabel) {
         : !canSign
         ? `<div style="padding:14px 16px;font-size:12px;color:var(--t3);display:flex;align-items:center;gap:8px"><i class="ti ti-lock" style="font-size:15px;color:var(--t4);flex-shrink:0"></i>רשימת תיוג זו שייכת ל<b>${_signerLabel(reqSigner)}</b> — אין הרשאת עריכה</div>`
         : `<table class="brd-cl-tbl">
+            <colgroup>
+              <col style="width:50%">
+              <col style="width:10%">
+              <col style="width:10%">
+              <col style="width:10%">
+              <col style="width:10%">
+              <col style="width:10%">
+            </colgroup>
             <thead><tr>
               <th>משימה</th>
-              <th style="width:70px">תפקיד</th>
-              <th style="width:115px">שם מלא</th>
-              <th style="width:95px">תאריך חתימה</th>
-              <th style="width:48px">מסמך</th>
-              <th style="width:32px"></th>
+              <th>תפקיד</th>
+              <th>שם מלא</th>
+              <th>תאריך חתימה</th>
+              <th>מסמך</th>
+              <th></th>
             </tr></thead>
             <tbody>${wi.checklist_instances
               .sort((a, b) => a.task_order - b.task_order)
@@ -6010,15 +6356,21 @@ function inspResultBadge(r) {
   })[r] || `<span class="badge b-gray">${r}</span>`;
 }
 
+let _inspFilter = 'all';
+
+function setInspFilter(f) {
+  _inspFilter = f;
+  document.querySelectorAll('#s-inspections .nc-filter-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('inspf-' + f)?.classList.add('active');
+  _filterInspTable();
+}
+
 async function loadInspectionsScreen() {
-  // Populate project filter if empty
-  const filterSel = document.getElementById('insp-filter-proj');
-  if (filterSel.options.length <= 1 && _allProjects.length > 0) {
-    _allProjects.forEach(p => {
-      const o = document.createElement('option');
-      o.value = p.id; o.textContent = p.name;
-      filterSel.appendChild(o);
-    });
+  // Scope follows the globally active project — switch it from the top project picker, not here.
+  const noteEl = document.getElementById('insp-scope-note');
+  if (noteEl) {
+    const p = _activeProjectId ? _allProjects.find(x => x.id === _activeProjectId) : null;
+    noteEl.textContent = p ? `מציג הזמנות עבור: ${p.name}` : 'מציג הזמנות מכל הפרויקטים';
   }
 
   const tbody = document.getElementById('inspections-tbody');
@@ -6028,8 +6380,7 @@ async function loadInspectionsScreen() {
     .select('*')
     .order('scheduled_date', { ascending: false })
     .order('created_at', { ascending: false });
-  const pid = filterSel.value;
-  if (pid) q = q.eq('project_id', pid);
+  if (_activeProjectId) q = q.eq('project_id', _activeProjectId);
 
   const { data: orders, error } = await q;
   if (error) { tbody.innerHTML = `<tr class="loading-row"><td colspan="12" style="color:#C0392B">שגיאה: ${error.message}</td></tr>`; return; }
@@ -6042,12 +6393,15 @@ function _filterInspTable() {
   const tbody = document.getElementById('inspections-tbody');
   if (!tbody) return;
   const q = (document.getElementById('insp-search')?.value || '').trim().toLowerCase();
-  const list = q
-    ? _allInspOrders.filter(o =>
+  let list = _inspFilter === 'all' ? _allInspOrders
+    : _inspFilter === 'nocert' ? _allInspOrders.filter(o => !o.certificate_url)
+    : _allInspOrders.filter(o => o.status === _inspFilter);
+  list = q
+    ? list.filter(o =>
         [o.id, o.sub_project, o.structure, o.sub_structure, o.element, o.sub_element,
          o.inspector_name, o.contractor, o.location, o.notes]
           .some(v => v && String(v).toLowerCase().includes(q)))
-    : _allInspOrders;
+    : list;
 
   if (list.length === 0 && _allInspOrders.length === 0) {
     tbody.innerHTML = emptyTR(12,'ti-microscope','אין הזמנות בדיקה עדיין','פתח הזמנה מלוח הפרויקט על פריט עבודה');
