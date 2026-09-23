@@ -4145,17 +4145,22 @@ async function loadUsersScreen() {
   const tableCard = document.getElementById('users-table-card');
   tableCard.innerHTML = '<div style="text-align:center;padding:32px"><span class="spinner"></span> טוען...</div>';
 
-  // Parallel fetch: profiles + memberships + companies (system_admin only)
+  // Parallel fetch: profiles + memberships + companies (system_admin only) + emails (admin-only RPC —
+  // profiles has no email column; auth.users is only readable server-side via SECURITY DEFINER).
   const queries = [
     db.from('profiles').select('*').order('created_at', { ascending: false }),
     db.from('project_members').select('user_id'),
+    db.rpc('get_company_user_emails'),
   ];
   if (currentSystemAdmin) queries.push(db.from('companies').select('id, name, logo_url'));
 
   const results = await Promise.all(queries);
   const { data: profiles, error } = results[0];
   const { data: memberships } = results[1];
-  const companiesData = currentSystemAdmin ? (results[2]?.data || []) : [];
+  const emailMap = {};
+  (results[2]?.data || []).forEach(u => { emailMap[u.id] = u.email; });
+  (profiles || []).forEach(p => { p.email = emailMap[p.id] || null; });
+  const companiesData = currentSystemAdmin ? (results[3]?.data || []) : [];
 
   if (error) {
     tableCard.innerHTML = `<div style="padding:20px;color:#C0392B"><i class="ti ti-alert-circle"></i> שגיאה בטעינה: ${error.message}</div>`;
