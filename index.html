@@ -844,7 +844,11 @@ body.theme-light .theme-opt-check{color:#10B981!important}
       <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <div class="login-err" id="login-err"></div>
+    <div id="login-forgot-msg" style="display:none;font-size:12px;color:#059669;text-align:center;margin-bottom:8px"></div>
     <button class="login-btn" id="login-btn" onclick="doLogin()">התחבר</button>
+    <div style="text-align:center;margin-top:12px">
+      <a href="#" onclick="event.preventDefault();sendLoginPasswordReset()" style="font-size:12px;color:#6B7280;text-decoration:underline">שכחתי סיסמה</a>
+    </div>
   </div>
 </div>
 
@@ -1565,6 +1569,22 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         </div>
       </div>
     </div>
+    <!-- Change my own password -->
+    <div style="margin:14px 0 6px;padding:12px 14px;background:#F8FAFC;border-radius:10px;border:1px solid #E8EDF3">
+      <div style="font-size:11.5px;color:#64748B;font-weight:500;margin-bottom:10px">
+        <i class="ti ti-lock" style="font-size:13px;margin-left:5px;color:#94A3B8"></i>שינוי סיסמה
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <input class="form-in" id="prof-new-pass" type="password" placeholder="סיסמה חדשה" autocomplete="new-password">
+        <input class="form-in" id="prof-new-pass2" type="password" placeholder="אימות סיסמה" autocomplete="new-password">
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-sm" id="prof-pass-btn" onclick="changeMyPassword()"><i class="ti ti-device-floppy"></i>עדכן סיסמה</button>
+        <span id="prof-pass-msg" style="font-size:11px;color:#22C55E;display:none;font-weight:600"><i class="ti ti-check"></i>הסיסמה עודכנה!</span>
+      </div>
+      <div id="prof-pass-err" style="color:#C0392B;font-size:12px;margin-top:6px;min-height:14px"></div>
+    </div>
+
     <div id="prof-err" style="color:#C0392B;font-size:12px;min-height:16px;margin-bottom:8px"></div>
     <div class="modal-foot">
       <button class="btn btn-p" id="prof-save-btn" onclick="saveProfileSettings()"><i class="ti ti-device-floppy"></i>שמור</button>
@@ -2174,6 +2194,23 @@ async function doLogin() {
   }
 
   await initApp(data.user);
+}
+
+async function sendLoginPasswordReset() {
+  const email = document.getElementById('login-email').value.trim();
+  const errEl = document.getElementById('login-err');
+  const msgEl = document.getElementById('login-forgot-msg');
+  errEl.textContent = '';
+  msgEl.style.display = 'none';
+  if (!email) { errEl.textContent = 'יש להזין אימייל תחילה, ואז ללחוץ "שכחתי סיסמה"'; return; }
+
+  await db.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  // Always show the same message regardless of whether the email exists —
+  // confirming/denying an account's existence to an unauthenticated visitor is a user-enumeration risk.
+  msgEl.textContent = 'אם קיים חשבון עם כתובת זו, נשלח אליו קישור לאיפוס סיסמה.';
+  msgEl.style.display = '';
 }
 
 async function doLogout() {
@@ -5809,6 +5846,28 @@ function removeProfileSig() {
   document.getElementById('prof-sig-img').style.display = 'none';
   document.getElementById('prof-sig-ph').style.display = '';
   document.getElementById('prof-sig-remove-btn').style.display = 'none';
+}
+
+async function changeMyPassword() {
+  const p1 = document.getElementById('prof-new-pass').value;
+  const p2 = document.getElementById('prof-new-pass2').value;
+  const errEl = document.getElementById('prof-pass-err');
+  const msgEl = document.getElementById('prof-pass-msg');
+  errEl.textContent = '';
+  msgEl.style.display = 'none';
+  if (!p1 || p1.length < 6) { errEl.textContent = 'הסיסמה חייבת להכיל לפחות 6 תווים'; return; }
+  if (p1 !== p2) { errEl.textContent = 'הסיסמאות אינן תואמות'; return; }
+
+  const btn = document.getElementById('prof-pass-btn');
+  btn.disabled = true;
+  const { error } = await db.auth.updateUser({ password: p1 });
+  btn.disabled = false;
+  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+
+  document.getElementById('prof-new-pass').value = '';
+  document.getElementById('prof-new-pass2').value = '';
+  msgEl.style.display = '';
+  setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
 }
 
 async function saveProfileSettings() {
