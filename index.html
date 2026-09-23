@@ -2218,8 +2218,10 @@ async function doLogout() {
   showLogin();
 }
 
+let _pendingPasswordRecovery = false;
 db.auth.onAuthStateChange((event) => {
   if (event === 'SIGNED_OUT') showLogin();
+  if (event === 'PASSWORD_RECOVERY') _pendingPasswordRecovery = true;
 });
 
 // ─── INIT ────────────────────────────────────────────────
@@ -2312,6 +2314,15 @@ async function initApp(user) {
   }
   subscribeCertificateUpdates();
   initTheme();
+
+  // If we got here via a "forgot password" email link, Supabase already logged the user
+  // in with a temporary recovery session — without this, they'd land in the app with
+  // their OLD password still active and no idea they still need to set a new one.
+  if (_pendingPasswordRecovery) {
+    _pendingPasswordRecovery = false;
+    openProfileModal();
+    showToast('אנא הגדר סיסמה חדשה למטה', 'info');
+  }
 }
 
 // ─── THEME SWITCHER ────────────────────────────────────────
