@@ -4658,6 +4658,11 @@ function toggleProjPicker(e) {
       }).join('')
     : '<div style="padding:12px 14px;font-size:12px;color:#9AA3B0">אין פרויקטים</div>';
 
+  picker.innerHTML += `<div class="proj-picker-item" style="border-top:1px solid #E5E7EB;font-weight:700;color:#3B82F6" onclick="event.stopPropagation();document.getElementById('proj-picker').style.display='none';go('projects')">
+    <i class="ti ti-settings" style="font-size:14px"></i>
+    <span style="flex:1">ניהול / יצירת פרויקטים</span>
+  </div>`;
+
   picker.style.display = 'block';
 }
 
