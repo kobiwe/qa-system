@@ -960,7 +960,6 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <div class="stats" id="dash-stats-row">
           <div class="stat blue"><i class="ti ti-building stat-icon-bg"></i><div class="stat-lbl">פרויקטים פעילים</div><div class="stat-val" id="stat-projects"><span class="spinner"></span></div></div>
           <div class="stat amber"><i class="ti ti-alert-circle stat-icon-bg"></i><div class="stat-lbl">ממצאים פתוחים</div><div class="stat-val" id="stat-open"><span class="spinner"></span></div></div>
-          <div class="stat red"><i class="ti ti-flame stat-icon-bg"></i><div class="stat-lbl">ממצאים קריטיים</div><div class="stat-val" id="stat-critical"><span class="spinner"></span></div></div>
           <div class="stat blue"><i class="ti ti-calendar-check stat-icon-bg"></i><div class="stat-lbl">בדיקות פתוחות</div><div class="stat-val" id="stat-inspections"><span class="spinner"></span></div></div>
           <div class="stat red"><i class="ti ti-octagon stat-icon-bg"></i><div class="stat-lbl">נקודות עצירה</div><div class="stat-val" id="stat-stoppoints"><span class="spinner"></span></div></div>
         </div>
@@ -1012,7 +1011,6 @@ body.theme-light .theme-opt-check{color:#10B981!important}
           <button class="nc-filter-btn"        id="ncf-low"      onclick="setNcFilter('low')"     >דרגה 1</button>
           <button class="nc-filter-btn"        id="ncf-medium"   onclick="setNcFilter('medium')"  >דרגה 2</button>
           <button class="nc-filter-btn"        id="ncf-high"     onclick="setNcFilter('high')"    >דרגה 3</button>
-          <button class="nc-filter-btn"        id="ncf-critical" onclick="setNcFilter('critical')">קריטי</button>
         </div>
         <div class="card" style="padding:0">
           <table>
@@ -1138,10 +1136,6 @@ body.theme-light .theme-opt-check{color:#10B981!important}
             <div class="brd-kpi" title="ממצאים פתוחים">
               <i class="ti ti-alert-circle" style="color:#6B7280"></i>
               <div><div class="brd-kpi-n" id="brd-kn-ncr">–</div><div class="brd-kpi-l">ממצאים</div></div>
-            </div>
-            <div class="brd-kpi" title="ממצאים קריטיים">
-              <i class="ti ti-alert-triangle" style="color:#EF4444"></i>
-              <div><div class="brd-kpi-n" id="brd-kn-crit">–</div><div class="brd-kpi-l">קריטיים</div></div>
             </div>
             <div class="brd-kpi" title="נקודות עצירה פתוחות">
               <i class="ti ti-octagon" style="color:#C0392B"></i>
@@ -1489,6 +1483,19 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <option value="surveyor">מודד מוסמך</option>
       </select>
     </div>
+    <div class="form-row">
+      <label class="form-lbl">חתימה (מוטבעת אוטומטית בפעולות המשתמש)</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:140px;height:56px;border:1px dashed #CBD5E1;border-radius:8px;background:#F8FAFC;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
+          <img id="eu-sig-img" alt="חתימה" style="max-width:100%;max-height:100%;display:none">
+          <span id="eu-sig-ph" style="font-size:11px;color:#9AA3B0">אין חתימה</span>
+        </div>
+        <label class="btn btn-sm" style="cursor:pointer"><i class="ti ti-upload"></i>העלה
+          <input type="file" accept="image/*" style="display:none" onchange="handleEuSigUpload(this)">
+        </label>
+        <button class="btn btn-sm" id="eu-sig-remove" onclick="removeEuSig()" style="display:none" title="הסר חתימה"><i class="ti ti-trash" style="color:#DC2626"></i></button>
+      </div>
+    </div>
 
     <!-- Password reset -->
     <div style="margin:14px 0 6px;padding:12px 14px;background:#F8FAFC;border-radius:10px;border:1px solid #E8EDF3">
@@ -1595,7 +1602,6 @@ body.theme-light .theme-opt-check{color:#10B981!important}
     <div class="detail-stat-row">
       <div class="detail-stat"><div class="ds-val" id="d-stat-total">–</div><div class="ds-lbl">סה"כ ממצאים</div></div>
       <div class="detail-stat"><div class="ds-val" id="d-stat-open" style="color:#C97B1A">–</div><div class="ds-lbl">פתוחים</div></div>
-      <div class="detail-stat"><div class="ds-val" id="d-stat-crit" style="color:#C0392B">–</div><div class="ds-lbl">קריטיים</div></div>
       <div class="detail-stat"><div class="ds-val" id="d-stat-closed" style="color:#2E7D32">–</div><div class="ds-lbl">סגורים</div></div>
     </div>
 
@@ -1757,7 +1763,6 @@ body.theme-light .theme-opt-check{color:#10B981!important}
           <button class="ncr-sev-btn" id="nsb-low"         onclick="selectSeverity('low')"     ><span class="ncr-sev-dot" style="background:#9CA3AF"></span>דרגה 1</button>
           <button class="ncr-sev-btn" id="nsb-medium"      onclick="selectSeverity('medium')"  ><span class="ncr-sev-dot" style="background:#D97706"></span>דרגה 2</button>
           <button class="ncr-sev-btn active" id="nsb-high" onclick="selectSeverity('high')"    ><span class="ncr-sev-dot" style="background:#DC2626"></span>דרגה 3</button>
-          <button class="ncr-sev-btn" id="nsb-critical"    onclick="selectSeverity('critical')"><span class="ncr-sev-dot" style="background:#7C1F1F"></span>קריטי</button>
         </div>
       </div>
 
@@ -1912,12 +1917,15 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         </div>
       </div>
       <div style="margin-bottom:14px">
-        <div class="ncr-sec-label" style="margin-bottom:8px"><i class="ti ti-signature"></i>חתימה דיגיטלית *</div>
-        <div style="border:2px dashed #CBD5E1;border-radius:8px;background:#F8FAFC;position:relative">
-          <canvas id="signature-canvas" width="500" height="110" style="width:100%;touch-action:none;cursor:crosshair;display:block;border-radius:6px"></canvas>
-          <button onclick="clearSignature()" style="position:absolute;top:6px;left:8px;font-size:10px;color:#9AA3B0;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;border:1px solid #E5E7EB;background:#fff">מחק</button>
+        <div class="ncr-sec-label" style="margin-bottom:8px"><i class="ti ti-signature"></i>חתימה דיגיטלית</div>
+        <div style="border:1px solid #E2E8F0;border-radius:8px;background:#F8FAFC;padding:10px;text-align:center;min-height:70px;display:flex;align-items:center;justify-content:center">
+          <img id="closure-sig-img" alt="חתימה" style="max-height:80px;max-width:100%;display:none">
+          <div id="closure-sig-missing" style="display:none;font-size:12px;color:#C0392B">
+            לא הועלתה חתימה לפרופיל שלך.
+            <a href="#" onclick="closeById('m-ncr-closure');openProfileModal();return false" style="color:#1D4ED8;font-weight:600">העלה חתימה בפרופיל</a>
+          </div>
         </div>
-        <div style="font-size:10px;color:#9AA3B0;margin-top:4px;text-align:center">חתום בשטח למעלה</div>
+        <div style="font-size:10px;color:#9AA3B0;margin-top:4px;text-align:center">החתימה נלקחת אוטומטית מהפרופיל שלך — אין צורך לחתום בכל פעם</div>
       </div>
       <div id="closure-err" style="color:#C0392B;font-size:12px;margin-bottom:8px;min-height:14px"></div>
       <div class="modal-foot" style="padding:0">
@@ -2096,7 +2104,7 @@ body.theme-light .theme-opt-check{color:#10B981!important}
             <div style="font-size:11px;color:#166534" id="insp-cert-date"></div>
           </div>
         </div>
-        <a id="insp-cert-link" href="#" target="_blank" class="btn btn-sm" style="color:#15803D;border-color:#86EFAC;white-space:nowrap"><i class="ti ti-file-text"></i>פתח תעודה</a>
+        <a id="insp-cert-link" href="#" class="btn btn-sm" style="color:#15803D;border-color:#86EFAC;white-space:nowrap"><i class="ti ti-file-text"></i>פתח תעודה</a>
       </div>
       <div id="insp-no-cert-msg" style="display:none;margin-top:10px;font-size:11px;color:#9AA3B0;text-align:center">תעודת מעבדה טרם התקבלה</div>
     </div>
@@ -2154,6 +2162,71 @@ async function reportUploadFailure(label, resp) {
   const body = resp ? await resp.text().catch(() => '') : '';
   logClientError('upload failed: ' + label, { status: resp?.status, body: body.slice(0, 300) });
   showToast('שגיאה בהעלאת ' + label, 'error');
+}
+
+// ─── PRIVATE STORAGE ─────────────────────────────────────
+// The `documents` bucket is private. DB columns (logo_url, pdf_url, certificate_url, url, ...) keep storing the
+// legacy ".../object/public/documents/<path>" string, but only as an opaque pointer: sbPathOf() extracts the path
+// and sbSign() asks Storage for a short-lived signed URL (RLS decides who may sign — see migration 008).
+const _SB_OBJ_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/documents\/([^?#]+)/;
+const sbRef = path => `${SUPABASE_URL}/storage/v1/object/public/documents/${path}`;
+function sbPathOf(ref) {
+  const m = ref && String(ref).match(_SB_OBJ_RE);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+const _sbCache = new Map();   // "<path>|<ttl>" -> { url, exp }
+async function sbSign(ref, ttl = 3600) {
+  const path = sbPathOf(ref);
+  if (!path) return ref || '';                       // data:/blob:/foreign URLs are used as they are
+  const key = path + '|' + ttl, hit = _sbCache.get(key);
+  if (hit && hit.exp - Date.now() > 120000) return hit.url;
+  const { data, error } = await db.storage.from('documents').createSignedUrl(path, ttl);
+  if (error || !data?.signedUrl) { logClientError('sign failed', { path, msg: error?.message }); return ''; }
+  _sbCache.set(key, { url: data.signedUrl, exp: Date.now() + ttl * 1000 });
+  return data.signedUrl;
+}
+function sbInvalidate(ref) {                          // call after overwriting an object at the same path
+  const p = sbPathOf(ref); if (!p) return;
+  for (const k of [..._sbCache.keys()]) if (k.startsWith(p + '|')) _sbCache.delete(k);
+  _sbDataCache.delete(p);
+}
+// Opens a stored file in a new tab. The tab is opened before the await so popup blockers allow it.
+async function sbOpen(ref) {
+  const w = window.open('', '_blank');
+  if (!w) { showToast('אנא אפשר חלונות קופצים בדפדפן', 'error'); return; }
+  const url = await sbSign(ref);
+  if (!url) { w.close(); showToast('הקובץ אינו זמין', 'error'); return; }
+  w.location.href = url;
+}
+async function sbSetImg(img, ref) {
+  if (!img) return;
+  img.dataset.sbDone = '1';
+  const url = await sbSign(ref);
+  if (url) { img.src = url; img.style.display = ''; } else img.style.display = 'none';
+}
+// <img data-sb="<ref>"> inside any dynamically rendered HTML is resolved automatically.
+function _sbHydrate(root) {
+  const list = root.matches?.('img[data-sb]') ? [root] : [];
+  root.querySelectorAll?.('img[data-sb]').forEach(i => list.push(i));
+  list.forEach(i => { if (!i.dataset.sbDone) sbSetImg(i, i.dataset.sb); });
+}
+new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) _sbHydrate(n); })))
+  .observe(document.documentElement, { childList: true, subtree: true });
+// Embeddable copy (for PDFs rendered in a popup / html2canvas, where a 1h signed URL could expire mid-flow).
+const _sbDataCache = new Map();
+async function sbDataUrl(ref) {
+  const path = sbPathOf(ref); if (!path) return ref || '';
+  if (_sbDataCache.has(path)) return _sbDataCache.get(path);
+  const url = await sbSign(ref); if (!url) return '';
+  const blob = await (await fetch(url)).blob();
+  const data = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+  _sbDataCache.set(path, data);
+  return data;
+}
+async function ensureCompanyLogoData() {
+  if (!currentCompany) return '';
+  try { currentCompany._logoData = currentCompany.logo_url ? await sbDataUrl(currentCompany.logo_url) : ''; } catch (_) { currentCompany._logoData = ''; }
+  return currentCompany._logoData;
 }
 
 // ─── AUTH ───────────────────────────────────────────────
@@ -2417,8 +2490,7 @@ async function loadDashboard() {
   const now              = new Date();
   const activeProjects   = proj.filter(p => p.status === 'active' || !p.status);
   const openFindings     = find.filter(f => f.status !== 'closed');
-  const criticalFindings = find.filter(f => f.severity === 'critical' && f.status !== 'closed');
-  const pendingInsp      = insp.filter(o => o.status === 'pending');
+  const pendingInsp     = insp.filter(o => o.status === 'pending');
   const longPending      = pendingInsp.filter(o => (now - new Date(o.created_at)) > 48 * 3600000);
   const overdueFindings  = openFindings.filter(f => f.due_date && new Date(f.due_date) < now);
   const projMap          = Object.fromEntries(proj.map(p => [p.id, p.name]));
@@ -2426,7 +2498,6 @@ async function loadDashboard() {
   // KPI cards
   countUp(document.getElementById('stat-projects'),    activeProjects.length);
   countUp(document.getElementById('stat-open'),        openFindings.length);
-  countUp(document.getElementById('stat-critical'),    criticalFindings.length);
   countUp(document.getElementById('stat-inspections'), pendingInsp.length);
   countUp(document.getElementById('stat-stoppoints'),  stops.length);
 
@@ -2437,7 +2508,6 @@ async function loadDashboard() {
   const summaryEl = document.getElementById('dash-summary-line');
   if (summaryEl) {
     const parts = [];
-    if (criticalFindings.length > 0) parts.push(`<b style="color:#FCA5A5">${criticalFindings.length} ממצאים קריטיים</b>`);
     if (stops.length > 0)            parts.push(`<b style="color:#FCA5A5">${stops.length} נקודות עצירה ממתינות</b>`);
     if (pendingInsp.length > 0)      parts.push(`${pendingInsp.length} בדיקות פתוחות`);
     if (overdueFindings.length > 0)  parts.push(`${overdueFindings.length} ממצאים באיחור`);
@@ -2447,7 +2517,7 @@ async function loadDashboard() {
   }
 
   // Render dashboard sections
-  _renderActionCenter(criticalFindings, stops, longPending, overdueFindings, projMap);
+  _renderActionCenter(stops, longPending, overdueFindings, projMap);
   _renderQualityHealth(proj, find, stops, longPending);
   _renderHeatmap(proj, find, stops);
   _renderActivityFeed(find, insp, projMap);
@@ -2458,18 +2528,12 @@ async function loadDashboard() {
 }
 
 // ── Dashboard helper: Action Center ────────────────────
-function _renderActionCenter(criticals, stops, longPending, overdue, projMap) {
+function _renderActionCenter(stops, longPending, overdue, projMap) {
   const el      = document.getElementById('dash-action-center');
   const countEl = document.getElementById('dash-ac-count');
   if (!el) return;
 
   const items = [];
-
-  criticals.slice(0, 5).forEach(f => items.push({
-    cls: 'ac-critical', icon: 'ti-flame', label: 'ממצא קריטי',
-    proj: projMap[f.project_id] || '–', title: f.title || '–',
-    date: f.created_at, action: `go('nc',document.getElementById('nav-nc'))`
-  }));
 
   stops.slice(0, 5).forEach(wi => items.push({
     cls: 'ac-stop', icon: 'ti-octagon', label: 'נקודת עצירה',
@@ -2524,22 +2588,20 @@ function _renderQualityHealth(proj, find, stops, longPending) {
   }
   const now = new Date();
   const scored = active.map(p => {
-    const crit   = find.filter(f => f.project_id === p.id && f.severity === 'critical' && f.status !== 'closed').length;
     const high   = find.filter(f => f.project_id === p.id && f.severity === 'high'     && f.status !== 'closed').length;
-    const ovrd   = find.filter(f => f.project_id === p.id && f.status !== 'closed' && f.due_date && new Date(f.due_date) < now).length;
+    const ovrd  = find.filter(f => f.project_id === p.id && f.status !== 'closed' && f.due_date && new Date(f.due_date) < now).length;
     const stp    = stops.filter(w => w.project_id === p.id).length;
     const lp     = longPending.filter(o => o.project_id === p.id).length;
-    const score  = crit * 30 + high * 15 + ovrd * 10 + stp * 12 + lp * 8;
-    return { p, crit, high, ovrd, stp, score };
+    const score  = high * 15 + ovrd * 10 + stp * 12 + lp * 8;
+    return { p, high, ovrd, stp, score };
   }).sort((a, b) => b.score - a.score);
 
-  el.innerHTML = scored.map(({ p, crit, high, ovrd, stp, score }) => {
+  el.innerHTML = scored.map(({ p, high, ovrd, stp, score }) => {
     const pct   = Math.min(score / 100 * 100, 100);
     const cls   = score === 0 ? 'good' : score <= 30 ? 'good' : score <= 70 ? 'warn' : 'risk';
     const label = score === 0 ? 'תקין ✓' : score <= 30 ? 'תקין' : score <= 70 ? 'דורש תשומת לב' : 'בסיכון';
     const lclr  = score <= 30 ? '#16A34A' : score <= 70 ? '#D97706' : '#EF4444';
     const tags  = [
-      crit  ? `<span class="badge b-red"   style="font-size:9px">${crit} קריטי</span>`  : '',
       high  ? `<span class="badge b-warn"  style="font-size:9px">${high} גבוה</span>`   : '',
       stp   ? `<span class="badge" style="font-size:9px;background:#FFF1F0;color:#C0392B">${stp} עצירה</span>` : '',
       ovrd  ? `<span class="badge b-warn"  style="font-size:9px">${ovrd} איחור</span>`  : '',
@@ -2566,12 +2628,10 @@ function _renderHeatmap(proj, find, stops) {
   }
   const tiles = active.map(p => {
     const total  = find.filter(f => f.project_id === p.id && f.status !== 'closed').length;
-    const crit   = find.filter(f => f.project_id === p.id && f.severity === 'critical' && f.status !== 'closed').length;
     const high   = find.filter(f => f.project_id === p.id && f.severity === 'high'     && f.status !== 'closed').length;
     const stp    = stops.filter(w => w.project_id === p.id).length;
-    const cls    = (crit > 0 || stp > 0) ? 'hm-risk' : (high > 0 || total > 3) ? 'hm-warn' : total === 0 ? 'hm-ok' : 'hm-ok';
+    const cls    = stp > 0 ? 'hm-risk' : (high > 0 || total > 3) ? 'hm-warn' : total === 0 ? 'hm-ok' : 'hm-ok';
     const dots   = [
-      ...Array(Math.min(crit, 4)).fill(`<div class="dash-hm-dot" style="background:#EF4444"></div>`),
       ...Array(Math.min(high, 3)).fill(`<div class="dash-hm-dot" style="background:#F59E0B"></div>`),
       ...Array(Math.min(stp,  2)).fill(`<div class="dash-hm-dot" style="background:#C0392B"></div>`),
     ].join('');
@@ -2724,7 +2784,6 @@ async function openProjectDetail(id) {
   tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><span class="spinner"></span> טוען...</td></tr>';
   document.getElementById('d-stat-total').textContent = '–';
   document.getElementById('d-stat-open').textContent  = '–';
-  document.getElementById('d-stat-crit').textContent  = '–';
   document.getElementById('d-stat-closed').textContent= '–';
 
   const { data: findings } = await db.from('findings').select('*').eq('project_id', id).order('created_at', { ascending: false });
@@ -2732,7 +2791,6 @@ async function openProjectDetail(id) {
 
   document.getElementById('d-stat-total').textContent  = find.length;
   document.getElementById('d-stat-open').textContent   = find.filter(f => f.status !== 'closed').length;
-  document.getElementById('d-stat-crit').textContent   = find.filter(f => f.severity === 'critical' && f.status !== 'closed').length;
   document.getElementById('d-stat-closed').textContent = find.filter(f => f.status === 'closed').length;
 
   tbody.innerHTML = find.length > 0
@@ -2854,21 +2912,16 @@ async function loadFindingsScreen(findings, projects) {
 
   // סיכום לפי דרגה — פתוחות בלבד
   const open = find.filter(f => f.status !== 'closed');
-  const counts = { all: open.length, low: 0, medium: 0, high: 0, critical: 0 };
+  const counts = { all: open.length, low: 0, medium: 0, high: 0 };
   open.forEach(f => { if (counts[f.severity] !== undefined) counts[f.severity]++; });
 
-  const critCount = counts.critical;
-  if (critCount > 0) {
-    alertEl.style.display = '';
-    alertEl.innerHTML = `<div class="alert a-danger"><i class="ti ti-alert-triangle"></i>${critCount} אי-התאמות קריטיות פתוחות הדורשות טיפול מיידי</div>`;
-  } else { alertEl.style.display = 'none'; }
+  alertEl.style.display = 'none';
 
   summaryEl.innerHTML = [
     { label:'סה"כ פתוחות', val:counts.all,      bg:'#EFF6FF', bdr:'#BFDBFE', clr:'#1D4ED8' },
     { label:'דרגה 1',      val:counts.low,      bg:'#F3F4F6', bdr:'#9CA3AF', clr:'#4B5563' },
     { label:'דרגה 2',      val:counts.medium,   bg:'#FEF3C7', bdr:'#F59E0B', clr:'#92400E' },
     { label:'דרגה 3',      val:counts.high,     bg:'#FEE2E2', bdr:'#EF4444', clr:'#991B1B' },
-    { label:'קריטי',       val:counts.critical, bg:'#FDF2F8', bdr:'#9B2C2C', clr:'#7C1F1F' },
   ].map(c => `<span class="nc-sum-chip" style="background:${c.bg};border-color:${c.bdr};color:${c.clr}">${c.label}<strong>${c.val}</strong></span>`).join('');
 
   _renderFindingsTable(_ncAllFindings);
@@ -2953,8 +3006,8 @@ async function loadReportsScreen(findings) {
     });
   }
 
-  const severities = ['critical', 'high', 'medium', 'low'];
-  const labels = { critical: 'קריטי', high: 'דרגה 3', medium: 'דרגה 2', low: 'דרגה 1' };
+  const severities = ['high', 'medium', 'low'];
+  const labels = { high: 'דרגה 3', medium: 'דרגה 2', low: 'דרגה 1' };
   const tbody = document.getElementById('report-tbody');
 
   if (find.length > 0) {
@@ -3128,7 +3181,7 @@ let _ncrMarkupPhase = 'open'; // 'open' | 'close'
 
 function selectSeverity(sev) {
   document.getElementById('nf-severity').value = sev;
-  ['low','medium','high','critical'].forEach(s => {
+  ['low','medium','high'].forEach(s => {
     document.getElementById('nsb-' + s)?.classList.toggle('active', s === sev);
   });
 }
@@ -3211,7 +3264,7 @@ function _ncrRenderAttachGrid() {
                ...(_ncrPhotos     || []).map((p,i) => ({ ...p, src: p.dataUrl, idx: i, existing: false }))];
   grid.innerHTML = all.map(p => `
     <div class="ncr-attach-thumb">
-      <img src="${p.src}" alt="">
+      <img ${p.existing ? `data-sb="${p.src}"` : `src="${p.src}"`} alt="">
       <div class="ncr-thumb-ov">
         <button onclick="${p.existing ? `ncrMarkupExisting(${p.idx})` : `ncrMarkupNew(${p.idx})`}" title="סמן"><i class="ti ti-edit"></i></button>
         <button onclick="${p.existing ? `ncrRemoveExisting(${p.idx})` : `ncrRemoveNew(${p.idx})`}" title="מחק" style="color:#DC2626"><i class="ti ti-trash"></i></button>
@@ -3348,11 +3401,11 @@ async function submitNCR() {
         const fname = `findings/${findingId}/photo_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
         const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${fname}`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'image/jpeg' },
           body: blob
         });
         if (resp.ok) {
-          const url = `${SUPABASE_URL}/storage/v1/object/public/documents/${fname}`;
+          const url = sbRef(fname);
           await db.from('finding_attachments').insert({
             finding_id: findingId, url, company_id: currentCompanyId, phase: 'open', created_by: currentUserId
           });
@@ -3456,7 +3509,7 @@ async function openFindingDetail(id) {
       actDiv.innerHTML += `<button class="btn" onclick="fdEditFinding()"><i class="ti ti-pencil"></i>ערוך</button>`;
     }
   } else if (f.signature_url) {
-    actDiv.innerHTML = `<a href="${f.signature_url}" target="_blank" class="btn btn-sm"><i class="ti ti-writing-sign"></i>צפה בחתימה</a>`;
+    actDiv.innerHTML = `<a href="#" onclick="sbOpen('${f.signature_url}');return false" class="btn btn-sm"><i class="ti ti-writing-sign"></i>צפה בחתימה</a>`;
   }
 
   openM('m-finding-detail');
@@ -3483,12 +3536,12 @@ async function _fdLoadMedia(findingId) {
   if (openPhotos.length) {
     html += `<div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;margin-bottom:8px">תמונות פתיחה</div>`;
     html += `<div class="ncr-attach-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">` +
-      openPhotos.map(a => `<div class="ncr-attach-thumb" onclick="window.open('${a.url}','_blank')"><img src="${a.url}" alt=""></div>`).join('') + `</div>`;
+      openPhotos.map(a => `<div class="ncr-attach-thumb" onclick="sbOpen('${a.url}')"><img data-sb="${a.url}" alt=""></div>`).join('') + `</div>`;
   }
   if (closePhotos.length) {
     html += `<div style="font-size:10px;font-weight:700;color:#16A34A;text-transform:uppercase;margin-bottom:8px">תמונות סגירה (תיקון)</div>`;
     html += `<div class="ncr-attach-grid" style="grid-template-columns:repeat(4,1fr)">` +
-      closePhotos.map(a => `<div class="ncr-attach-thumb" onclick="window.open('${a.url}','_blank')"><img src="${a.url}" alt=""></div>`).join('') + `</div>`;
+      closePhotos.map(a => `<div class="ncr-attach-thumb" onclick="sbOpen('${a.url}')"><img data-sb="${a.url}" alt=""></div>`).join('') + `</div>`;
   }
   pane.innerHTML = html;
 }
@@ -3577,7 +3630,7 @@ let _markupDrawing = false;
 let _markupStart   = { x:0, y:0 };
 let _markupCurrent = null;
 
-function openMarkupCanvas(imgSrc) {
+async function openMarkupCanvas(imgSrc) {
   const canvas = document.getElementById('markup-canvas');
   const ctx    = canvas.getContext('2d');
   _markupShapes = [];
@@ -3591,8 +3644,8 @@ function openMarkupCanvas(imgSrc) {
     canvas.width = w; canvas.height = h;
     _markupRedraw();
   };
-  _markupImg.src = imgSrc;
   openM('m-photo-markup');
+  _markupImg.src = await sbSign(imgSrc);   // stored photos need a signed URL; data: URLs pass through
 }
 
 function _markupRedraw() {
@@ -3677,27 +3730,21 @@ function saveMarkup() {
 // ═══════════════════════════════════════════════════════════
 
 let _closurePhotos = [];
-let _sigPad = { drawing: false, canvas: null, ctx: null, lastX: 0, lastY: 0, hasData: false };
 
-function _sigInit() {
-  const c = document.getElementById('signature-canvas');
-  if (!c || _sigPad.canvas === c) return;
-  _sigPad.canvas = c; _sigPad.ctx = c.getContext('2d');
-  _sigPad.ctx.strokeStyle = '#1A2B4A'; _sigPad.ctx.lineWidth = 2.5; _sigPad.ctx.lineCap = 'round'; _sigPad.ctx.lineJoin = 'round';
-  const on = (el, ev, fn, opt) => el.addEventListener(ev, fn, opt);
-  const pos = e => { const r = c.getBoundingClientRect(), cl = e.touches ? e.touches[0] : e, sx = c.width / r.width, sy = c.height / r.height; return { x: (cl.clientX - r.left) * sx, y: (cl.clientY - r.top) * sy }; };
-  on(c, 'mousedown',  e => { _sigPad.drawing = true; const p = pos(e); _sigPad.lastX = p.x; _sigPad.lastY = p.y; });
-  on(c, 'mousemove',  e => { if (!_sigPad.drawing) return; const p = pos(e); _sigPad.ctx.beginPath(); _sigPad.ctx.moveTo(_sigPad.lastX, _sigPad.lastY); _sigPad.ctx.lineTo(p.x, p.y); _sigPad.ctx.stroke(); _sigPad.lastX = p.x; _sigPad.lastY = p.y; _sigPad.hasData = true; });
-  on(c, 'mouseup',    () => { _sigPad.drawing = false; });
-  on(c, 'touchstart', e => { e.preventDefault(); _sigPad.drawing = true; const p = pos(e); _sigPad.lastX = p.x; _sigPad.lastY = p.y; }, { passive:false });
-  on(c, 'touchmove',  e => { e.preventDefault(); if (!_sigPad.drawing) return; const p = pos(e); _sigPad.ctx.beginPath(); _sigPad.ctx.moveTo(_sigPad.lastX, _sigPad.lastY); _sigPad.ctx.lineTo(p.x, p.y); _sigPad.ctx.stroke(); _sigPad.lastX = p.x; _sigPad.lastY = p.y; _sigPad.hasData = true; }, { passive:false });
-  on(c, 'touchend',   e => { e.preventDefault(); _sigPad.drawing = false; }, { passive:false });
+// Everyone uploads a signature once in their profile; it is then stamped automatically on every signed action
+// (NCR closure, checklist tick). Signature files are versioned (signatures/<user>/<ts>.<ext>, never overwritten),
+// so records signed earlier keep the signature that was valid when they were signed.
+// Signer name plus a small signature thumbnail (checklist rows).
+function _signerCellHtml(name, sigRef) {
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return `${esc(name)}${sigRef ? `<img data-sb="${esc(sigRef)}" alt="חתימה" style="display:block;height:22px;max-width:80px;object-fit:contain;margin-top:2px">` : ''}`;
 }
-
-function clearSignature() {
-  if (!_sigPad.ctx) return;
-  _sigPad.ctx.clearRect(0, 0, _sigPad.canvas.width, _sigPad.canvas.height);
-  _sigPad.hasData = false;
+function requireProfileSignature() {
+  const sig = _currentUserProfile?.signature_url;
+  if (sig) return sig;
+  showToast('יש להעלות חתימה בפרופיל לפני חתימה על פעולה', 'error');
+  openProfileModal();
+  return null;
 }
 
 async function requestNCRClosure(id) {
@@ -3727,10 +3774,11 @@ function openNCRClosure(id) {
   document.getElementById('closure-file-input').value = '';
   const f = { title: document.getElementById('fd-title')?.textContent || '' };
   document.getElementById('closure-ncr-title').textContent = f.title;
-  // Init signature pad after modal opens
-  setTimeout(_sigInit, 100);
-  clearSignature();
-  _sigPad.hasData = false;
+  // signature comes from the profile — show it, or tell the user to upload one
+  const sig = _currentUserProfile?.signature_url;
+  const sigImg = document.getElementById('closure-sig-img'), sigMissing = document.getElementById('closure-sig-missing');
+  sigMissing.style.display = sig ? 'none' : '';
+  if (sig) { delete sigImg.dataset.sbDone; sbSetImg(sigImg, sig); } else sigImg.style.display = 'none';
   openM('m-ncr-closure');
 }
 
@@ -3762,27 +3810,11 @@ async function submitClosure() {
   const errEl = document.getElementById('closure-err');
   errEl.textContent = '';
   if (!notes) { errEl.textContent = 'יש לתאר את התיקון שבוצע'; return; }
-  if (!_sigPad.hasData) { errEl.textContent = 'נדרשת חתימה דיגיטלית'; return; }
+  const sigUrl = _currentUserProfile?.signature_url;
+  if (!sigUrl) { errEl.textContent = 'יש להעלות חתימה בפרופיל לפני סגירת אי-התאמה'; return; }
 
   const btn = document.querySelector('#m-ncr-closure button[onclick="submitClosure()"]');
   if (btn) btn.disabled = true;
-
-  // Upload signature
-  let sigUrl = null;
-  try {
-    const sigDataUrl = _sigPad.canvas.toDataURL('image/png');
-    const sigBlob    = await (await fetch(sigDataUrl)).blob();
-    const { data: sd } = await db.auth.getSession();
-    const token = sd?.session?.access_token;
-    const sigPath = `findings/${id}/signature_${Date.now()}.png`;
-    const sigResp = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${sigPath}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'image/png', 'x-upsert': 'true' },
-      body: sigBlob
-    });
-    if (sigResp.ok) sigUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${sigPath}`;
-    else await reportUploadFailure('חתימה', sigResp);
-  } catch(e) { console.warn('signature upload error', e); logClientError('signature upload exception', { msg: e.message }); }
 
   // Upload closure photos
   if (_closurePhotos.length) {
@@ -3795,11 +3827,11 @@ async function submitClosure() {
         const fname = `findings/${id}/close_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
         const resp  = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${fname}`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token2}`, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
+          headers: { 'Authorization': `Bearer ${token2}`, 'Content-Type': 'image/jpeg' },
           body: blob
         });
         if (resp.ok) await db.from('finding_attachments').insert({
-          finding_id: id, url: `${SUPABASE_URL}/storage/v1/object/public/documents/${fname}`,
+          finding_id: id, url: sbRef(fname),
           company_id: currentCompanyId, phase: 'close', created_by: currentUserId
         });
         else await reportUploadFailure('תמונת סגירה', resp);
@@ -3853,7 +3885,7 @@ function loadCompanySettings() {
   const rmBtn   = document.getElementById('logo-remove-btn');
   if (nameInp) nameInp.value = name;
   if (logo && img) {
-    img.src = logo; img.style.display = '';
+    sbSetImg(img, logo);
     if (ph)    ph.style.display = 'none';
     if (rmBtn) rmBtn.style.display = '';
   } else {
@@ -3882,7 +3914,8 @@ async function handleLogoUpload(input) {
   });
   if (!resp.ok) { showToast('שגיאה בהעלאת לוגו', 'error'); return; }
 
-  const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${path}`;
+  const publicUrl = sbRef(path);
+  sbInvalidate(publicUrl);   // same path, new content
   // Save to companies table
   await db.from('companies').update({ logo_url: publicUrl }).eq('id', currentCompanyId);
   // Update local cache
@@ -3932,7 +3965,8 @@ async function handleEcLogoUpload(input) {
   });
   if (!resp.ok) { showToast('שגיאה בהעלאת לוגו', 'error'); return; }
 
-  const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${path}`;
+  const publicUrl = sbRef(path);
+  sbInvalidate(publicUrl);   // same path, new content
   await db.from('companies').update({ logo_url: publicUrl }).eq('id', companyId);
 
   // Update local cache if editing own company
@@ -3942,7 +3976,7 @@ async function handleEcLogoUpload(input) {
   const ecImg = document.getElementById('ec-logo-img');
   const ecPh  = document.getElementById('ec-logo-ph');
   const ecRm  = document.getElementById('ec-logo-remove-btn');
-  if (ecImg) { ecImg.src = publicUrl; ecImg.style.display = ''; }
+  if (ecImg) sbSetImg(ecImg, publicUrl);
   if (ecPh)  ecPh.style.display = 'none';
   if (ecRm)  ecRm.style.display = '';
   showToast('לוגו עודכן ✓', 'success');
@@ -4045,7 +4079,7 @@ function openEditCompany(companyId) {
     document.getElementById('ec-acc-email').value       = data.accounting_contact_email || '';
     // Populate logo
     if (data.logo_url) {
-      if (ecImg) { ecImg.src = data.logo_url; ecImg.style.display = ''; }
+      if (ecImg) sbSetImg(ecImg, data.logo_url);
       if (ecPh)  ecPh.style.display = 'none';
       if (ecRm)  ecRm.style.display = '';
     }
@@ -4199,7 +4233,7 @@ async function loadUsersScreen() {
     if (!co) return '<td style="color:#9AA3B0;font-size:11px">–</td>';
     const initials = (co.name || '?').replace(/[^א-תa-zA-Z]/g, '').substring(0, 2).toUpperCase() || '?';
     const logo = co.logo_url
-      ? `<img src="${co.logo_url}" style="height:24px;max-width:64px;object-fit:contain;border-radius:3px;flex-shrink:0" onerror="this.style.display='none'">`
+      ? `<img data-sb="${co.logo_url}" style="height:24px;max-width:64px;object-fit:contain;border-radius:3px;flex-shrink:0" onerror="this.style.display='none'">`
       : `<div style="width:28px;height:24px;border-radius:4px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#2563EB;flex-shrink:0">${initials}</div>`;
     return `<td><div style="display:flex;align-items:center;gap:7px">${logo}<span style="font-size:11px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px" title="${co.name||''}">${co.name || '–'}</span></div></td>`;
   };
@@ -4360,7 +4394,48 @@ function openEditUser(id, fullName, role, email, signerRole) {
   document.getElementById('eu-avatar').textContent = initials;
   document.getElementById('eu-name-display').textContent = fullName || email || '–';
   document.getElementById('eu-email-display').textContent = email || '';
+  _euSigRender(null);
+  db.from('profiles').select('signature_url').eq('id', id).single().then(({ data }) => {
+    if (document.getElementById('eu-id').value === id) _euSigRender(data?.signature_url || null);
+  });
   openM('m-edit-user');
+}
+
+// An admin can upload the signature for a user (e.g. when creating the account); it is saved immediately.
+function _euSigRender(ref) {
+  const img = document.getElementById('eu-sig-img'), ph = document.getElementById('eu-sig-ph'), rm = document.getElementById('eu-sig-remove');
+  if (ref) { delete img.dataset.sbDone; sbSetImg(img, ref); ph.style.display = 'none'; rm.style.display = ''; }
+  else { img.style.display = 'none'; img.removeAttribute('src'); ph.style.display = ''; rm.style.display = 'none'; }
+}
+
+async function handleEuSigUpload(input) {
+  const file = input.files?.[0];
+  const id = document.getElementById('eu-id').value;
+  const errEl = document.getElementById('eu-err');
+  if (!file || !id) return;
+  errEl.textContent = '';
+  if (!file.type.startsWith('image/')) { errEl.textContent = 'יש לבחור קובץ תמונה'; input.value = ''; return; }
+  if (file.size > 2 * 1024 * 1024) { errEl.textContent = 'הקובץ גדול מ-2MB'; input.value = ''; return; }
+  const ext  = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+  const path = `signatures/${id}/${Date.now()}.${ext}`;   // versioned: earlier signed records keep their signature
+  const { error } = await db.storage.from('documents').upload(path, file);
+  if (error) { errEl.textContent = 'שגיאה בהעלאת החתימה'; logClientError('admin signature upload failed', { msg: error.message }); input.value = ''; return; }
+  const ref = sbRef(path);
+  const { error: upErr } = await db.from('profiles').update({ signature_url: ref }).eq('id', id);
+  input.value = '';
+  if (upErr) { errEl.textContent = 'שגיאה בשמירה: ' + upErr.message; return; }
+  _euSigRender(ref);
+  if (id === currentUserId && _currentUserProfile) _currentUserProfile.signature_url = ref;
+  showToast('החתימה נשמרה', 'success');
+}
+
+async function removeEuSig() {
+  const id = document.getElementById('eu-id').value;
+  if (!id || !confirm('להסיר את החתימה של המשתמש?')) return;
+  const { error } = await db.from('profiles').update({ signature_url: null }).eq('id', id);
+  if (error) { document.getElementById('eu-err').textContent = 'שגיאה: ' + error.message; return; }
+  _euSigRender(null);
+  if (id === currentUserId && _currentUserProfile) _currentUserProfile.signature_url = null;
 }
 
 async function saveEditUser() {
@@ -4789,7 +4864,7 @@ async function selectDocsFolder(id) {
   listEl.innerHTML = files.map(f => `
     <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bdr)">
       <i class="ti ti-file" style="color:#6B7280"></i>
-      <a href="${f.url}" target="_blank" style="flex:1;font-size:12px;color:#374151;text-decoration:none">${f.name}</a>
+      <a href="#" onclick="sbOpen('${f.url}');return false" style="flex:1;font-size:12px;color:#374151;text-decoration:none">${f.name}</a>
       <span style="font-size:10px;color:#9AA3B0">${f.uploaded_by_name || ''}</span>
       <button class="btn btn-sm" onclick="docsDeleteFile('${f.id}','${id}')" title="מחק"><i class="ti ti-trash" style="color:#DC2626"></i></button>
     </div>`).join('');
@@ -4835,7 +4910,7 @@ async function docsDeleteFolder(id) {
 async function _docsUploadOnce(token, path, file) {
   return fetch(`${SUPABASE_URL}/storage/v1/object/documents/${path}`, {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': file.type || 'application/octet-stream' },
     body: file
   });
 }
@@ -4867,7 +4942,7 @@ async function docsUploadFile(input, folderId) {
         const body = await resp.text().catch(() => '');
         throw new Error(`upload failed (${resp.status}) ${body}`.trim());
       }
-      const url = `${SUPABASE_URL}/storage/v1/object/public/documents/${path}`;
+      const url = sbRef(path);
       await db.from('project_files').insert({
         company_id: currentCompanyId, project_id: _activeProjectId, folder_id: folderId,
         name: file.name, url, size_bytes: file.size,
@@ -4928,7 +5003,7 @@ async function openProjectBoard(projectId) {
   // Parallel fetch: work items + KPI data
   const [{ data, error }, { data: findings }, { data: inspections }, { data: typeConfig }] = await Promise.all([
     db.from('work_items')
-      .select('*, checklist_instances(id, task_name, task_order, is_checked, checked_by, checked_at, signer_name, signer_role, document_url)')
+      .select('*, checklist_instances(id, task_name, task_order, is_checked, checked_by, checked_at, signer_name, signer_role, signature_url, document_url)')
       .eq('project_id', projectId)
       .order('row_order'),
     db.from('findings').select('id, severity, status').eq('project_id', projectId),
@@ -5010,12 +5085,10 @@ function _setBoardBreadcrumb(pathArr) {
 
 function _updateBoardKpis(findings, inspections) {
   const openNcr  = (findings  || []).filter(f => f.status !== 'closed').length;
-  const critNcr  = (findings  || []).filter(f => f.severity === 'critical' && f.status !== 'closed').length;
   const stopPts  = (_boardItems || []).filter(wi => wi.is_stop_point && !wi.stop_released).length;
   const pendInsp = (inspections || []).filter(i => i.status === 'pending').length;
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   set('brd-kn-ncr',  openNcr);
-  set('brd-kn-crit', critNcr);
   set('brd-kn-stop', stopPts);
   set('brd-kn-insp', pendInsp);
 }
@@ -5320,7 +5393,7 @@ function _renderBoardDetails(wi, contextLabel) {
               <tr id="ci-${ci.id}">
                 <td class="brd-cl-task${ci.is_checked ? ' done' : ''}" onclick="toggleCheckItem('${ci.id}','${wi.id}')">${ci.task_name}</td>
                 <td id="ci-role-${ci.id}" class="brd-cl-meta">${ci.is_checked && ci.signer_role ? _signerLabel(ci.signer_role) : ''}</td>
-                <td id="ci-name-${ci.id}" class="brd-cl-meta">${ci.is_checked && ci.signer_name ? ci.signer_name : ''}</td>
+                <td id="ci-name-${ci.id}" class="brd-cl-meta">${ci.is_checked && ci.signer_name ? _signerCellHtml(ci.signer_name, ci.signature_url) : ''}</td>
                 <td id="ci-date-${ci.id}">
                   ${ci.is_checked && ci.checked_at
                     ? `<span class="brd-cl-date" onclick="editCheckDate('${ci.id}')">${new Date(ci.checked_at).toLocaleDateString('he-IL')}</span>`
@@ -5328,7 +5401,7 @@ function _renderBoardDetails(wi, contextLabel) {
                 </td>
                 <td id="ci-doc-${ci.id}" style="text-align:center">
                   ${ci.document_url
-                    ? `<a href="${ci.document_url}" target="_blank" class="brd-cl-doc-link" title="פתח מסמך"><i class="ti ti-file-check"></i></a>`
+                    ? `<a href="#" onclick="sbOpen('${ci.document_url}');return false" class="brd-cl-doc-link" title="פתח מסמך"><i class="ti ti-file-check"></i></a>`
                     : ci.is_checked
                       ? `<button class="brd-cl-up-btn" onclick="uploadClDoc('${ci.id}')" title="העלה מסמך"><i class="ti ti-upload"></i></button>`
                       : ''}
@@ -5389,10 +5462,10 @@ async function _loadBoardInspections(workItemId) {
   container.innerHTML = orders.map(o => {
     const date = o.scheduled_date ? new Date(o.scheduled_date + 'T12:00:00').toLocaleDateString('he-IL') : '–';
     const pdfBtn = o.pdf_url
-      ? `<a href="${o.pdf_url}" target="_blank" class="btn btn-sm" title="PDF הזמנה"><i class="ti ti-file-type-pdf"></i></a>`
+      ? `<a href="#" onclick="sbOpen('${o.pdf_url}');return false" class="btn btn-sm" title="PDF הזמנה"><i class="ti ti-file-type-pdf"></i></a>`
       : `<button class="btn btn-sm" onclick="openInspectionPDF('${o.id}')" title="הפק PDF"><i class="ti ti-file-type-pdf"></i></button>`;
     const certBtn = o.certificate_url
-      ? `<a href="${o.certificate_url}" target="_blank" class="btn btn-sm" style="color:#16A34A;border-color:#86EFAC" title="תעודת מעבדה"><i class="ti ti-file-certificate"></i></a>`
+      ? `<a href="#" onclick="sbOpen('${o.certificate_url}');return false" class="btn btn-sm" style="color:#16A34A;border-color:#86EFAC" title="תעודת מעבדה"><i class="ti ti-file-certificate"></i></a>`
       : '';
     return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #F8FAFC;font-size:11px">
       <span style="color:#9AA3B0;min-width:46px;font-size:10px;font-weight:700">${o.id.slice(-6).toUpperCase()}</span>
@@ -5472,6 +5545,9 @@ async function toggleCheckItem(ciId, wiId) {
   const wasChecked = chkEl.classList.contains('on');
   const newVal = !wasChecked;
   const nowIso = new Date().toISOString();
+  // ticking an item is a signed action: the signer's profile signature is attached automatically
+  const sigRef = newVal ? requireProfileSignature() : null;
+  if (newVal && !sigRef) return;
 
   // Find existing ci data for rollback
   let ciData = null;
@@ -5489,12 +5565,12 @@ async function toggleCheckItem(ciId, wiId) {
   const docEl    = document.getElementById('ci-doc-'  + ciId);
   if (newVal) {
     if (roleEl)  roleEl.textContent  = _signerLabel(currentSignerRole);
-    if (sigNmEl) sigNmEl.textContent = currentUserFullName || '';
+    if (sigNmEl) sigNmEl.innerHTML   = _signerCellHtml(currentUserFullName, sigRef);
     if (dateEl)  dateEl.innerHTML    = `<span class="brd-cl-date" onclick="editCheckDate('${ciId}')">${new Date(nowIso).toLocaleDateString('he-IL')}</span>`;
     if (docEl)   docEl.innerHTML     = `<button class="brd-cl-up-btn" onclick="uploadClDoc('${ciId}')" title="העלה מסמך"><i class="ti ti-upload"></i></button>`;
   } else {
     if (roleEl)  roleEl.textContent  = '';
-    if (sigNmEl) sigNmEl.textContent = '';
+    if (sigNmEl) sigNmEl.innerHTML   = '';
     if (dateEl)  dateEl.innerHTML    = '';
     if (docEl)   docEl.innerHTML     = '';
   }
@@ -5504,7 +5580,8 @@ async function toggleCheckItem(ciId, wiId) {
     checked_by:  newVal ? currentUserId         : null,
     checked_at:  newVal ? nowIso                : null,
     signer_name: newVal ? (currentUserFullName || null) : null,
-    signer_role: newVal ? currentSignerRole      : null
+    signer_role: newVal ? currentSignerRole      : null,
+    signature_url: newVal ? sigRef               : null
   }).eq('id', ciId);
 
   if (error) {
@@ -5512,7 +5589,7 @@ async function toggleCheckItem(ciId, wiId) {
     chkEl.innerHTML = wasChecked ? '<i class="ti ti-check"></i>' : '';
     nameEl.classList.toggle('done', wasChecked);
     if (roleEl)  roleEl.textContent  = wasChecked && ciData?.signer_role ? _signerLabel(ciData.signer_role) : '';
-    if (sigNmEl) sigNmEl.textContent = wasChecked && ciData?.signer_name ? ciData.signer_name : '';
+    if (sigNmEl) sigNmEl.innerHTML   = wasChecked && ciData?.signer_name ? _signerCellHtml(ciData.signer_name, ciData.signature_url) : '';
     if (dateEl)  dateEl.innerHTML    = wasChecked && ciData?.checked_at
       ? `<span class="brd-cl-date" onclick="editCheckDate('${ciId}')">${new Date(ciData.checked_at).toLocaleDateString('he-IL')}</span>` : '';
     if (docEl)   docEl.innerHTML     = '';
@@ -5527,6 +5604,7 @@ async function toggleCheckItem(ciId, wiId) {
     ci.checked_at  = newVal ? nowIso : null;
     ci.signer_name = newVal ? (currentUserFullName || null) : null;
     ci.signer_role = newVal ? currentSignerRole : null;
+    ci.signature_url = newVal ? sigRef : null;
 
     const total   = wi.checklist_instances.length;
     const checked = wi.checklist_instances.filter(c => c.is_checked).length;
@@ -5773,10 +5851,11 @@ async function uploadClDoc(ciId) {
       showToast('שגיאה בהעלאת הקובץ', 'error');
       return;
     }
-    const { data: { publicUrl } } = db.storage.from('documents').getPublicUrl(path);
+    const publicUrl = sbRef(path);
+    sbInvalidate(publicUrl);   // same path, new content
     await db.from('checklist_instances').update({ document_url: publicUrl }).eq('id', ciId);
     for (const wi of _boardItems) { const ci = wi.checklist_instances.find(c => c.id === ciId); if (ci) { ci.document_url = publicUrl; break; } }
-    if (docEl) docEl.innerHTML = `<a href="${publicUrl}" target="_blank" class="brd-cl-doc-link" title="פתח מסמך"><i class="ti ti-file-check"></i></a>`;
+    if (docEl) docEl.innerHTML = `<a href="#" onclick="sbOpen('${publicUrl}');return false" class="brd-cl-doc-link" title="פתח מסמך"><i class="ti ti-file-check"></i></a>`;
     showToast('המסמך הועלה בהצלחה');
   };
 }
@@ -5794,7 +5873,7 @@ async function openProfileModal() {
   const sigPh  = document.getElementById('prof-sig-ph');
   const sigRmv = document.getElementById('prof-sig-remove-btn');
   if (_profileSigUrl) {
-    sigImg.src = _profileSigUrl; sigImg.style.display = ''; sigPh.style.display = 'none'; sigRmv.style.display = '';
+    sbSetImg(sigImg, _profileSigUrl); sigPh.style.display = 'none'; sigRmv.style.display = '';
   } else {
     sigImg.style.display = 'none'; sigPh.style.display = ''; sigRmv.style.display = 'none';
   }
@@ -5805,13 +5884,13 @@ async function handleProfileSigUpload(input) {
   const file = input.files?.[0];
   if (!file) return;
   const ext  = file.name.split('.').pop().toLowerCase();
-  const path = `signatures/${currentUserId}.${ext}`;
-  const { error } = await db.storage.from('documents').upload(path, file, { upsert: true });
+  const path = `signatures/${currentUserId}/${Date.now()}.${ext}`;   // versioned: earlier signed records keep their signature
+  const { error } = await db.storage.from('documents').upload(path, file);
   if (error) { showToast('שגיאה בהעלאת חתימה', 'error'); input.value = ''; return; }
-  const { data: { publicUrl } } = db.storage.from('documents').getPublicUrl(path);
+  const publicUrl = sbRef(path);
   _profileSigUrl = publicUrl;
   const sigImg = document.getElementById('prof-sig-img');
-  sigImg.src = publicUrl; sigImg.style.display = '';
+  sbSetImg(sigImg, publicUrl);
   document.getElementById('prof-sig-ph').style.display = 'none';
   document.getElementById('prof-sig-remove-btn').style.display = '';
   input.value = '';
@@ -6465,7 +6544,7 @@ function _filterInspTable() {
 
     // אייקון תעודה
     const certIcon = o.certificate_url
-      ? `<a href="${o.certificate_url}" target="_blank"
+      ? `<a href="#" onclick="sbOpen('${o.certificate_url}');return false"
            class="btn btn-sm" style="color:#16A34A;border-color:#86EFAC"
            title="פתח תעודת מעבדה"><i class="ti ti-file-certificate" style="font-size:15px"></i></a>`
       : `<button class="btn btn-sm" style="color:#CBD5E1;cursor:default" disabled
@@ -6902,7 +6981,7 @@ async function openEditInspection(id) {
   if (o.certificate_url) {
     certSection.style.display  = 'flex';
     noCertMsg.style.display    = 'none';
-    document.getElementById('insp-cert-link').href = o.certificate_url;
+    document.getElementById('insp-cert-link').onclick = e => { e.preventDefault(); sbOpen(o.certificate_url); };
     // הצג תאריך עדכון אם אפשר לחלץ מה-URL
     const tsMatch = o.certificate_url.match(/_(\d{13})\.pdf/);
     if (tsMatch) {
@@ -7051,6 +7130,7 @@ async function submitInspectionAndSend() {
       checks = ci || [];
     }
 
+    await ensureCompanyLogoData();
     const html = buildInspectionOrderHTML(newOrder, project, workItem, checks);
     win.document.open();
     win.document.write(html);
@@ -7076,7 +7156,8 @@ async function submitInspectionAndSend() {
       { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/pdf', 'x-upsert': 'true' }, body: pdfBlob }
     );
     if (resp.ok) {
-      pdfUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${storagePath}`;
+      pdfUrl = sbRef(storagePath);
+      sbInvalidate(pdfUrl);   // same path every time the PDF is regenerated
       await db.from('inspection_orders').update({ pdf_url: pdfUrl }).eq('id', newOrder.id);
     }
   } catch(e) {
@@ -7090,7 +7171,9 @@ async function submitInspectionAndSend() {
   const dateStr  = newOrder.scheduled_date
     ? new Date(newOrder.scheduled_date + 'T12:00').toLocaleDateString('he-IL') : '–';
   const timeStr  = newOrder.scheduled_time || '';
-  const pdfLine  = pdfUrl ? `\nטופס הזמנת הבדיקה (PDF):\n${pdfUrl}\n` : '';
+  // The lab has no login, so the e-mailed link is a long-lived signed URL (90 days) instead of a permanent public one.
+  const pdfLink  = pdfUrl ? await sbSign(pdfUrl, 90 * 86400) : '';
+  const pdfLine  = pdfLink ? `\nטופס הזמנת הבדיקה (PDF):\n${pdfLink}\n` : '';
 
   const uploadParams = new URLSearchParams({
     lab_upload: '',
@@ -7179,6 +7262,7 @@ async function openInspectionPDF(orderId) {
     checks = ci || [];
   }
 
+  await ensureCompanyLogoData();
   const html         = buildInspectionOrderHTML(order, project, workItem, checks);
   const downloadName = `הזמנת_בדיקה_${orderNum}.pdf`;
   const storagePath  = `inspection-orders/order_${orderNum}.pdf`;
@@ -7231,7 +7315,8 @@ async function openInspectionPDF(orderId) {
     );
 
     if (resp.ok) {
-      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${storagePath}`;
+      const publicUrl = sbRef(storagePath);
+      sbInvalidate(publicUrl);   // same path every time the PDF is regenerated
       await db.from('inspection_orders').update({ pdf_url: publicUrl }).eq('id', orderId);
       showToast('PDF הורד ותויק להזמנה ✓', 'success');
     } else {
@@ -7249,7 +7334,7 @@ async function openInspectionPDF(orderId) {
 // הורדת קובץ PDF שמור
 async function downloadOrderFile(url, orderNum) {
   try {
-    const resp = await fetch(url);
+    const resp = await fetch(await sbSign(url));
     if (!resp.ok) throw new Error('שגיאת רשת');
     const blob = await resp.blob();
     const a = document.createElement('a');
@@ -7258,7 +7343,7 @@ async function downloadOrderFile(url, orderNum) {
     document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   } catch(e) {
-    window.open(url, '_blank');
+    sbOpen(url);
   }
 }
 
@@ -7268,7 +7353,7 @@ function buildInspectionOrderHTML(order, project, wi, checks) {
   const orderNum    = order.id.slice(-6).toUpperCase();
   const today       = new Date().toLocaleDateString('he-IL');
   const statusHe    = { pending:'ממתינה', completed:'בוצעה', cancelled:'בוטלה' }[order.status] || order.status || '–';
-  const companyLogo = currentCompany?.logo_url || '';
+  const companyLogo = currentCompany?._logoData || '';   // embedded data URL — filled by ensureCompanyLogoData()
   const companyName = currentCompany?.name     || '';
   const locationText = order.location || (wi ? [wi.structure, wi.sub_structure, wi.element].filter(Boolean).join(' / ') : '–');
 
@@ -7561,6 +7646,7 @@ async function sendToLab(orderId) {
       checks = ci || [];
     }
 
+    await ensureCompanyLogoData();
     const html = buildInspectionOrderHTML(order, project, workItem, checks);
     win.document.open();
     win.document.write(html);
@@ -7587,7 +7673,8 @@ async function sendToLab(orderId) {
         { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/pdf', 'x-upsert': 'true' }, body: pdfBlob }
       );
       if (resp.ok) {
-        pdfUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${storagePath}`;
+        pdfUrl = sbRef(storagePath);
+        sbInvalidate(pdfUrl);
         await db.from('inspection_orders').update({ pdf_url: pdfUrl }).eq('id', orderId);
       } else {
         console.warn('sendToLab: PDF upload failed');
@@ -7606,8 +7693,10 @@ async function sendToLab(orderId) {
   const dateStr   = order.scheduled_date
     ? new Date(order.scheduled_date + 'T12:00').toLocaleDateString('he-IL') : '–';
   const timeStr   = order.scheduled_time || '';
-  const pdfLine   = pdfUrl
-    ? `\nטופס הזמנת הבדיקה (PDF):\n${pdfUrl}\n`
+  // The lab has no login, so the e-mailed link is a long-lived signed URL (90 days) instead of a permanent public one.
+  const pdfLink   = pdfUrl ? await sbSign(pdfUrl, 90 * 86400) : '';
+  const pdfLine   = pdfLink
+    ? `\nטופס הזמנת הבדיקה (PDF):\n${pdfLink}\n`
     : '';
 
   // בנה URL עם פרטי ההזמנה מוטמעים — ללא קריאת DB בדף הציבורי
@@ -7854,7 +7943,7 @@ async function labSubmit() {
           'Authorization': `Bearer ${SUPABASE_KEY}`,
           'apikey':        SUPABASE_KEY,
           'Content-Type':  'application/pdf',
-          'x-upsert':      'true',
+          // no x-upsert: upsert needs SELECT+UPDATE rights, which the anonymous role must not have (names are unique anyway)
         },
         body: _labFile,
       }
@@ -7867,7 +7956,7 @@ async function labSubmit() {
 
     labShowStatus('שומר ברשומה...', 'info');
 
-    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${storagePath}`;
+    const publicUrl = sbRef(storagePath);   // stored as an opaque pointer; viewers get signed URLs
 
     // Update inspection_orders via SECURITY DEFINER RPC (bypasses RLS)
     const { data: rpc, error: rpcErr } = await db.rpc('submit_lab_certificate', {
