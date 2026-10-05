@@ -1,0 +1,18 @@
+# The repo root is published as-is, so keep infra files out of the public site.
+[[redirects]]
+  from = "/migrations/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package.json"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package-lock.json"
+  to = "/index.html"
+  status = 404
+  force = true
