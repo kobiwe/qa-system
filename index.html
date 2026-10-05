@@ -2111,8 +2111,23 @@ body.theme-light .theme-opt-check{color:#10B981!important}
 </div>
 
 <script>
-const SUPABASE_URL = 'https://hkdacdibkwgtcgaqxxjo.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_32ahowCQKAghPHGSN5bgDQ_SgCEmJAo';
+// Two fully separate Supabase projects. Production is the fail-safe default — only
+// localhost and Netlify branch/preview deploys (hostname contains "--") use staging.
+const _SB_ENVS = {
+  prod:    { url: 'https://hkdacdibkwgtcgaqxxjo.supabase.co', key: 'sb_publishable_32ahowCQKAghPHGSN5bgDQ_SgCEmJAo' },
+  staging: { url: 'https://qrquiyshxvgmpkfwhobr.supabase.co', key: 'sb_publishable_zu5AwowWqsS8aTaOC7WVLg_fBGsv4-X' },
+};
+const IS_STAGING = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.hostname.includes('--');
+const SUPABASE_URL = (IS_STAGING ? _SB_ENVS.staging : _SB_ENVS.prod).url;
+const SUPABASE_KEY = (IS_STAGING ? _SB_ENVS.staging : _SB_ENVS.prod).key;
+if (IS_STAGING) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const b = document.createElement('div');
+    b.textContent = 'STAGING — סביבת בדיקות';
+    b.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:99999;background:#F59E0B;color:#1F2937;font:700 11px sans-serif;padding:2px 14px;border-radius:0 0 8px 8px;pointer-events:none';
+    document.body.appendChild(b);
+  });
+}
 const { createClient } = window.supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
