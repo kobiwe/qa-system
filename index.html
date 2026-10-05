@@ -2131,6 +2131,31 @@ if (IS_STAGING) {
 const { createClient } = window.supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ─── CLIENT ERROR LOG (table public.client_errors; read it with scripts/errors.js) ───
+let _clientErrCount = 0;
+function logClientError(message, context) {
+  try {
+    if (_clientErrCount >= 20) return;   // don't flood on error loops
+    _clientErrCount++;
+    db.auth.getSession().then(({ data }) => {
+      if (!data?.session) return;        // table only accepts authenticated users
+      return db.from('client_errors').insert({
+        message: String(message).slice(0, 500), context: context || null, env: IS_STAGING ? 'staging' : 'prod',
+        url: location.href.slice(0, 300), user_agent: navigator.userAgent.slice(0, 200)
+      });
+    }).catch(() => {});
+  } catch (_) {}
+}
+window.addEventListener('error', e => logClientError(e.message, { src: e.filename, line: e.lineno }));
+window.addEventListener('unhandledrejection', e => logClientError('unhandledrejection: ' + (e.reason?.message || e.reason)));
+
+// Storage uploads answer with a non-ok status instead of throwing — surface and log those.
+async function reportUploadFailure(label, resp) {
+  const body = resp ? await resp.text().catch(() => '') : '';
+  logClientError('upload failed: ' + label, { status: resp?.status, body: body.slice(0, 300) });
+  showToast('שגיאה בהעלאת ' + label, 'error');
+}
+
 // ─── AUTH ───────────────────────────────────────────────
 
 async function checkSession() {
@@ -3331,8 +3356,10 @@ async function submitNCR() {
           await db.from('finding_attachments').insert({
             finding_id: findingId, url, company_id: currentCompanyId, phase: 'open', created_by: currentUserId
           });
+        } else {
+          await reportUploadFailure('תמונה', resp);
         }
-      } catch(e) { console.warn('photo upload error', e); }
+      } catch(e) { console.warn('photo upload error', e); logClientError('photo upload exception', { msg: e.message }); }
     }
   }
 
@@ -3754,7 +3781,8 @@ async function submitClosure() {
       body: sigBlob
     });
     if (sigResp.ok) sigUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${sigPath}`;
-  } catch(e) { console.warn('signature upload error', e); }
+    else await reportUploadFailure('חתימה', sigResp);
+  } catch(e) { console.warn('signature upload error', e); logClientError('signature upload exception', { msg: e.message }); }
 
   // Upload closure photos
   if (_closurePhotos.length) {
@@ -3774,7 +3802,8 @@ async function submitClosure() {
           finding_id: id, url: `${SUPABASE_URL}/storage/v1/object/public/documents/${fname}`,
           company_id: currentCompanyId, phase: 'close', created_by: currentUserId
         });
-      } catch(e) { console.warn('closure photo error', e); }
+        else await reportUploadFailure('תמונת סגירה', resp);
+      } catch(e) { console.warn('closure photo error', e); logClientError('closure photo exception', { msg: e.message }); }
     }
   }
 
@@ -4846,6 +4875,7 @@ async function docsUploadFile(input, folderId) {
       });
     } catch (e) {
       console.warn('docsUploadFile failed', file.name, e);
+      logClientError('docs upload failed', { name: file.name, type: file.type, size: file.size, msg: e.message });
       showToast('שגיאה בהעלאת ' + file.name, 'error');
     }
   }
@@ -7560,10 +7590,12 @@ async function sendToLab(orderId) {
         pdfUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${storagePath}`;
         await db.from('inspection_orders').update({ pdf_url: pdfUrl }).eq('id', orderId);
       } else {
-        console.warn('sendToLab: PDF upload failed', await resp.text());
+        console.warn('sendToLab: PDF upload failed');
+        await reportUploadFailure('PDF הזמנה', resp);
       }
     } catch(e) {
       console.error('sendToLab PDF error:', e);
+      logClientError('sendToLab PDF exception', { msg: e.message });
     }
   }
 
