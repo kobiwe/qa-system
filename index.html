@@ -3254,7 +3254,7 @@ async function createProject() {
     contractor_phone:      document.getElementById('np-contractor-phone').value.trim() || null,
     client_contact:        document.getElementById('np-client-contact').value.trim() || null,
     client_contact_phone:  document.getElementById('np-client-phone').value.trim() || null,
-    lab_email:             document.getElementById('np-lab-email').value.trim() || null,
+    lab_email:             _cleanLabEmail(document.getElementById('np-lab-email').value),
   };
 
   if (editId) {
@@ -5737,7 +5737,10 @@ async function _pcSendMail() {
     pdfLink ? '' : null, pdfLink ? 'הטופס כקובץ PDF (הקישור תקף 90 יום):' : null, pdfLink || null,
   ].filter(l => l !== null).join('\n');
   const subject = `[${PC_TYPES[c.form_type].short} #${c.serial_number}] ${c.title} — ${PC_STATUS[c.status].label}`;
-  const to = chosen.map(u => u.email).join(',');
+  const okMails = chosen.map(u => u.email).filter(e => _NCR_EMAIL_RE.test(e));
+  if (okMails.length < chosen.length) showToast('כתובת מייל לא תקינה הוסרה מרשימת הנמענים', 'info');
+  if (!okMails.length) { showToast('אין כתובת מייל תקינה לנמענים שנבחרו', 'error'); return; }
+  const to = okMails.map(_mailtoAddr).join(',');
   let href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines)}`;
   // mail clients (Outlook/Windows) drop mailto links longer than ~2000 characters — Hebrew is percent-encoded ~6x
   if (href.length > 1900) {
@@ -7915,7 +7918,7 @@ function _updateInspSubmitBtn() {
     if (sob) { sob.style.display = ''; sob.setAttribute('onclick', 'submitInspection()'); }
     if (hint) {
       hint.style.display = 'flex';
-      hint.innerHTML = '<i class="ti ti-mail-check" style="color:#16A34A;font-size:13px"></i><span style="color:#166534">הזמנה תישלח אוטומטית ל-' + project.lab_email + '</span>';
+      hint.innerHTML = '<i class="ti ti-mail-check" style="color:#16A34A;font-size:13px"></i><span style="color:#166534">הזמנה תישלח אוטומטית ל-' + _attr(project.lab_email) + '</span>';
     }
   } else {
     sb.innerHTML = '<i class="ti ti-calendar-check"></i>צור הזמנה';
@@ -8056,7 +8059,7 @@ async function submitInspectionAndSend() {
   closeById('m-new-inspection');
   await loadInspectionsScreen();
 
-  window.location.href = `mailto:${project.lab_email}?subject=${subject}&body=${body}`;
+  window.location.href = `mailto:${_mailtoAddr(project.lab_email || '')}?subject=${subject}&body=${body}`;
 }
 
 async function submitInspection() {
@@ -8366,6 +8369,7 @@ let _ncrMail = { f: null, users: [] };
 const _ncrMailKey = c => c ? `qafield_ncr_mail_${currentCompanyId}_${currentUserId}_${c}` : null;
 // no ? & # % = in an address (they would add mailto parameters such as bcc=...), no double dots, a real domain with a TLD
 const _NCR_EMAIL_RE = /^(?!.*\.\.)[^\s@<>",;?&#%=()\[\]\\:]+@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}$/;
+const _cleanLabEmail = v => { v = (v || '').trim(); return v && _NCR_EMAIL_RE.test(v) ? v : null; };
 const _mailtoAddr = a => a.replace(/[?&#%=]/g, c => encodeURIComponent(c));
 async function openNcrMail(findingId) {
   const { data: f } = await db.from('findings').select('id, serial_number, title, contractor, project_id, severity, status, due_date').eq('id', findingId).single();
@@ -8814,7 +8818,7 @@ async function sendToLab(orderId) {
     `בברכה`
   );
 
-  window.location.href = `mailto:${project.lab_email}?subject=${subject}&body=${body}`;
+  window.location.href = `mailto:${_mailtoAddr(project.lab_email || '')}?subject=${subject}&body=${body}`;
 }
 
 // ─── LAB UPLOAD PAGE ─────────────────────────────────────
