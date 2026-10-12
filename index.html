@@ -870,6 +870,7 @@ body.theme-light .theme-opt-check{color:#10B981!important}
       <div class="nav-item" id="nav-nc" onclick="go('nc',this)"><i class="ti ti-alert-triangle"></i>אי-התאמות</div>
       <div class="nav-item" id="nav-board" onclick="goBoardNav(this)"><i class="ti ti-layout-board"></i>עץ מבנה</div>
       <div class="nav-item" id="nav-docs" onclick="goDocsNav(this)"><i class="ti ti-folder"></i>מסמכים</div>
+      <div class="nav-item" id="nav-precontrol" onclick="goPrecontrolNav(this)"><i class="ti ti-clipboard-check"></i>בקרה מקדימה</div>
 
       <div class="nav-item" onclick="go('reports',this)"><i class="ti ti-chart-bar"></i>דוחות</div>
     </div>
@@ -1183,6 +1184,27 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <b id="board-prog-pct" style="display:none">0%</b>
       </div>
 
+      <!-- PRE-CONTROL (בקרה מקדימה) -->
+      <div class="screen" id="s-precontrol">
+        <div class="sec-hdr">
+          <h2>בקרה מקדימה</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" onclick="pcExportExcel()"><i class="ti ti-file-spreadsheet"></i>ייצוא לאקסל</button>
+            <button class="btn btn-p" onclick="_pcRenderTypeChooser();openM('m-pc-type')"><i class="ti ti-plus"></i>טופס חדש</button>
+          </div>
+        </div>
+        <div id="pc-scope-note" style="font-size:11px;color:#9AA3B0;margin-bottom:10px"></div>
+        <div id="pc-summary" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+        <div id="pc-type-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
+        <div id="pc-status-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
+        <div class="card" style="padding:0;overflow-x:auto">
+          <table>
+            <thead><tr><th>מס'</th><th>סוג</th><th>כותרת</th><th>ספק / חומר</th><th>תאריך הגשה</th><th>תוקף עד</th><th>סטטוס</th><th>תאריך מענה</th></tr></thead>
+            <tbody id="pc-tbody"><tr class="loading-row"><td colspan="8">טוען...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- DOCUMENTS / FOLDERS -->
       <div class="screen" id="s-docs">
         <div class="sec-hdr">
@@ -1481,6 +1503,7 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <option value="qa_inspector">בקר איכות</option>
         <option value="site_manager">מנהל עבודה</option>
         <option value="surveyor">מודד מוסמך</option>
+        <option value="qa_assurance">הבטחת איכות (רשאי לאשר בבקרה מקדימה)</option>
       </select>
     </div>
     <div class="form-row">
@@ -1493,6 +1516,7 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <label class="btn btn-sm" style="cursor:pointer"><i class="ti ti-upload"></i>העלה
           <input type="file" accept="image/*" style="display:none" onchange="handleEuSigUpload(this)">
         </label>
+        <button class="btn btn-sm" onclick="openSigDraw(document.getElementById('eu-id').value, ref => _euSigRender(ref))" title="צייר חתימה"><i class="ti ti-writing"></i>צייר</button>
         <button class="btn btn-sm" id="eu-sig-remove" onclick="removeEuSig()" style="display:none" title="הסר חתימה"><i class="ti ti-trash" style="color:#DC2626"></i></button>
       </div>
     </div>
@@ -1532,6 +1556,7 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <option value="qa_inspector">בקר איכות</option>
         <option value="site_manager">מנהל עבודה</option>
         <option value="surveyor">מודד מוסמך</option>
+        <option value="qa_assurance" id="prof-qa-opt" disabled>הבטחת איכות (מוגדר על ידי אדמין)</option>
       </select>
     </div>
     <!-- Signature image -->
@@ -1544,10 +1569,12 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;justify-content:center">
           <input type="file" id="prof-sig-input" accept="image/*" style="display:none" onchange="handleProfileSigUpload(this)">
-          <button class="btn btn-sm btn-p" onclick="document.getElementById('prof-sig-input').click()"><i class="ti ti-upload"></i>בחר קובץ</button>
+          <button class="btn btn-sm btn-p" id="prof-sig-pick-btn" onclick="document.getElementById('prof-sig-input').click()"><i class="ti ti-upload"></i>בחר קובץ</button>
+          <button class="btn btn-sm" onclick="openSigDraw(currentUserId, ref => { _profileSigUrl = ref; _profileSigRender(ref); })"><i class="ti ti-writing"></i>צייר חתימה</button>
           <button class="btn btn-sm" id="prof-sig-remove-btn" onclick="removeProfileSig()" style="display:none;color:#C0392B"><i class="ti ti-trash"></i>הסר</button>
         </div>
       </div>
+      <div style="font-size:10.5px;color:#9AA3B0;margin-top:6px;line-height:1.5">החתימה נשמרת מיד עם העלאת הקובץ ומוטבעת אוטומטית בכל פעולה (סימון בצ'קליסט, סגירת אי-התאמה). העלאת קובץ חדש מחליפה את הקודם; רשומות שכבר נחתמו שומרות את החתימה שבה נחתמו.</div>
     </div>
     <!-- Change my own password -->
     <div style="margin:14px 0 6px;padding:12px 14px;background:#F8FAFC;border-radius:10px;border:1px solid #E8EDF3">
@@ -1921,11 +1948,12 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <div style="border:1px solid #E2E8F0;border-radius:8px;background:#F8FAFC;padding:10px;text-align:center;min-height:70px;display:flex;align-items:center;justify-content:center">
           <img id="closure-sig-img" alt="חתימה" style="max-height:80px;max-width:100%;display:none">
           <div id="closure-sig-missing" style="display:none;font-size:12px;color:#C0392B">
-            לא הועלתה חתימה לפרופיל שלך.
-            <a href="#" onclick="closeById('m-ncr-closure');openProfileModal();return false" style="color:#1D4ED8;font-weight:600">העלה חתימה בפרופיל</a>
+            אין עדיין חתימה בפרופיל שלך.
+            <a href="#" onclick="closureDrawSig();return false" style="color:#1D4ED8;font-weight:600">צייר חתימה</a>
           </div>
         </div>
-        <div style="font-size:10px;color:#9AA3B0;margin-top:4px;text-align:center">החתימה נלקחת אוטומטית מהפרופיל שלך — אין צורך לחתום בכל פעם</div>
+        <div style="font-size:10px;color:#9AA3B0;margin-top:4px;text-align:center">החתימה נלקחת אוטומטית מהפרופיל שלך — אין צורך לחתום בכל פעם
+          · <a href="#" onclick="closureDrawSig();return false" style="color:#1D4ED8">צייר חתימה חדשה</a></div>
       </div>
       <div id="closure-err" style="color:#C0392B;font-size:12px;margin-bottom:8px;min-height:14px"></div>
       <div class="modal-foot" style="padding:0">
@@ -2118,6 +2146,83 @@ body.theme-light .theme-opt-check{color:#10B981!important}
   </div>
 </div>
 
+<!-- MODAL: בקרה מקדימה — בחירת סוג טופס -->
+<div class="modal-bg" id="m-pc-type" onclick="closeM(event,'m-pc-type')">
+  <div class="modal" style="width:440px">
+    <div class="modal-ttl">טופס חדש — בקרה מקדימה<button class="modal-x" onclick="closeById('m-pc-type')"><i class="ti ti-x"></i></button></div>
+    <div id="pc-type-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<!-- MODAL: בקרה מקדימה — טופס -->
+<div class="modal-bg" id="m-pc-form" onclick="closeM(event,'m-pc-form')">
+  <div class="modal" style="width:860px;max-width:96vw">
+    <div class="modal-ttl"><span id="pc-form-ttl"></span><button class="modal-x" onclick="closeById('m-pc-form')"><i class="ti ti-x"></i></button></div>
+    <div id="pc-form-body"></div>
+    <div id="pc-form-err" style="color:#C0392B;font-size:12px;margin:8px 0;min-height:16px"></div>
+    <div class="modal-foot" id="pc-form-foot"></div>
+  </div>
+</div>
+
+<!-- MODAL: בקרה מקדימה — החלטת אישור -->
+<div class="modal-bg" id="m-pc-decision" onclick="closeM(event,'m-pc-decision')">
+  <div class="modal" style="width:460px">
+    <div class="modal-ttl">החלטה על הטופס<button class="modal-x" onclick="closeById('m-pc-decision')"><i class="ti ti-x"></i></button></div>
+    <div id="pc-dec-form-name" style="font-size:12px;color:#64748B;margin-bottom:10px"></div>
+    <div id="pc-dec-options" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+    <div class="form-row">
+      <label class="form-lbl">הערות להחלטה (למשל: "חסר ISO", "ISO לא בתוקף")</label>
+      <textarea class="form-in" id="pc-dec-note" rows="3"></textarea>
+    </div>
+    <div id="pc-dec-err" style="color:#C0392B;font-size:12px;margin:6px 0;min-height:16px"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" id="pc-dec-btn" onclick="submitPcDecision()"><i class="ti ti-rosette-discount-check"></i>שמור החלטה</button>
+      <button class="btn" onclick="closeById('m-pc-decision')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: שליחת אי-התאמה במייל -->
+<div class="modal-bg" id="m-ncr-mail" onclick="closeM(event,'m-ncr-mail')">
+  <div class="modal" style="width:540px;max-width:96vw">
+    <div class="modal-ttl">שליחת אי-התאמה במייל<button class="modal-x" onclick="closeById('m-ncr-mail')"><i class="ti ti-x"></i></button></div>
+    <div id="ncrm-title" style="font-size:12px;color:#64748B;margin-bottom:10px"></div>
+    <div class="ncr-sec-label" style="margin-bottom:6px"><i class="ti ti-users"></i>משתמשי הפרויקט</div>
+    <div id="ncrm-users" style="display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto;margin-bottom:12px"></div>
+    <div class="form-row">
+      <label class="form-lbl">כתובות נוספות (למשל הקבלן) — מופרדות בפסיק</label>
+      <textarea class="form-in" id="ncrm-extra" rows="2" dir="ltr" placeholder="contractor@example.com, other@example.com"></textarea>
+      <div id="ncrm-contractor-hint" style="font-size:10.5px;color:#9AA3B0"></div>
+    </div>
+    <div style="font-size:11.5px;color:#64748B;background:#F8FAFC;border:1px solid #E8EDF3;border-radius:8px;padding:8px 12px;margin-bottom:8px;line-height:1.6">
+      המייל יכיל <b>קישור</b> לדוח (תקף 90 יום), כי פתיחת מייל רגילה אינה יכולה לצרף קובץ. כדי לצרף את הקובץ עצמו — "הורד PDF" וצרף ידנית.
+    </div>
+    <div id="ncrm-err" style="color:#C0392B;font-size:12px;margin:6px 0;min-height:16px"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="ncrMailSend()"><i class="ti ti-mail"></i>צור PDF ופתח מייל</button>
+      <button class="btn" onclick="ncrMailDownload()"><i class="ti ti-file-download"></i>הורד PDF</button>
+      <button class="btn" onclick="closeById('m-ncr-mail')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ציור חתימה ידני (נפתח מעל כל חלון אחר) -->
+<div class="modal-bg" id="m-sig-draw" onclick="closeM(event,'m-sig-draw')">
+  <div class="modal" style="width:540px;max-width:96vw">
+    <div class="modal-ttl">ציור חתימה<button class="modal-x" onclick="closeById('m-sig-draw')"><i class="ti ti-x"></i></button></div>
+    <div style="font-size:12px;color:#64748B;margin-bottom:8px">צייר את החתימה באצבע או בעכבר. היא תישמר בפרופיל ותוטבע אוטומטית בכל פעולה.</div>
+    <div style="border:2px dashed #CBD5E1;border-radius:8px;background:#fff;position:relative">
+      <canvas id="sigdraw-canvas" width="500" height="170" style="width:100%;touch-action:none;cursor:crosshair;display:block;border-radius:6px"></canvas>
+      <button class="btn btn-sm" onclick="sigDrawClear()" style="position:absolute;top:6px;left:8px"><i class="ti ti-eraser"></i>נקה</button>
+    </div>
+    <div id="sigdraw-err" style="color:#C0392B;font-size:12px;margin:8px 0;min-height:16px"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" id="sigdraw-save" onclick="saveDrawnSignature()"><i class="ti ti-device-floppy"></i>שמור חתימה</button>
+      <button class="btn" onclick="closeById('m-sig-draw')">ביטול</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // Two fully separate Supabase projects. Production is the fail-safe default — only
 // localhost and Netlify branch/preview deploys (hostname contains "--") use staging.
@@ -2169,6 +2274,8 @@ async function reportUploadFailure(label, resp) {
 // legacy ".../object/public/documents/<path>" string, but only as an opaque pointer: sbPathOf() extracts the path
 // and sbSign() asks Storage for a short-lived signed URL (RLS decides who may sign — see migration 008).
 const _SB_OBJ_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/documents\/([^?#]+)/;
+// HTML-attribute escaping for DB values (use inside double-quoted attributes; never put DB values inside JS strings in onclick)
+const _attr = s => String(s ?? '').replace(/[&<>"'`]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));
 const sbRef = path => `${SUPABASE_URL}/storage/v1/object/public/documents/${path}`;
 function sbPathOf(ref) {
   const m = ref && String(ref).match(_SB_OBJ_RE);
@@ -2177,7 +2284,9 @@ function sbPathOf(ref) {
 const _sbCache = new Map();   // "<path>|<ttl>" -> { url, exp }
 async function sbSign(ref, ttl = 3600) {
   const path = sbPathOf(ref);
-  if (!path) return ref || '';                       // data:/blob:/foreign URLs are used as they are
+  // Not a pointer into our bucket: only inline images (data:/blob:) may pass. Anything else — javascript:, other hosts,
+  // data:text/html — is refused, because the result is assigned to location.href / img.src.
+  if (!path) return /^(data:image\/(png|jpe?g|gif|webp);|blob:)/i.test(ref || '') ? ref : '';
   const key = path + '|' + ttl, hit = _sbCache.get(key);
   if (hit && hit.exp - Date.now() > 120000) return hit.url;
   const { data, error } = await db.storage.from('documents').createSignedUrl(path, ttl);
@@ -2195,7 +2304,7 @@ async function sbOpen(ref) {
   const w = window.open('', '_blank');
   if (!w) { showToast('אנא אפשר חלונות קופצים בדפדפן', 'error'); return; }
   const url = await sbSign(ref);
-  if (!url) { w.close(); showToast('הקובץ אינו זמין', 'error'); return; }
+  if (!url || !/^https:\/\//i.test(url)) { w.close(); showToast('הקובץ אינו זמין', 'error'); return; }
   w.location.href = url;
 }
 async function sbSetImg(img, ref) {
@@ -2215,7 +2324,7 @@ new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nod
 // Embeddable copy (for PDFs rendered in a popup / html2canvas, where a 1h signed URL could expire mid-flow).
 const _sbDataCache = new Map();
 async function sbDataUrl(ref) {
-  const path = sbPathOf(ref); if (!path) return ref || '';
+  const path = sbPathOf(ref); if (!path) return /^data:image\//i.test(ref || '') ? ref : '';
   if (_sbDataCache.has(path)) return _sbDataCache.get(path);
   const url = await sbSign(ref); if (!url) return '';
   const blob = await (await fetch(url)).blob();
@@ -2300,6 +2409,7 @@ async function sendLoginPasswordReset() {
 }
 
 async function doLogout() {
+  try { Object.keys(localStorage).filter(k => k.startsWith('qafield_ncr_mail_')).forEach(k => localStorage.removeItem(k)); } catch (_) {}   // remembered recipient addresses are per user
   await db.auth.signOut();
   showLogin();
 }
@@ -2413,6 +2523,7 @@ async function initApp(user) {
     openProfileModal();
     showToast('אנא הגדר סיסמה חדשה למטה', 'info');
   }
+  _pcDeepLink();   // ?pc=<form id> from a pre-control e-mail
 }
 
 // ─── THEME SWITCHER ────────────────────────────────────────
@@ -2821,7 +2932,7 @@ async function loadProjectMembers(projectId) {
 
   const { data: members } = await db
     .from('project_members')
-    .select('id, user_id, profiles(full_name, role)')
+    .select('id, user_id, profiles!project_members_user_id_fkey(full_name, role)')   // two FKs point at profiles (user_id, added_by) — name the one we mean
     .eq('project_id', projectId);
 
   const mem = members || [];
@@ -2835,8 +2946,8 @@ async function loadProjectMembers(projectId) {
     const role = _roleLbls[m.profiles?.role] || m.profiles?.role || '';
     const initials = name.charAt(0).toUpperCase();
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#F8FAFC;border:1px solid #EEF0F4;border-radius:8px">
-      <div style="width:30px;height:30px;border-radius:50%;background:#E8F1FB;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#3B82F6;flex-shrink:0">${initials}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1E293B">${name}</div><div style="font-size:11px;color:#9AA3B0">${role}</div></div>
+      <div style="width:30px;height:30px;border-radius:50%;background:#E8F1FB;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#3B82F6;flex-shrink:0">${_attr(initials)}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1E293B">${_attr(name)}</div><div style="font-size:11px;color:#9AA3B0">${_attr(role)}</div></div>
       ${isAdmin ? `<button onclick="removeProjectMember('${m.id}','${projectId}')" style="color:#9AA3B0;background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px" title="הסר מהפרויקט" onmouseover="this.style.color='#C0392B'" onmouseout="this.style.color='#9AA3B0'"><i class="ti ti-user-minus"></i></button>` : ''}
     </div>`;
   }).join('');
@@ -3264,7 +3375,7 @@ function _ncrRenderAttachGrid() {
                ...(_ncrPhotos     || []).map((p,i) => ({ ...p, src: p.dataUrl, idx: i, existing: false }))];
   grid.innerHTML = all.map(p => `
     <div class="ncr-attach-thumb">
-      <img ${p.existing ? `data-sb="${p.src}"` : `src="${p.src}"`} alt="">
+      <img ${p.existing ? `data-sb="${_attr(p.src)}"` : `src="${p.src}"`} alt="">
       <div class="ncr-thumb-ov">
         <button onclick="${p.existing ? `ncrMarkupExisting(${p.idx})` : `ncrMarkupNew(${p.idx})`}" title="סמן"><i class="ti ti-edit"></i></button>
         <button onclick="${p.existing ? `ncrRemoveExisting(${p.idx})` : `ncrRemoveNew(${p.idx})`}" title="מחק" style="color:#DC2626"><i class="ti ti-trash"></i></button>
@@ -3302,7 +3413,7 @@ function openNewFinding() {
   if (_activeProjectId) ncrOnProjectChange();
   // Auto-fill current user
   document.getElementById('nf-opened-by').value = _currentUserProfile?.full_name || '';
-  document.getElementById('nf-opened-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('nf-opened-date').value = _pcLocalDate();
   openM('m-new-nc');
 }
 
@@ -3326,7 +3437,7 @@ async function openNewFindingFromWI(wiId) {
   }
   // Auto-fill current user + today's date
   document.getElementById('nf-opened-by').value   = _currentUserProfile?.full_name || '';
-  document.getElementById('nf-opened-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('nf-opened-date').value = _pcLocalDate();
   openM('m-new-nc');
 }
 
@@ -3509,8 +3620,12 @@ async function openFindingDetail(id) {
       actDiv.innerHTML += `<button class="btn" onclick="fdEditFinding()"><i class="ti ti-pencil"></i>ערוך</button>`;
     }
   } else if (f.signature_url) {
-    actDiv.innerHTML = `<a href="#" onclick="sbOpen('${f.signature_url}');return false" class="btn btn-sm"><i class="ti ti-writing-sign"></i>צפה בחתימה</a>`;
+    actDiv.innerHTML = `<a href="#" data-sb-ref="${_attr(f.signature_url)}" onclick="sbOpen(this.dataset.sbRef);return false" class="btn btn-sm"><i class="ti ti-writing-sign"></i>צפה בחתימה</a>`;
   }
+  // export / send (any status): PDF download, mobile share (only where the browser can share files), e-mail with a link
+  actDiv.innerHTML += `<button class="btn" onclick="exportNcrPdf('${f.id}')"><i class="ti ti-file-type-pdf"></i>ייצוא PDF</button>` +
+    (_ncrCanShareFiles() ? `<button class="btn" onclick="shareNcrPdf('${f.id}')"><i class="ti ti-share"></i>שתף</button>` : '') +
+    `<button class="btn" onclick="openNcrMail('${f.id}')"><i class="ti ti-mail"></i>שלח במייל</button>`;
 
   openM('m-finding-detail');
 
@@ -3536,12 +3651,12 @@ async function _fdLoadMedia(findingId) {
   if (openPhotos.length) {
     html += `<div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;margin-bottom:8px">תמונות פתיחה</div>`;
     html += `<div class="ncr-attach-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">` +
-      openPhotos.map(a => `<div class="ncr-attach-thumb" onclick="sbOpen('${a.url}')"><img data-sb="${a.url}" alt=""></div>`).join('') + `</div>`;
+      openPhotos.map(a => `<div class="ncr-attach-thumb" data-sb-ref="${_attr(a.url)}" onclick="sbOpen(this.dataset.sbRef)"><img data-sb="${_attr(a.url)}" alt=""></div>`).join('') + `</div>`;
   }
   if (closePhotos.length) {
     html += `<div style="font-size:10px;font-weight:700;color:#16A34A;text-transform:uppercase;margin-bottom:8px">תמונות סגירה (תיקון)</div>`;
     html += `<div class="ncr-attach-grid" style="grid-template-columns:repeat(4,1fr)">` +
-      closePhotos.map(a => `<div class="ncr-attach-thumb" onclick="sbOpen('${a.url}')"><img data-sb="${a.url}" alt=""></div>`).join('') + `</div>`;
+      closePhotos.map(a => `<div class="ncr-attach-thumb" data-sb-ref="${_attr(a.url)}" onclick="sbOpen(this.dataset.sbRef)"><img data-sb="${_attr(a.url)}" alt=""></div>`).join('') + `</div>`;
   }
   pane.innerHTML = html;
 }
@@ -3734,6 +3849,68 @@ let _closurePhotos = [];
 // Everyone uploads a signature once in their profile; it is then stamped automatically on every signed action
 // (NCR closure, checklist tick). Signature files are versioned (signatures/<user>/<ts>.<ext>, never overwritten),
 // so records signed earlier keep the signature that was valid when they were signed.
+// Uploads a signature image (file or drawn blob) as a NEW version and makes it the user's current signature.
+// Returns the stored pointer, or null on failure.
+async function saveUserSignature(userId, file, ext) {
+  const path = `signatures/${userId}/${Date.now()}.${ext}`;   // versioned: earlier signed records keep their signature
+  const { error } = await db.storage.from('documents').upload(path, file, { contentType: file.type || 'image/png' });
+  if (error) { logClientError('signature upload failed', { msg: error.message }); return null; }
+  const ref = sbRef(path);
+  const { error: upErr } = await db.from('profiles').update({ signature_url: ref }).eq('id', userId);
+  if (upErr) { logClientError('signature save failed', { msg: upErr.message }); return null; }
+  if (userId === currentUserId && _currentUserProfile) _currentUserProfile.signature_url = ref;
+  return ref;
+}
+
+// ── Hand-drawn signature pad (modal m-sig-draw) ──
+const _sigDraw = { userId: null, onSaved: null, canvas: null, ctx: null, drawing: false, has: false, last: null };
+function openSigDraw(userId, onSaved) {
+  _sigDraw.userId = userId || currentUserId;
+  _sigDraw.onSaved = onSaved || null;
+  document.getElementById('sigdraw-err').textContent = '';
+  openM('m-sig-draw');
+  setTimeout(_sigDrawInit, 60);   // the canvas is measured only once the modal is visible
+}
+function _sigDrawInit() {
+  const c = document.getElementById('sigdraw-canvas');
+  if (_sigDraw.canvas !== c) {
+    _sigDraw.canvas = c; _sigDraw.ctx = c.getContext('2d');
+    const pos = e => { const r = c.getBoundingClientRect(); return { x: (e.clientX - r.left) * c.width / r.width, y: (e.clientY - r.top) * c.height / r.height }; };
+    const stroke = (a, b) => { const x = _sigDraw.ctx; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); _sigDraw.has = true; };
+    c.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      try { c.setPointerCapture(e.pointerId); } catch (_) {}
+      document.getElementById('sigdraw-err').textContent = '';
+      _sigDraw.drawing = true; _sigDraw.last = pos(e); stroke(_sigDraw.last, { x: _sigDraw.last.x + 0.1, y: _sigDraw.last.y });
+    });
+    c.addEventListener('pointermove', e => { if (!_sigDraw.drawing) return; const p = pos(e); stroke(_sigDraw.last, p); _sigDraw.last = p; });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => c.addEventListener(ev, () => { _sigDraw.drawing = false; }));
+  }
+  _sigDraw.ctx.strokeStyle = '#1A2B4A'; _sigDraw.ctx.lineWidth = 2.6; _sigDraw.ctx.lineCap = 'round'; _sigDraw.ctx.lineJoin = 'round';
+  sigDrawClear();
+}
+function sigDrawClear() {
+  if (!_sigDraw.ctx) return;
+  _sigDraw.ctx.clearRect(0, 0, _sigDraw.canvas.width, _sigDraw.canvas.height);
+  _sigDraw.has = false;
+}
+async function saveDrawnSignature() {
+  const errEl = document.getElementById('sigdraw-err'), btn = document.getElementById('sigdraw-save');
+  errEl.textContent = '';
+  if (!_sigDraw.has) { errEl.textContent = 'יש לצייר חתימה'; return; }
+  btn.disabled = true;
+  let ref = null;
+  try {
+    const blob = await new Promise(res => _sigDraw.canvas.toBlob(res, 'image/png'));
+    if (blob) ref = await saveUserSignature(_sigDraw.userId, blob, 'png');
+  } catch (e) { logClientError('draw signature failed', { msg: e.message }); }
+  finally { btn.disabled = false; }   // never leave the save button stuck
+  if (!ref) { errEl.textContent = 'שגיאה בשמירת החתימה — נסה שוב'; return; }
+  closeById('m-sig-draw');
+  showToast('החתימה נשמרה', 'success');
+  if (_sigDraw.onSaved) _sigDraw.onSaved(ref);
+}
+
 // Signer name plus a small signature thumbnail (checklist rows).
 function _signerCellHtml(name, sigRef) {
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -3742,8 +3919,8 @@ function _signerCellHtml(name, sigRef) {
 function requireProfileSignature() {
   const sig = _currentUserProfile?.signature_url;
   if (sig) return sig;
-  showToast('יש להעלות חתימה בפרופיל לפני חתימה על פעולה', 'error');
-  openProfileModal();
+  showToast('אין חתימה בפרופיל — צייר חתימה פעם אחת ואז סמן שוב', 'error');
+  openSigDraw(currentUserId, () => showToast('החתימה נשמרה — אפשר לחתום על הפעולה', 'success'));
   return null;
 }
 
@@ -3780,6 +3957,16 @@ function openNCRClosure(id) {
   sigMissing.style.display = sig ? 'none' : '';
   if (sig) { delete sigImg.dataset.sbDone; sbSetImg(sigImg, sig); } else sigImg.style.display = 'none';
   openM('m-ncr-closure');
+}
+
+// Draw (or redraw) the signature from inside the closure dialog; the preview updates when it is saved.
+function closureDrawSig() {
+  openSigDraw(currentUserId, ref => {
+    const img = document.getElementById('closure-sig-img');
+    document.getElementById('closure-sig-missing').style.display = 'none';
+    document.getElementById('closure-err').textContent = '';
+    delete img.dataset.sbDone; sbSetImg(img, ref);
+  });
 }
 
 function closureAddPhotos(input) {
@@ -4023,18 +4210,20 @@ async function loadCompaniesScreen() {
     free:  '<span class="badge b-gray">Free</span>',
     basic: '<span class="badge b-open">Basic</span>',
     pro:   '<span class="badge b-ok">Pro</span>',
-  }[p] || `<span class="badge b-gray">${p}</span>`);
+  }[p] || `<span class="badge b-gray">${_attr(p)}</span>`);
 
   tbody.innerHTML = companies.map(c => {
     const userCount    = (profiles || []).filter(p => p.company_id === c.id).length;
     const projectCount = (projects  || []).filter(p => p.company_id === c.id).length;
-    const taxStr   = c.tax_id       ? `<div style="font-size:10px;color:#9AA3B0">מ.ח.פ ${c.tax_id}</div>` : '';
-    const addrStr  = c.address      ? `<div style="font-size:10px;color:#9AA3B0">${c.address}</div>` : '';
-    const phoneStr = c.phone        ? `<div style="font-size:11px;direction:ltr;text-align:right">${c.phone}</div>` : '';
-    const contactStr = c.contact_name ? `<div style="font-size:11px;color:#6B7280">${c.contact_name}</div>` : '';
-    const emailStr = c.email        ? `<a href="mailto:${c.email}" style="font-size:11px;color:#3B82F6;direction:ltr;display:block" onclick="event.stopPropagation()">${c.email}</a>` : '<span style="color:#9AA3B0;font-size:11px">–</span>';
+    // every company field is written by that company's admin and read by the platform owner — always encode
+    const taxStr   = c.tax_id       ? `<div style="font-size:10px;color:#9AA3B0">מ.ח.פ ${_attr(c.tax_id)}</div>` : '';
+    const addrStr  = c.address      ? `<div style="font-size:10px;color:#9AA3B0">${_attr(c.address)}</div>` : '';
+    const phoneStr = c.phone        ? `<div style="font-size:11px;direction:ltr;text-align:right">${_attr(c.phone)}</div>` : '';
+    const contactStr = c.contact_name ? `<div style="font-size:11px;color:#6B7280">${_attr(c.contact_name)}</div>` : '';
+    const emailOk  = /^[^\s@<>"'`]+@[^\s@<>"'`]+$/.test(c.email || '');
+    const emailStr = c.email        ? (emailOk ? `<a href="mailto:${_attr(c.email)}" style="font-size:11px;color:#3B82F6;direction:ltr;display:block" onclick="event.stopPropagation()">${_attr(c.email)}</a>` : `<span style="font-size:11px;direction:ltr;display:block">${_attr(c.email)}</span>`) : '<span style="color:#9AA3B0;font-size:11px">–</span>';
     return `<tr>
-      <td><b>${c.name}</b>${taxStr}${addrStr}</td>
+      <td><b>${_attr(c.name)}</b>${taxStr}${addrStr}</td>
       <td>${phoneStr}${contactStr}</td>
       <td>${emailStr}</td>
       <td>${planBadge(c.plan)}</td>
@@ -4233,34 +4422,33 @@ async function loadUsersScreen() {
     if (!co) return '<td style="color:#9AA3B0;font-size:11px">–</td>';
     const initials = (co.name || '?').replace(/[^א-תa-zA-Z]/g, '').substring(0, 2).toUpperCase() || '?';
     const logo = co.logo_url
-      ? `<img data-sb="${co.logo_url}" style="height:24px;max-width:64px;object-fit:contain;border-radius:3px;flex-shrink:0" onerror="this.style.display='none'">`
+      ? `<img data-sb="${_attr(co.logo_url)}" style="height:24px;max-width:64px;object-fit:contain;border-radius:3px;flex-shrink:0" onerror="this.style.display='none'">`
       : `<div style="width:28px;height:24px;border-radius:4px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#2563EB;flex-shrink:0">${initials}</div>`;
-    return `<td><div style="display:flex;align-items:center;gap:7px">${logo}<span style="font-size:11px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px" title="${co.name||''}">${co.name || '–'}</span></div></td>`;
+    return `<td><div style="display:flex;align-items:center;gap:7px">${logo}<span style="font-size:11px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px" title="${_attr(co.name)}">${_attr(co.name) || '–'}</span></div></td>`;
   };
 
   const showCo = currentSystemAdmin;
   const rows = profiles.map(p => {
     const date = p.created_at ? new Date(p.created_at).toLocaleDateString('he-IL') : '–';
     const isMe = p.id === currentUserId;
-    const safeName  = (p.full_name  || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    const safeEmail = (p.email      || '').replace(/'/g, "\\'");
+    _usersById[p.id] = p;   // handlers get only the id; the values are read from here (never put DB text inside onclick JS)
     const projCount = memberCount[p.id] || 0;
     const projBadge = projCount > 0
-      ? `<span class="badge b-open" style="cursor:pointer" onclick="openUserProjects('${p.id}','${safeName}','${p.role||'user'}')">${projCount} פרויקטים</span>`
-      : `<span style="font-size:11px;color:#9AA3B0;cursor:pointer" onclick="openUserProjects('${p.id}','${safeName}','${p.role||'user'}')">אין — הקצה</span>`;
+      ? `<span class="badge b-open" style="cursor:pointer" onclick="openUserProjectsRow('${_attr(p.id)}')">${projCount} פרויקטים</span>`
+      : `<span style="font-size:11px;color:#9AA3B0;cursor:pointer" onclick="openUserProjectsRow('${_attr(p.id)}')">אין — הקצה</span>`;
     return `<tr>
-      <td><b>${p.full_name || '–'}</b>${isMe ? ' <span style="font-size:10px;color:#9AA3B0">(אתה)</span>' : ''}</td>
-      <td style="direction:ltr;text-align:right;font-size:12px">${p.email || '–'}</td>
+      <td><b>${_attr(p.full_name) || '–'}</b>${isMe ? ' <span style="font-size:10px;color:#9AA3B0">(אתה)</span>' : ''}</td>
+      <td style="direction:ltr;text-align:right;font-size:12px">${_attr(p.email) || '–'}</td>
       <td>${roleAdminBadge(p.role)}${p.signer_role ? `<div style="font-size:10px;color:var(--t3);margin-top:2px">${_signerLabel(p.signer_role)}</div>` : ''}</td>
       <td>${projBadge}</td>
       <td style="font-size:12px;color:#64748B">${date}</td>
       ${showCo ? companyCell(p.company_id) : ''}
       <td>
         <div style="display:flex;gap:4px">
-          <button class="btn btn-sm" onclick="openEditUser('${p.id}','${safeName}','${p.role||'user'}','${safeEmail}','${p.signer_role||''}')">
+          <button class="btn btn-sm" onclick="openEditUserRow('${_attr(p.id)}')">
             <i class="ti ti-user-edit"></i> עריכה
           </button>
-          <button class="btn btn-sm btn-p" onclick="openUserProjects('${p.id}','${safeName}','${p.role||'user'}')">
+          <button class="btn btn-sm btn-p" onclick="openUserProjectsRow('${_attr(p.id)}')">
             <i class="ti ti-folder"></i> פרויקטים
           </button>
         </div>
@@ -4281,6 +4469,10 @@ async function loadUsersScreen() {
 // ─── USER ↔ PROJECT MANAGEMENT ───────────────────────────
 
 let _upUserId = null;
+
+const _usersById = {};
+function openUserProjectsRow(id) { const p = _usersById[id]; if (p) openUserProjects(p.id, p.full_name || '', p.role || 'user'); }
+function openEditUserRow(id)     { const p = _usersById[id]; if (p) openEditUser(p.id, p.full_name || '', p.role || 'user', p.email || '', p.signer_role || ''); }
 
 async function openUserProjects(userId, userName, userRole) {
   _upUserId = userId;
@@ -4416,16 +4608,11 @@ async function handleEuSigUpload(input) {
   errEl.textContent = '';
   if (!file.type.startsWith('image/')) { errEl.textContent = 'יש לבחור קובץ תמונה'; input.value = ''; return; }
   if (file.size > 2 * 1024 * 1024) { errEl.textContent = 'הקובץ גדול מ-2MB'; input.value = ''; return; }
-  const ext  = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
-  const path = `signatures/${id}/${Date.now()}.${ext}`;   // versioned: earlier signed records keep their signature
-  const { error } = await db.storage.from('documents').upload(path, file);
-  if (error) { errEl.textContent = 'שגיאה בהעלאת החתימה'; logClientError('admin signature upload failed', { msg: error.message }); input.value = ''; return; }
-  const ref = sbRef(path);
-  const { error: upErr } = await db.from('profiles').update({ signature_url: ref }).eq('id', id);
+  const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+  const ref = await saveUserSignature(id, file, ext);
   input.value = '';
-  if (upErr) { errEl.textContent = 'שגיאה בשמירה: ' + upErr.message; return; }
+  if (!ref) { errEl.textContent = 'שגיאה בשמירת החתימה'; return; }
   _euSigRender(ref);
-  if (id === currentUserId && _currentUserProfile) _currentUserProfile.signature_url = ref;
   showToast('החתימה נשמרה', 'success');
 }
 
@@ -4453,7 +4640,14 @@ async function saveEditUser() {
   const { error } = await db.from('profiles').update({ full_name: name, role, signer_role: signerRole || null }).eq('id', id);
   btn.disabled = false;
 
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+  if (error) {
+    // the database refuses privileged changes (migration 011) with English messages — show something the admin can act on
+    errEl.textContent = /system admin profile/.test(error.message) ? 'לא ניתן לערוך פרופיל של מנהל מערכת'
+      : /only an admin may/.test(error.message) ? 'רק אדמין רשאי לשנות תפקידים'
+      : /quality assurance role/.test(error.message) ? 'רק אדמין רשאי להעניק את תפקיד הבטחת האיכות'
+      : 'שגיאה: ' + error.message;
+    return;
+  }
   closeById('m-edit-user');
   await loadUsersScreen();
 }
@@ -4596,6 +4790,7 @@ const titles = {
   companies:       'ניהול חברות',
   'project-board': 'עץ מבנה',
   'my-tasks':      'המשימות שלי',
+  precontrol:      'בקרה מקדימה',
 };
 
 function go(name, el) {
@@ -4615,6 +4810,7 @@ function go(name, el) {
   else if (name === 'users')     loadUsersScreen();
   else if (name === 'companies') loadCompaniesScreen();
   else if (name === 'my-tasks')  loadMyTasksScreen();
+  else if (name === 'precontrol') loadPrecontrolScreen();
 }
 
 // ─── MODALS ───────────────────────────────────────────────
@@ -4657,6 +4853,7 @@ function _reloadActiveScreen() {
   else if (id === 's-reports')   loadReportsScreen();
   else if (id === 's-inspections') loadInspectionsScreen();
   else if (id === 's-docs')        loadDocsScreen();
+  else if (id === 's-precontrol')  loadPrecontrolScreen();
   else if (id === 's-project-board') openProjectBoard(_activeProjectId);
 }
 
@@ -4864,7 +5061,7 @@ async function selectDocsFolder(id) {
   listEl.innerHTML = files.map(f => `
     <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bdr)">
       <i class="ti ti-file" style="color:#6B7280"></i>
-      <a href="#" onclick="sbOpen('${f.url}');return false" style="flex:1;font-size:12px;color:#374151;text-decoration:none">${f.name}</a>
+      <a href="#" data-sb-ref="${_attr(f.url)}" onclick="sbOpen(this.dataset.sbRef);return false" style="flex:1;font-size:12px;color:#374151;text-decoration:none">${f.name}</a>
       <span style="font-size:10px;color:#9AA3B0">${f.uploaded_by_name || ''}</span>
       <button class="btn btn-sm" onclick="docsDeleteFile('${f.id}','${id}')" title="מחק"><i class="ti ti-trash" style="color:#DC2626"></i></button>
     </div>`).join('');
@@ -4892,8 +5089,13 @@ async function docsDeleteFolder(id) {
     ? `למחוק את "${folder?.name}"? זה ימחק גם את כל תת-התיקיות והקבצים שבתוכה.`
     : `למחוק את "${folder?.name}"? כל הקבצים שבתוכה יימחקו.`;
   if (!confirm(msg)) return;
-  const { error } = await db.from('folders').delete().eq('id', id);
-  if (error) { showToast('שגיאה במחיקת תיקייה: ' + error.message, 'error'); return; }
+  // collect the stored objects of the whole subtree first — the folder delete cascades to the file rows
+  const subtree = [id]; for (let i = 0; i < subtree.length; i++) _docsFolders.filter(f => f.parent_id === subtree[i]).forEach(f => subtree.push(f.id));
+  const { data: fileRows } = await db.from('project_files').select('url').in('folder_id', subtree);
+  const paths = (fileRows || []).map(r => sbPathOf(r.url)).filter(Boolean);
+  const { data: gone, error } = await db.from('folders').delete().eq('id', id).select('id');
+  if (error || !gone?.length) { showToast('שגיאה במחיקת תיקייה' + (error ? ': ' + error.message : ' (אין הרשאה)'), 'error'); return; }
+  if (paths.length) await db.storage.from('documents').remove(paths);
   if (_docsSelectedFolder === id) {
     _docsSelectedFolder = null;
     document.getElementById('docs-files-pnl').innerHTML = `
@@ -4959,9 +5161,624 @@ async function docsUploadFile(input, folderId) {
 
 async function docsDeleteFile(fileId, folderId) {
   if (!confirm('למחוק את הקובץ?')) return;
-  const { error } = await db.from('project_files').delete().eq('id', fileId);
-  if (error) { showToast('שגיאה במחיקה: ' + error.message, 'error'); return; }
+  // remove the stored object as well (the row only held the pointer — deleting just the row left orphaned files)
+  const { data: row } = await db.from('project_files').select('url').eq('id', fileId).maybeSingle();
+  const path = sbPathOf(row?.url);
+  const { data: gone, error } = await db.from('project_files').delete().eq('id', fileId).select('id');
+  if (error || !gone?.length) { showToast('שגיאה במחיקה' + (error ? ': ' + error.message : ' (אין הרשאה)'), 'error'); return; }
+  if (path) await db.storage.from('documents').remove([path]);
   selectDocsFolder(folderId);
+}
+
+// ─── PRE-CONTROL (בקרה מקדימה) ───────────────────────────
+// Supplier / material / subcontractor approvals and trial sections ("קטע ניסוי"), per project.
+// Status changes (approved / in progress / not approved) are restricted to quality assurance and admins — enforced in the DB
+// (migration 010), the UI only hides the button. History is written by DB triggers.
+
+const PC_TYPES = {
+  supplier:      { label: 'אישור ספק / יצרן',          short: 'ספק',        icon: 'ti-building-factory-2', nameLbl: 'שם ספק / יצרן', matLbl: 'חומר / ציוד מסופק',
+                   items: ['רישום במאגר ספקים', 'תו תקן', 'ISO 9001', 'ISO 14001', 'דרישות מפרט', 'אישור סופי הבטחת איכות'] },
+  material:      { label: 'אישור חומר',                short: 'חומר',       icon: 'ti-package',            nameLbl: 'ספק / יצרן',    matLbl: 'חומר',
+                   items: ['אישור יצרן / תעודת מקור', 'תו תקן', 'תעודת בדיקה / דגימה', 'התאמה למפרט הטכני', 'אישור סופי הבטחת איכות'] },
+  subcontractor: { label: 'אישור קבלן משנה',           short: 'קבלן משנה',  icon: 'ti-users-group',        nameLbl: 'שם קבלן משנה',  matLbl: 'תחום עבודה',
+                   items: ['רישיון / סיווג קבלן', 'ביטוחים', 'ISO', 'מנהל עבודה מוסמך', 'ניסיון בפרויקטים דומים', 'אישור סופי הבטחת איכות'] },
+  trial_section: { label: 'קטע ניסוי (הוכחת יכולת)',   short: 'קטע ניסוי',  icon: 'ti-flask',              nameLbl: 'קבלן משנה / צוות', matLbl: null, items: null },
+};
+const PC_STATUS = {
+  approved:    { label: 'מאושר',      cls: 'b-ok' },
+  in_progress: { label: 'בתהליך',     cls: 'b-warn' },
+  rejected:    { label: 'לא מאושר',   cls: 'b-fail' },
+};
+const PC_ITEM_STATUS = ['ממתין', 'כן', 'לא', 'לא רלוונטי'];
+const PC_TRIAL_FIELDS = [
+  ['description', 'תיאור', 2], ['location', 'מיקום', 1], ['attendees', 'נוכחים', 2], ['team', 'צוות ביצוע', 2],
+  ['equipment', 'ציוד וחומרים', 2], ['steps', 'פעולות ותהליך', 4], ['tests', 'בדיקות נלוות', 2], ['conclusions', 'מסקנות', 3],
+];
+const PC_ACTIONS = { created: 'נוצר', status_changed: 'שינוי סטטוס', updated: 'עודכן', file_added: 'קובץ נוסף' };
+
+let _pcForms = [], _pcTypeFilter = 'all', _pcStatusFilter = 'all';
+let _pcSnap = '';
+// Order-independent, null-safe signature of the persisted fields (jsonb reorders keys, empty values are null vs '')
+const _pcSig = c => {
+  const d = c.data || {}, rest = {};
+  Object.keys(d).filter(k => k !== 'items' && d[k] !== '' && d[k] != null).sort().forEach(k => { rest[k] = d[k]; });
+  return JSON.stringify([c.title || '', c.supplier_name || '', c.branch || '', c.material || '', c.submitted_date || '', c.valid_from || '', c.valid_to || '', c.notes || '',
+    (d.items || []).map(i => [i.name || '', i.status || '', i.number || '', i.valid || '', i.notes || '']), rest, [...(c.recipients || [])].sort()]);
+};
+const _pcDirty = () => { _pcCollect(); return _pcCur?.id && _pcSig(_pcCur) !== _pcSnap; };
+let _pcCur = null, _pcUsers = [], _pcFiles = [], _pcHistory = [], _pcPending = [];
+
+const _pcEsc = _attr;
+const _pcCanDecide = () => !!(currentSystemAdmin || currentUserRole === 'admin' || currentSignerRole === 'qa_assurance');
+const _pcBadge = st => { const s = PC_STATUS[st] || PC_STATUS.in_progress; return `<span class="badge ${s.cls}">${s.label}</span>`; };
+const _pcDate = d => d ? new Date(d.length === 10 ? d + 'T12:00' : d).toLocaleDateString('he-IL') : '–';
+const _pcLocalDate = d => { const x = d ? new Date(d) : new Date(); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };   // local date, not UTC
+const _pcToday = () => _pcLocalDate();
+
+function goPrecontrolNav(el) {
+  if (!_activeProjectId) {
+    const sel = document.getElementById('proj-sel');
+    sel.style.outline = '2px solid #C97B1A';
+    setTimeout(() => sel.style.outline = '', 1500);
+    toggleProjPicker({ stopPropagation: () => {} });
+    return;
+  }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('s-precontrol').classList.add('active');
+  (el || document.getElementById('nav-precontrol')).classList.add('active');
+  document.getElementById('ttl').textContent = 'בקרה מקדימה';
+  loadPrecontrolScreen();
+}
+
+async function loadPrecontrolScreen() {
+  const p = _activeProjectId ? _allProjects.find(x => x.id === _activeProjectId) : null;
+  document.getElementById('pc-scope-note').textContent = p ? `טפסי בקרה מקדימה: ${p.name}` : 'יש לבחור פרויקט פעיל מלמעלה';
+  if (!_activeProjectId) { _pcForms = []; _pcRenderList(); return; }
+  const { data, error } = await db.from('precontrol_forms').select('*').eq('project_id', _activeProjectId).order('created_at', { ascending: false });
+  if (error) { logClientError('precontrol load failed', { msg: error.message }); showToast('שגיאה בטעינת הטפסים', 'error'); }
+  _pcForms = data || [];
+  _pcRenderList();
+}
+
+function _pcFiltered() {
+  return _pcForms.filter(f => (_pcTypeFilter === 'all' || f.form_type === _pcTypeFilter) && (_pcStatusFilter === 'all' || f.status === _pcStatusFilter));
+}
+
+function _pcRenderList() {
+  const byType = _pcForms.filter(f => _pcTypeFilter === 'all' || f.form_type === _pcTypeFilter);
+  const cnt = s => byType.filter(f => f.status === s).length;
+  document.getElementById('pc-summary').innerHTML = [
+    ['סה"כ', byType.length, '#EFF6FF', '#BFDBFE', '#1D4ED8'],
+    ['מאושר', cnt('approved'), '#F0FDF4', '#86EFAC', '#15803D'],
+    ['בתהליך', cnt('in_progress'), '#FFFBEB', '#FCD34D', '#B45309'],
+    ['לא מאושר', cnt('rejected'), '#FFF1F0', '#FCA5A5', '#B91C1C'],
+  ].map(([l, v, bg, bd, c]) => `<span class="nc-sum-chip" style="background:${bg};border-color:${bd};color:${c}">${l}<strong>${v}</strong></span>`).join('');
+  const pill = (cur, val, label, fn) => `<button class="nc-filter-btn${cur === val ? ' active' : ''}" onclick="${fn}('${val}')">${label}</button>`;
+  document.getElementById('pc-type-filters').innerHTML =
+    pill(_pcTypeFilter, 'all', 'כל הסוגים', 'setPcTypeFilter') + Object.entries(PC_TYPES).map(([k, t]) => pill(_pcTypeFilter, k, t.short, 'setPcTypeFilter')).join('');
+  document.getElementById('pc-status-filters').innerHTML =
+    pill(_pcStatusFilter, 'all', 'כל הסטטוסים', 'setPcStatusFilter') + Object.entries(PC_STATUS).map(([k, s]) => pill(_pcStatusFilter, k, s.label, 'setPcStatusFilter')).join('');
+
+  const rows = _pcFiltered(), today = _pcToday(), tbody = document.getElementById('pc-tbody');
+  if (!rows.length) { tbody.innerHTML = emptyTR(8, 'ti-clipboard-check', 'אין טפסים', 'לחץ "טופס חדש" כדי להתחיל'); return; }
+  tbody.innerHTML = rows.map(f => {
+    const t = PC_TYPES[f.form_type] || {};
+    const expired = f.valid_to && f.valid_to < today && f.status === 'approved';
+    const what = [f.supplier_name, f.material].filter(Boolean).join(' · ') || '–';
+    return `<tr style="cursor:pointer" onclick="openPcForm('${f.id}')">
+      <td style="font-size:11px;color:#6B7280;white-space:nowrap">${_pcEsc(t.short)} ${f.serial_number ?? ''}</td>
+      <td><i class="ti ${t.icon || 'ti-file'}" style="color:#6B7280;margin-left:4px"></i>${_pcEsc(t.label)}</td>
+      <td><b style="font-size:12px">${_pcEsc(f.title)}</b></td>
+      <td style="font-size:12px">${_pcEsc(what)}</td>
+      <td style="font-size:12px">${_pcDate(f.submitted_date)}</td>
+      <td style="font-size:12px${expired ? ';color:#DC2626;font-weight:700' : ''}">${_pcDate(f.valid_to)}${expired ? ' (פג תוקף)' : ''}</td>
+      <td>${_pcBadge(f.status)}</td>
+      <td style="font-size:12px">${f.decided_at ? _pcDate(f.decided_at) : '–'}</td>
+    </tr>`;
+  }).join('');
+}
+function setPcTypeFilter(v)   { _pcTypeFilter = v;   _pcRenderList(); }
+function setPcStatusFilter(v) { _pcStatusFilter = v; _pcRenderList(); }
+
+// ── new-form type chooser ──
+function _pcRenderTypeChooser() {
+  document.getElementById('pc-type-list').innerHTML = Object.entries(PC_TYPES).map(([k, t]) => `
+    <button class="btn" style="justify-content:flex-start;gap:10px;padding:12px 14px;font-size:13px" onclick="closeById('m-pc-type');openPcForm(null,'${k}')">
+      <i class="ti ${t.icon}" style="font-size:20px;color:#2563EB"></i>${t.label}
+    </button>`).join('');
+}
+
+// ── open / render the form ──
+async function openPcForm(id, type) {
+  _pcPending = []; _pcFiles = []; _pcHistory = [];
+  document.getElementById('pc-form-err').textContent = '';
+  if (id) {
+    let f = _pcForms.find(x => x.id === id);
+    if (!f) { const { data } = await db.from('precontrol_forms').select('*').eq('id', id).maybeSingle(); f = data; }
+    if (!f) { showToast('הטופס לא נמצא', 'error'); return; }
+    _pcCur = JSON.parse(JSON.stringify(f));
+  } else {
+    _pcCur = {
+      id: null, form_type: type, status: 'in_progress', project_id: _activeProjectId, title: '', supplier_name: '', branch: '', material: '',
+      submitted_date: _pcToday(), valid_from: '', valid_to: '', notes: '', recipients: [],
+      data: type === 'trial_section' ? {} : { items: PC_TYPES[type].items.map(n => ({ name: n, status: 'ממתין', number: '', valid: '', notes: '' })) },
+    };
+  }
+  _pcCur.data = _pcCur.data || {};
+  _pcSnap = _pcSig(_pcCur);   // what is saved, to detect unsaved edits later
+  const jobs = [db.rpc('get_project_user_emails', { p_project_id: _pcCur.project_id })];
+  if (_pcCur.id) {
+    jobs.push(db.from('precontrol_files').select('*').eq('form_id', _pcCur.id).order('created_at'));
+    jobs.push(db.from('precontrol_history').select('*').eq('form_id', _pcCur.id).order('created_at', { ascending: false }));
+  }
+  const [u, fl, hs] = await Promise.all(jobs);
+  _pcUsers = u?.data || [];
+  _pcFiles = fl?.data || [];
+  _pcHistory = hs?.data || [];
+  _pcRenderForm();
+  openM('m-pc-form');
+}
+
+function _pcRenderForm() {
+  const c = _pcCur, t = PC_TYPES[c.form_type], isTrial = c.form_type === 'trial_section';
+  document.getElementById('pc-form-ttl').innerHTML =
+    `${_pcEsc(t.label)}${c.serial_number ? ' #' + c.serial_number : ' — חדש'} ${c.id ? _pcBadge(c.status) : ''}`;
+  const inp = (id, label, val, extra = '') => `<div class="form-row" style="margin-bottom:0"><label class="form-lbl">${label}</label><input class="form-in" id="${id}" value="${_pcEsc(val)}" ${extra}></div>`;
+  const dat = (id, label, val) => `<div class="form-row" style="margin-bottom:0"><label class="form-lbl">${label}</label><input class="form-in" type="date" id="${id}" value="${_pcEsc(val || '')}"></div>`;
+  let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:12px">
+    <div style="grid-column:1/-1">${inp('pc-title', 'כותרת הטופס *', c.title, 'placeholder="למשל: אישור חומרים — שוחות השקיה"')}</div>
+    ${inp('pc-supplier', t.nameLbl, c.supplier_name, 'placeholder="הקלדה חופשית — לא מתוך רשימה"')}
+    ${isTrial ? dat('pc-submitted', 'תאריך', c.submitted_date) : inp('pc-branch', 'סניף', c.branch)}
+    ${isTrial ? '' : inp('pc-material', t.matLbl, c.material)}
+    ${isTrial ? '' : dat('pc-submitted', 'תאריך הגשה', c.submitted_date)}
+    ${isTrial ? '' : dat('pc-vfrom', 'תוקף אישור מ', c.valid_from)}
+    ${isTrial ? '' : dat('pc-vto', 'תוקף אישור עד', c.valid_to)}
+  </div>`;
+
+  if (isTrial) {
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:12px">' + PC_TRIAL_FIELDS.map(([k, lbl, rows]) =>
+      `<div class="form-row" style="margin-bottom:0;${rows >= 3 ? 'grid-column:1/-1' : ''}"><label class="form-lbl">${lbl}</label>
+        <textarea class="form-in pc-trial" data-k="${k}" rows="${rows}">${_pcEsc(c.data[k] || '')}</textarea></div>`).join('') + '</div>';
+  } else {
+    const items = c.data.items || [];
+    html += `<div class="ncr-sec-label" style="margin:6px 0 6px"><i class="ti ti-list-check"></i>פריטי בדיקה</div>
+      <div style="overflow-x:auto"><table style="min-width:640px"><thead><tr><th>פריט</th><th style="width:110px">סטטוס</th><th style="width:90px">מס'</th><th style="width:130px">תוקף</th><th>הערות</th><th style="width:44px"></th></tr></thead><tbody>
+      ${items.map((it, i) => `<tr class="pc-item-row">
+        <td><input class="form-in pc-i-name" value="${_pcEsc(it.name)}"></td>
+        <td><select class="form-in pc-i-status">${PC_ITEM_STATUS.map(s => `<option${s === it.status ? ' selected' : ''}>${s}</option>`).join('')}</select></td>
+        <td><input class="form-in pc-i-number" value="${_pcEsc(it.number)}"></td>
+        <td><input class="form-in pc-i-valid" type="date" value="${_pcEsc(it.valid)}"></td>
+        <td><input class="form-in pc-i-notes" value="${_pcEsc(it.notes)}"></td>
+        <td><button class="btn btn-sm" onclick="pcRemoveItem(${i})" title="הסר"><i class="ti ti-trash" style="color:#DC2626"></i></button></td></tr>`).join('')}
+      </tbody></table></div>
+      <button class="btn btn-sm" style="margin:6px 0 12px" onclick="pcAddItem()"><i class="ti ti-plus"></i>הוסף פריט</button>`;
+  }
+
+  html += `<div class="form-row"><label class="form-lbl">הערות</label><textarea class="form-in" id="pc-notes" rows="2">${_pcEsc(c.notes)}</textarea></div>`;
+
+  // attachments
+  html += `<div class="ncr-sec-label" style="margin:6px 0 6px"><i class="ti ti-paperclip"></i>מסמכים מצורפים</div><div id="pc-files-list" style="margin-bottom:6px">${_pcFilesHtml()}</div>
+    <label class="btn btn-sm" style="cursor:pointer;margin-bottom:12px"><i class="ti ti-upload"></i>הוסף קבצים
+      <input type="file" multiple style="display:none" onchange="pcAddFiles(this)"></label>`;
+
+  // recipients (project users only)
+  const sel = new Set(c.recipients || []);
+  html += `<div class="ncr-sec-label" style="margin:6px 0 6px"><i class="ti ti-mail"></i>רשימת תפוצה (משתמשי הפרויקט)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:12px">
+    ${_pcUsers.length ? _pcUsers.map(u => `<label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer">
+        <input type="checkbox" class="pc-rcpt" value="${u.user_id}"${sel.has(u.user_id) ? ' checked' : ''}>
+        ${_pcEsc(u.full_name || u.email)} <span style="color:#9AA3B0">${_pcEsc([_roleLabel(u.role), u.signer_role ? _signerLabel(u.signer_role) : ''].filter(Boolean).join(' · '))}</span></label>`).join('')
+      : '<div style="font-size:12px;color:#9AA3B0">אין משתמשים משויכים לפרויקט</div>'}
+    </div>`;
+
+  // decision info + history
+  if (c.id) {
+    if (c.decided_at) html += `<div style="font-size:12px;color:#475569;background:#F8FAFC;border:1px solid #E8EDF3;border-radius:8px;padding:8px 12px;margin-bottom:10px">
+      החלטה אחרונה: ${_pcBadge(c.status)} · ${_pcEsc(c.decided_by_name || '')} · ${_pcDate(c.decided_at)}${c.decision_note ? '<br>' + _pcEsc(c.decision_note) : ''}</div>`;
+    html += `<div class="ncr-sec-label" style="margin:6px 0 6px"><i class="ti ti-history"></i>היסטוריה</div>
+      <div id="pc-history" style="max-height:140px;overflow-y:auto;margin-bottom:6px">${_pcHistoryHtml()}</div>`;
+  }
+  document.getElementById('pc-form-body').innerHTML = html;
+
+  // footer
+  const btn = (cls, fn, icon, label, extra = '') => `<button class="btn ${cls}" onclick="${fn}" ${extra}><i class="ti ${icon}"></i>${label}</button>`;
+  let foot = btn('btn-p', 'savePcForm()', 'ti-device-floppy', 'שמור');
+  if (c.id && _pcCanDecide()) foot += btn('', 'openPcDecision()', 'ti-rosette-discount-check', 'החלטת אישור', 'style="background:#065F46;color:#fff;border-color:#065F46"');
+  if (c.id) foot += btn('', 'exportPcPdf()', 'ti-file-type-pdf', 'ייצוא PDF');
+  if (c.id) foot += btn('', 'pcSendMail()', 'ti-mail', 'שלח במייל');
+  if (c.id && _pcCanDelete(c)) foot += btn('', 'deletePcForm()', 'ti-trash', 'מחק', 'style="color:#DC2626"');
+  foot += btn('', "closeById('m-pc-form')", 'ti-x', 'סגור');
+  document.getElementById('pc-form-foot').innerHTML = foot;
+}
+
+function _pcFilesHtml() {
+  const saved = _pcFiles.map(f => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px">
+      <i class="ti ti-file" style="color:#6B7280"></i>
+      <a href="#" data-sb-ref="${_attr(_pcEsc(f.url))}" onclick="sbOpen(this.dataset.sbRef);return false" style="flex:1;color:#1D4ED8;text-decoration:none">${_pcEsc(f.name)}</a>
+      <span style="color:#9AA3B0;font-size:10px">${_pcEsc(f.uploaded_by_name || '')}</span>
+      <button class="btn btn-sm" onclick="pcDeleteFile('${f.id}')" title="מחק"><i class="ti ti-trash" style="color:#DC2626"></i></button></div>`);
+  const pending = _pcPending.map((f, i) => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:#64748B">
+      <i class="ti ti-clock" style="color:#9AA3B0"></i><span style="flex:1">${_pcEsc(f.name)} <span style="font-size:10px">(יועלה בשמירה)</span></span>
+      <button class="btn btn-sm" onclick="_pcPending.splice(${i},1);document.getElementById('pc-files-list').innerHTML=_pcFilesHtml()"><i class="ti ti-x"></i></button></div>`);
+  return saved.concat(pending).join('') || '<div style="font-size:12px;color:#9AA3B0">אין קבצים</div>';
+}
+
+function _pcHistoryHtml() {
+  if (!_pcHistory.length) return '<div style="font-size:12px;color:#9AA3B0">אין היסטוריה</div>';
+  return _pcHistory.map(h => `<div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #F1F5F9;color:#475569">
+    <b>${PC_ACTIONS[h.action] || _pcEsc(h.action)}</b>
+    ${h.to_status ? `${h.from_status ? _pcBadge(h.from_status) + ' ← ' : ''}${_pcBadge(h.to_status)}` : ''}
+    <span style="color:#9AA3B0">· ${_pcEsc(h.actor_name || '')} · ${new Date(h.created_at).toLocaleString('he-IL')}</span>
+    ${h.comment ? `<div style="margin-top:2px">${_pcEsc(h.comment)}</div>` : ''}</div>`).join('');
+}
+
+// ── read the DOM back into _pcCur (before re-rendering or saving) ──
+function _pcCollect() {
+  const c = _pcCur, v = id => document.getElementById(id)?.value ?? '';
+  c.title = v('pc-title').trim(); c.supplier_name = v('pc-supplier').trim(); c.branch = v('pc-branch').trim(); c.material = v('pc-material').trim();
+  c.submitted_date = v('pc-submitted') || null; c.valid_from = v('pc-vfrom') || null; c.valid_to = v('pc-vto') || null; c.notes = v('pc-notes').trim();
+  if (c.form_type === 'trial_section') {
+    document.querySelectorAll('.pc-trial').forEach(el => { c.data[el.dataset.k] = el.value.trim(); });
+  } else {
+    c.data.items = [...document.querySelectorAll('.pc-item-row')].map(r => ({
+      name: r.querySelector('.pc-i-name').value.trim(), status: r.querySelector('.pc-i-status').value,
+      number: r.querySelector('.pc-i-number').value.trim(), valid: r.querySelector('.pc-i-valid').value, notes: r.querySelector('.pc-i-notes').value.trim(),
+    })).filter(it => it.name);
+  }
+  c.recipients = [...document.querySelectorAll('.pc-rcpt:checked')].map(x => x.value);
+}
+function pcAddItem()      { _pcCollect(); (_pcCur.data.items = _pcCur.data.items || []).push({ name: 'פריט חדש', status: 'ממתין', number: '', valid: '', notes: '' }); _pcRenderForm(); }
+function pcRemoveItem(i)  { _pcCollect(); _pcCur.data.items.splice(i, 1); _pcRenderForm(); }
+
+// ── attachments ──
+async function _pcUploadFiles(formId, files) {
+  let ok = 0;
+  for (const file of files) {
+    try {
+      const ext = (file.name.match(/\.[a-zA-Z0-9]+$/) || [''])[0];
+      const path = `precontrol/${formId}/${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;   // ASCII-safe key; real name lives in the table
+      const { error } = await db.storage.from('documents').upload(path, file, { contentType: file.type || 'application/octet-stream' });
+      if (error) throw error;
+      const { error: rowErr } = await db.from('precontrol_files').insert({
+        company_id: currentCompanyId, form_id: formId, name: file.name, url: sbRef(path), size_bytes: file.size,
+        uploaded_by_name: _currentUserProfile?.full_name || ''
+      });
+      if (rowErr) throw rowErr;
+      ok++;
+    } catch (e) {
+      logClientError('precontrol upload failed', { name: file.name, type: file.type, size: file.size, msg: e.message });
+      showToast('שגיאה בהעלאת ' + file.name, 'error');
+    }
+  }
+  return ok;
+}
+async function pcAddFiles(input) {
+  const files = Array.from(input.files || []); input.value = '';
+  if (!files.length) return;
+  if (_pcCur.id) {
+    await _pcUploadFiles(_pcCur.id, files);
+    const { data } = await db.from('precontrol_files').select('*').eq('form_id', _pcCur.id).order('created_at');
+    _pcFiles = data || [];
+  } else { _pcPending.push(...files); }
+  document.getElementById('pc-files-list').innerHTML = _pcFilesHtml();
+}
+async function pcDeleteFile(fileId) {
+  const f = _pcFiles.find(x => x.id === fileId); if (!f || !confirm('למחוק את הקובץ?')) return;
+  const path = sbPathOf(f.url);
+  if (path) await db.storage.from('documents').remove([path]);
+  const { error } = await db.from('precontrol_files').delete().eq('id', fileId);
+  if (error) { showToast('שגיאה במחיקה: ' + error.message, 'error'); return; }
+  _pcFiles = _pcFiles.filter(x => x.id !== fileId);
+  document.getElementById('pc-files-list').innerHTML = _pcFilesHtml();
+}
+
+// ── save ──
+let _pcSaving = false;
+async function savePcForm() {
+  if (_pcSaving) return;   // a double click used to create two forms
+  _pcSaving = true;
+  const btn = document.querySelector('#pc-form-foot .btn-p'); if (btn) btn.disabled = true;
+  try { await _savePcFormImpl(); } finally { _pcSaving = false; if (btn) btn.disabled = false; }
+}
+async function _savePcFormImpl() {
+  _pcCollect();
+  const c = _pcCur, errEl = document.getElementById('pc-form-err');
+  errEl.textContent = '';
+  if (!c.title) c.title = PC_TYPES[c.form_type].label + (c.material ? ' — ' + c.material : '') + (c.supplier_name ? ' — ' + c.supplier_name : '');
+  const row = {
+    title: c.title, supplier_name: c.supplier_name || null, branch: c.branch || null, material: c.material || null,
+    submitted_date: c.submitted_date, valid_from: c.valid_from, valid_to: c.valid_to, notes: c.notes || null, data: c.data, recipients: c.recipients,
+  };
+  let saved, error;
+  if (!c.id) {
+    ({ data: saved, error } = await db.from('precontrol_forms').insert({ ...row, company_id: currentCompanyId, project_id: c.project_id, form_type: c.form_type }).select().single());
+  } else {
+    ({ data: saved, error } = await db.from('precontrol_forms').update(row).eq('id', c.id).select().single());
+  }
+  if (error) { errEl.textContent = 'שגיאה בשמירה: ' + error.message; return; }
+  // history ('updated' / 'status_changed') is written by DB triggers — nothing to write from here
+  const pending = _pcPending.length;
+  const uploaded = pending ? await _pcUploadFiles(saved.id, _pcPending) : 0;
+  await loadPrecontrolScreen();
+  if (uploaded < pending) {
+    // some attachments failed: keep the form open (now saved) so the user can add them again instead of losing the message
+    await openPcForm(saved.id);
+    document.getElementById('pc-form-err').textContent = `הטופס נשמר, אך ${pending - uploaded} קבצים לא הועלו — הוסף אותם שוב.`;
+    return;
+  }
+  closeById('m-pc-form');
+  showToast('הטופס נשמר', 'success');
+}
+
+const _pcCanDelete = c => !!c && (c.created_by === currentUserId || _pcCanDecide());   // mirrors the RLS delete rule
+async function deletePcForm() {
+  const c = _pcCur, errEl = document.getElementById('pc-form-err');
+  if (!c?.id) return;
+  if (!_pcCanDelete(c)) { errEl.textContent = 'רק יוצר הטופס, הבטחת איכות או אדמין רשאים למחוק'; return; }
+  if (!confirm('למחוק את הטופס, הקבצים וההיסטוריה שלו? אי אפשר לשחזר.')) return;
+  // attachments first: storage access is granted through the form row, so once the row is gone the files can no longer be removed
+  const { data: stored, error: lsErr } = await db.storage.from('documents').list('precontrol/' + c.id, { limit: 1000 });   // attachments AND the PDF versions the system created
+  if (lsErr) { errEl.textContent = 'לא ניתן לבדוק את קבצי הטופס — הטופס לא נמחק'; return; }
+  const paths = (stored || []).filter(o => o.id).map(o => 'precontrol/' + c.id + '/' + o.name);
+  if (paths.length) {
+    const { data: removed, error: rmErr } = await db.storage.from('documents').remove(paths);
+    if (rmErr || (removed || []).length !== paths.length) { errEl.textContent = 'לא ניתן למחוק את הקבצים המצורפים — הטופס לא נמחק'; return; }
+  }
+  const { data, error } = await db.from('precontrol_forms').delete().eq('id', c.id).select('id');
+  if (error || !data?.length) { errEl.textContent = 'המחיקה נכשלה' + (error ? ': ' + error.message : ' (אין הרשאה)'); return; }
+  closeById('m-pc-form');
+  showToast('הטופס נמחק', 'success');
+  await loadPrecontrolScreen();
+}
+
+// ── decision (quality assurance / admin only; the DB enforces it) ──
+function openPcDecision() {
+  const c = _pcCur;
+  document.getElementById('pc-dec-err').textContent = '';
+  document.getElementById('pc-dec-note').value = '';
+  document.getElementById('pc-dec-form-name').textContent = `${PC_TYPES[c.form_type].label} #${c.serial_number} — ${c.title}`;
+  document.getElementById('pc-dec-options').innerHTML = Object.entries(PC_STATUS).map(([k, s]) => `
+    <label style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1.5px solid var(--bdr);border-radius:8px;cursor:pointer">
+      <input type="radio" name="pc-dec" value="${k}"${k === c.status ? ' checked' : ''}> <span class="badge ${s.cls}">${s.label}</span></label>`).join('');
+  openM('m-pc-decision');
+}
+async function submitPcDecision() {
+  const c = _pcCur, errEl = document.getElementById('pc-dec-err');
+  const status = document.querySelector('input[name="pc-dec"]:checked')?.value;
+  const note = document.getElementById('pc-dec-note').value.trim();
+  errEl.textContent = '';
+  if (!status) { errEl.textContent = 'יש לבחור סטטוס'; return; }
+  if (status === c.status) { errEl.textContent = 'הסטטוס לא השתנה'; return; }
+  if (status !== 'approved' && !note) { errEl.textContent = 'יש לכתוב הערה (למשל מה חסר)'; return; }
+  const btn = document.getElementById('pc-dec-btn'); btn.disabled = true;
+  const { error } = await db.from('precontrol_forms').update({ status, decision_note: note || null }).eq('id', c.id);
+  btn.disabled = false;
+  if (error) { errEl.textContent = /only quality assurance/.test(error.message) ? 'רק הבטחת איכות או אדמין רשאים לשנות סטטוס' : 'שגיאה: ' + error.message; return; }
+  closeById('m-pc-decision');
+  showToast('ההחלטה נשמרה', 'success');
+  await loadPrecontrolScreen();
+  await openPcForm(c.id);
+}
+
+// ── pre-control form → PDF (same engine as the NCR report: one A4 sheet per .pg, rendered in a helper window) ──
+// Friendly Hebrew message for the usual failures (the helper window loads jsPDF / html2canvas from a CDN)
+function _pdfErrMsg(e) {
+  const m = String(e?.message || e || '');
+  if (/jsPDF|jspdf|html2canvas|undefined|Failed to fetch|Network/i.test(m)) return 'לא ניתן היה לטעון את רכיבי יצירת ה-PDF — בדוק חיבור לאינטרנט ונסה שוב';
+  return m;
+}
+// One PDF job at a time: a double click used to open two windows and store two versions.
+let _pdfBusy = false;
+function _pdfOnce(fn) {
+  return async (...a) => {
+    if (_pdfBusy) { showToast('הדוח כבר בהפקה…', 'info'); return; }
+    _pdfBusy = true;
+    try { return await fn(...a); } finally { _pdfBusy = false; }
+  };
+}
+function _pdfFromHtml(win, html) {
+  return new Promise((resolve, reject) => {
+    let done = false, timer, watch;
+    const finish = (fn, v) => { if (done) return; done = true; clearTimeout(timer); clearInterval(watch); window.removeEventListener('message', handler); fn(v); };
+    timer = setTimeout(() => finish(reject, new Error('לא התקבל PDF תוך 40 שניות')), 40000);
+    // a window that was closed by the user fails fast (the grace period lets an in-flight success message arrive first)
+    watch = setInterval(() => { if (win.closed) setTimeout(() => finish(reject, new Error('חלון ההפקה נסגר לפני שהדוח הושלם')), 800); }, 500);
+    const handler = e => {
+      if (e.source !== win) return;
+      if (e.data?.type === 'qafield_pdf') finish(resolve, { ab: e.data.data, truncated: !!e.data.truncated });
+      else if (e.data?.type === 'qafield_pdf_error') finish(reject, new Error(e.data.error));
+    };
+    window.addEventListener('message', handler);
+    win.document.open(); win.document.write(html); win.document.close();
+  });
+}
+
+function buildPcPdfHTML(d) {
+  const f = d.f, t = PC_TYPES[f.form_type] || {}, st = PC_STATUS[f.status] || PC_STATUS.in_progress;
+  const accent = { approved: '#16A34A', in_progress: '#D97706', rejected: '#DC2626' }[f.status] || '#2563EB';
+  const dt = x => x ? new Date(x.length === 10 ? x + 'T12:00' : x).toLocaleDateString('he-IL') : '–';
+  const nl = s => _attr(s).replace(/\n/g, '<br>');
+  const row = (l, v) => `<tr><th>${l}</th><td>${v || '–'}</td></tr>`;
+  const blk = (title, v, bg) => v ? `<div class="blk" style="${bg ? 'background:' + bg : ''}"><div class="blk-t">${title}</div><div class="blk-v">${nl(v)}</div></div>` : '';
+  const isTrial = f.form_type === 'trial_section';
+  const fields = isTrial
+    ? row('פרויקט', _attr(d.projName)) + row(t.nameLbl, _attr(f.supplier_name)) + row('תאריך', dt(f.submitted_date)) + row('נפתח ע"י', _attr(f.created_by_name))
+    : row('פרויקט', _attr(d.projName)) + row(t.nameLbl, _attr(f.supplier_name)) + row('סניף', _attr(f.branch)) + row(t.matLbl, _attr(f.material)) +
+      row('תאריך הגשה', dt(f.submitted_date)) + row('תוקף אישור', f.valid_from || f.valid_to ? `${dt(f.valid_from)} — ${dt(f.valid_to)}` : '') + row('נפתח ע"י', _attr(f.created_by_name));
+  const items = (f.data?.items || []);
+  const itemsTbl = !isTrial && items.length ? `<div class="blk-t" style="margin:4px 0 6px">פריטי בדיקה</div><table class="grid"><thead><tr><th>פריט</th><th style="width:70px">סטטוס</th><th style="width:70px">מס'</th><th style="width:80px">תוקף</th><th>הערות</th></tr></thead><tbody>${
+    items.map(i => `<tr><td>${_attr(i.name)}</td><td>${_attr(i.status)}</td><td>${_attr(i.number)}</td><td>${i.valid ? dt(i.valid) : ''}</td><td>${_attr(i.notes)}</td></tr>`).join('')}</tbody></table>` : '';
+  const trial = isTrial ? PC_TRIAL_FIELDS.map(([k, lbl]) => blk(lbl, f.data?.[k])).join('') : '';
+  const decision = f.decided_at ? `<div class="blk" style="background:${f.status === 'approved' ? '#F0FDF4' : f.status === 'rejected' ? '#FFF1F0' : '#FFFBEB'}"><div class="blk-t">החלטה אחרונה</div>
+      <div class="blk-v"><b>${st.label}</b> · ${_attr(f.decided_by_name || '')} · ${dt(f.decided_at)}${f.decision_note ? '<br>' + nl(f.decision_note) : ''}</div></div>` : '';
+  const files = d.files.length ? `<div class="blk"><div class="blk-t">מסמכים מצורפים (${d.files.length})</div><div class="blk-v">${d.files.map(x => '• ' + _attr(x.name)).join('<br>')}</div></div>` : '';
+  const act = { created: 'נוצר', status_changed: 'שינוי סטטוס', updated: 'עודכן' };
+  const hist = d.history.length ? `<div class="blk-t" style="margin:6px 0">היסטוריה</div><table class="grid"><thead><tr><th style="width:110px">מתי</th><th>פעולה</th><th>מי</th><th>הערה</th></tr></thead><tbody>${
+    d.history.slice(0, 14).map(h => `<tr><td>${new Date(h.created_at).toLocaleString('he-IL')}</td><td>${act[h.action] || _attr(h.action)}${h.to_status ? ': ' + (h.from_status ? (PC_STATUS[h.from_status]?.label || '') + ' ← ' : '') + (PC_STATUS[h.to_status]?.label || '') : ''}</td><td>${_attr(h.actor_name)}</td><td>${_attr(h.comment)}</td></tr>`).join('')}</tbody></table>` : '';
+  return `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><title>בקרה מקדימה ${_attr(f.serial_number ?? '')}</title>
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#1A2B4A;background:#fff;width:794px}
+.pg{width:794px;min-height:1123px;padding:34px 44px 56px;position:relative;background:#fff}
+.hd{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid ${accent};padding-bottom:14px;margin-bottom:16px}
+.hd img{max-height:54px;max-width:170px;object-fit:contain} .hd .co{font-size:13px;font-weight:700}
+.hd .ttl{text-align:left} .hd .ttl b{font-size:21px;display:block} .hd .ttl span{font-size:12px;color:#64748B}
+.hd .ttl span.badge{display:inline-block;padding:3px 12px;border-radius:999px;background:${accent};color:#fff;font-size:12px;font-weight:700}
+h1{font-size:19px;margin:0 0 12px}
+table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12.5px}
+th{text-align:right;background:#F1F5F9;color:#475569;padding:7px 10px;border:1px solid #E2E8F0;font-weight:700}
+table:not(.grid) th{width:19%}
+td{padding:7px 10px;border:1px solid #E2E8F0;vertical-align:top}
+.blk{border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;margin-bottom:12px}
+.blk-t{font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px} .blk-v{font-size:13px;line-height:1.7}
+.grid{font-size:11.5px}
+.ftr{position:absolute;bottom:18px;left:44px;right:44px;display:flex;justify-content:space-between;font-size:10px;color:#94A3B8;border-top:1px solid #E2E8F0;padding-top:6px}
+</style></head><body>
+<div class="pg">
+  <div class="hd"><div>${d.logo ? `<img src="${d.logo}">` : ''}<div class="co">${_attr(d.companyName)}</div></div>
+    <div class="ttl"><b>${_attr(t.label || '')} #${_attr(f.serial_number ?? '–')}</b><span class="badge">${st.label}</span></div></div>
+  <h1>${_attr(f.title || '–')}</h1>
+  <table>${fields}</table>
+  ${trial}${itemsTbl}${blk('הערות', f.notes)}${decision}${files}${hist}
+  <div class="ftr"><span>הופק: ${new Date().toLocaleString('he-IL')}</span><span>QAField — ניהול איכות בנייה</span><span>בקרה מקדימה · ${_attr(t.short || '')} #${_attr(f.serial_number ?? '')}</span></div>
+</div>
+<div id="_ov" style="position:fixed;inset:0;background:rgba(26,43,74,.85);display:flex;align-items:center;justify-content:center;z-index:9999;color:#fff;font:700 15px Arial">מייצר PDF…</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+<script>
+window.addEventListener('load', async function () {
+  const ov = document.getElementById('_ov');
+  try {
+    ov.style.display = 'none';
+    await new Promise(r => setTimeout(r, 600));
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+    let truncated = false;
+    const canvas = await html2canvas(document.querySelector('.pg'), { scale: 2, useCORS: true, allowTaint: false, backgroundColor: '#ffffff', logging: false, width: 794, windowWidth: 794 });
+    const img = canvas.toDataURL('image/jpeg', 0.92), ih = (canvas.height / canvas.width) * pw;
+    if (ih <= ph + 0.5) pdf.addImage(img, 'JPEG', 0, 0, pw, ih);
+    else { let y = 0, n = 0; while (y < ih && n < 8) { if (n > 0) pdf.addPage(); pdf.addImage(img, 'JPEG', 0, -y, pw, ih); y += ph; n++; } if (y < ih) truncated = true; }   // long form: continue on the next sheet
+    const ab = pdf.output('arraybuffer');
+    if (window.opener) window.opener.postMessage({ type: 'qafield_pdf', data: ab, truncated }, '*', [ab]);
+    window.close();
+  } catch (err) {
+    ov.style.display = 'none';
+    if (window.opener) window.opener.postMessage({ type: 'qafield_pdf_error', error: err.message }, '*');
+  }
+});
+<\/script></body></html>`;
+}
+
+// Straight from a click handler (popup first). Builds the PDF from the SAVED form.
+async function generatePcPdf(formId) {
+  const win = window.open('', '_blank', 'width=860,height=700');
+  if (!win) { showToast('אנא אפשר חלונות קופצים בדפדפן', 'error'); return null; }
+  win.document.write('<html dir="rtl"><body style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:Arial;font-size:15px;color:#1A2B4A;background:#EEF4FB">מכין את הדוח…</body></html>');
+  win.document.close();
+  const { data: _sd } = await db.auth.getSession();
+  if (!_sd?.session) { if (!win.closed) win.close(); showToast('פג תוקף ההתחברות — היכנס מחדש', 'error'); return null; }
+  try {
+    const { data: f, error } = await db.from('precontrol_forms').select('*').eq('id', formId).single();
+    if (error || !f) throw new Error('הטופס לא נמצא');
+    const [fl, hs] = await Promise.all([
+      db.from('precontrol_files').select('name').eq('form_id', formId).order('created_at'),
+      db.from('precontrol_history').select('*').eq('form_id', formId).order('created_at', { ascending: false }),
+    ]);
+    await ensureCompanyLogoData();
+    const html = buildPcPdfHTML({ f, files: fl.data || [], history: hs.data || [], projName: _allProjects.find(p => p.id === f.project_id)?.name || '', companyName: currentCompany?.name || '', logo: currentCompany?._logoData || '' });
+    const { ab, truncated } = await _pdfFromHtml(win, html);
+    if (truncated) showToast('הדוח ארוך מאוד ונחתך בסופו — קצר את הטקסט ונסה שוב', 'error');
+    return { blob: new Blob([ab], { type: 'application/pdf' }), f, fileName: `${PC_TYPES[f.form_type]?.short || 'בקרה_מקדימה'}_${f.serial_number ?? f.id.slice(-6)}.pdf` };
+  } catch (e) {
+    if (!win.closed) win.close();
+    logClientError('pc pdf failed', { msg: e.message });
+    showToast('שגיאה ביצירת ה-PDF: ' + _pdfErrMsg(e), 'error');
+    return null;
+  }
+}
+async function _pcStoreVersion(f, blob) {
+  const stamp = new Date().toISOString().replace(/[-:T.Z]/g, '') + Math.random().toString(36).slice(2, 5);
+  const path = `precontrol/${f.id}/report_${f.serial_number ?? 'x'}_${stamp}.pdf`;   // immutable, timestamped copy
+  const { error } = await db.storage.from('documents').upload(path, blob, { contentType: 'application/pdf' });
+  if (error) { logClientError('pc pdf store failed', { msg: error.message }); return null; }
+  return sbRef(path);
+}
+const exportPcPdf = _pdfOnce(_exportPcPdf);
+async function _exportPcPdf() {
+  const c = _pcCur; if (!c?.id) { showToast('שמור את הטופס לפני הייצוא', 'info'); return; }
+  if (_pcDirty()) { showToast('יש שינויים שלא נשמרו — לחץ "שמור" ואז ייצא (ה-PDF מופק מהגרסה השמורה)', 'error'); return; }
+  const r = await generatePcPdf(c.id); if (!r) return;
+  _ncrDownload(r.blob, r.fileName);
+  const ptr = await _pcStoreVersion(r.f, r.blob);
+  showToast(ptr ? 'ה-PDF הורד ונשמרה גרסה בארכיון ✓' : 'ה-PDF הורד (שמירת הגרסה בארכיון נכשלה)', ptr ? 'success' : 'info');
+}
+
+// ── e-mail (opens the user's mail client; the approval itself always happens in the system) ──
+const pcSendMail = _pdfOnce(_pcSendMail);
+async function _pcSendMail() {
+  _pcCollect();
+  const c = _pcCur;
+  if (c?.id && _pcSig(c) !== _pcSnap) { showToast('יש שינויים שלא נשמרו — לחץ "שמור" ואז שלח (המייל וה-PDF נבנים מהגרסה השמורה)', 'error'); return; }
+  const chosen = _pcUsers.filter(u => c.recipients.includes(u.user_id) && u.email);
+  if (!chosen.length) { showToast('בחר נמענים מרשימת התפוצה ושמור', 'error'); return; }
+  if (!c.id) { showToast('שמור את הטופס לפני השליחה', 'info'); return; }
+  const gen = generatePcPdf(c.id);   // opens the helper window synchronously (inside the click); everything else is awaited below
+  const p = _allProjects.find(x => x.id === c.project_id);
+  const link = `${location.origin}${location.pathname}?pc=${c.id}`;
+  // the mail carries a link to the PDF of the saved form (mailto cannot attach files); 90-day signed link
+  const r = await gen;
+  let pdfLink = '';
+  if (r) { const ptr = await _pcStoreVersion(r.f, r.blob); if (ptr) pdfLink = await sbSign(ptr, 90 * 86400); }
+  const lines = [
+    `פרויקט: ${p?.name || ''}`, `סוג: ${PC_TYPES[c.form_type].label} #${c.serial_number}`, `כותרת: ${c.title}`,
+    c.supplier_name ? `${PC_TYPES[c.form_type].nameLbl}: ${c.supplier_name}` : null, c.material ? `${PC_TYPES[c.form_type].matLbl}: ${c.material}` : null,
+    `סטטוס: ${PC_STATUS[c.status].label}`, '', 'האישור והמעקב מתבצעים במערכת:', link,
+    pdfLink ? '' : null, pdfLink ? 'הטופס כקובץ PDF (הקישור תקף 90 יום):' : null, pdfLink || null,
+  ].filter(l => l !== null).join('\n');
+  const subject = `[${PC_TYPES[c.form_type].short} #${c.serial_number}] ${c.title} — ${PC_STATUS[c.status].label}`;
+  const to = chosen.map(u => u.email).join(',');
+  let href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines)}`;
+  // mail clients (Outlook/Windows) drop mailto links longer than ~2000 characters — Hebrew is percent-encoded ~6x
+  if (href.length > 1900) {
+    // tier 2: keep the context (title + status) and both links; tier 3: only the most useful link
+    const short = [c.title.slice(0, 60), `סטטוס: ${PC_STATUS[c.status].label}`, link, pdfLink ? 'PDF (תקף 90 יום):' : null, pdfLink || null].filter(Boolean).join('\n');
+    href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(short)}`;
+    if (href.length > 1990) href = `mailto:${to}?subject=${encodeURIComponent('[' + PC_TYPES[c.form_type].short + ' #' + c.serial_number + '] ' + PC_STATUS[c.status].label)}&body=${encodeURIComponent(pdfLink || link)}`;
+  }
+  if (r && !pdfLink) showToast('ה-PDF לא נשמר בארכיון — המייל כולל רק קישור לטופס', 'info');
+  const a = document.createElement('a');
+  a.href = href;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ── Excel export (current filter) ──
+function pcExportExcel() {
+  const rows = _pcFiltered().map(f => ({
+    "מס'": f.serial_number ?? '', 'סוג': PC_TYPES[f.form_type]?.label || f.form_type, 'כותרת': f.title,
+    'ספק / קבלן': f.supplier_name || '', 'סניף': f.branch || '', 'חומר / תחום': f.material || '',
+    'תאריך הגשה': f.submitted_date || '', 'תוקף מ': f.valid_from || '', 'תוקף עד': f.valid_to || '',
+    'סטטוס': PC_STATUS[f.status]?.label || f.status,
+    'תאריך קבלת מענה': f.decided_at ? _pcLocalDate(f.decided_at) : '', 'הוחלט ע"י': f.decided_by_name || '', 'הערת החלטה': f.decision_note || '',
+    'נפתח ע"י': f.created_by_name || '', 'הערות': f.notes || '',
+  }));
+  if (!rows.length) { showToast('אין טפסים לייצוא', 'info'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows), wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'בקרה מקדימה');
+  XLSX.writeFile(wb, `בקרה_מקדימה_${_pcToday()}.xlsx`);
+}
+
+// ── deep link from the e-mail: ?pc=<form id> ──
+async function _pcDeepLink() {
+  const id = new URLSearchParams(location.search).get('pc');
+  if (!id) return;
+  history.replaceState(null, '', location.pathname);
+  const { data } = await db.from('precontrol_forms').select('*').eq('id', id).maybeSingle();
+  if (!data) { showToast('הטופס לא נמצא או שאין הרשאה', 'error'); return; }
+  if (data.project_id !== _activeProjectId) setActiveProject(data.project_id);
+  goPrecontrolNav(document.getElementById('nav-precontrol'));
+  await loadPrecontrolScreen();
+  openPcForm(id);
 }
 
 // ─── PROJECT BOARD ───────────────────────────────────────
@@ -5401,7 +6218,7 @@ function _renderBoardDetails(wi, contextLabel) {
                 </td>
                 <td id="ci-doc-${ci.id}" style="text-align:center">
                   ${ci.document_url
-                    ? `<a href="#" onclick="sbOpen('${ci.document_url}');return false" class="brd-cl-doc-link" title="פתח מסמך"><i class="ti ti-file-check"></i></a>`
+                    ? `<a href="#" data-sb-ref="${_attr(ci.document_url)}" onclick="sbOpen(this.dataset.sbRef);return false" class="brd-cl-doc-link" title="פתח מסמך"><i class="ti ti-file-check"></i></a>`
                     : ci.is_checked
                       ? `<button class="brd-cl-up-btn" onclick="uploadClDoc('${ci.id}')" title="העלה מסמך"><i class="ti ti-upload"></i></button>`
                       : ''}
@@ -5462,10 +6279,10 @@ async function _loadBoardInspections(workItemId) {
   container.innerHTML = orders.map(o => {
     const date = o.scheduled_date ? new Date(o.scheduled_date + 'T12:00:00').toLocaleDateString('he-IL') : '–';
     const pdfBtn = o.pdf_url
-      ? `<a href="#" onclick="sbOpen('${o.pdf_url}');return false" class="btn btn-sm" title="PDF הזמנה"><i class="ti ti-file-type-pdf"></i></a>`
+      ? `<a href="#" data-sb-ref="${_attr(o.pdf_url)}" onclick="sbOpen(this.dataset.sbRef);return false" class="btn btn-sm" title="PDF הזמנה"><i class="ti ti-file-type-pdf"></i></a>`
       : `<button class="btn btn-sm" onclick="openInspectionPDF('${o.id}')" title="הפק PDF"><i class="ti ti-file-type-pdf"></i></button>`;
     const certBtn = o.certificate_url
-      ? `<a href="#" onclick="sbOpen('${o.certificate_url}');return false" class="btn btn-sm" style="color:#16A34A;border-color:#86EFAC" title="תעודת מעבדה"><i class="ti ti-file-certificate"></i></a>`
+      ? `<a href="#" data-sb-ref="${_attr(o.certificate_url)}" onclick="sbOpen(this.dataset.sbRef);return false" class="btn btn-sm" style="color:#16A34A;border-color:#86EFAC" title="תעודת מעבדה"><i class="ti ti-file-certificate"></i></a>`
       : '';
     return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #F8FAFC;font-size:11px">
       <span style="color:#9AA3B0;min-width:46px;font-size:10px;font-weight:700">${o.id.slice(-6).toUpperCase()}</span>
@@ -5537,7 +6354,14 @@ function _filterBoardTree(query) {
   });
 }
 
+// One tick at a time per item: a double click used to send two parallel updates and leave the UI and the DB disagreeing.
+const _ciBusy = new Set();
 async function toggleCheckItem(ciId, wiId) {
+  if (_ciBusy.has(ciId)) return;
+  _ciBusy.add(ciId);
+  try { await _toggleCheckItemImpl(ciId, wiId); } finally { _ciBusy.delete(ciId); }
+}
+async function _toggleCheckItemImpl(ciId, wiId) {
   const ciEl  = document.getElementById('ci-' + ciId);
   if (!ciEl) return;
   const chkEl  = ciEl.querySelector('.chk');
@@ -5797,7 +6621,7 @@ function _roleLabel(role) {
 }
 
 function _signerLabel(signerRole) {
-  return { qa_inspector:'בקר איכות', site_manager:'מנהל עבודה', surveyor:'מודד מוסמך' }[signerRole] || signerRole || '';
+  return { qa_inspector:'בקר איכות', site_manager:'מנהל עבודה', surveyor:'מודד מוסמך', qa_assurance:'הבטחת איכות' }[signerRole] || signerRole || '';
 }
 
 function editCheckDate(ciId) {
@@ -5855,7 +6679,7 @@ async function uploadClDoc(ciId) {
     sbInvalidate(publicUrl);   // same path, new content
     await db.from('checklist_instances').update({ document_url: publicUrl }).eq('id', ciId);
     for (const wi of _boardItems) { const ci = wi.checklist_instances.find(c => c.id === ciId); if (ci) { ci.document_url = publicUrl; break; } }
-    if (docEl) docEl.innerHTML = `<a href="#" onclick="sbOpen('${publicUrl}');return false" class="brd-cl-doc-link" title="פתח מסמך"><i class="ti ti-file-check"></i></a>`;
+    if (docEl) docEl.innerHTML = `<a href="#" data-sb-ref="${_attr(publicUrl)}" onclick="sbOpen(this.dataset.sbRef);return false" class="brd-cl-doc-link" title="פתח מסמך"><i class="ti ti-file-check"></i></a>`;
     showToast('המסמך הועלה בהצלחה');
   };
 }
@@ -5866,41 +6690,45 @@ let _profileSigUrl = null;
 
 async function openProfileModal() {
   document.getElementById('prof-name').value = currentUserFullName || '';
+  document.getElementById('prof-qa-opt').disabled = currentSignerRole !== 'qa_assurance';   // only an admin can grant it
   document.getElementById('prof-signer-role').value = currentSignerRole || '';
   document.getElementById('prof-err').textContent = '';
   _profileSigUrl = _currentUserProfile?.signature_url || null;
-  const sigImg = document.getElementById('prof-sig-img');
-  const sigPh  = document.getElementById('prof-sig-ph');
-  const sigRmv = document.getElementById('prof-sig-remove-btn');
-  if (_profileSigUrl) {
-    sbSetImg(sigImg, _profileSigUrl); sigPh.style.display = 'none'; sigRmv.style.display = '';
-  } else {
-    sigImg.style.display = 'none'; sigPh.style.display = ''; sigRmv.style.display = 'none';
-  }
+  _profileSigRender(_profileSigUrl);
   openM('m-profile');
 }
 
 async function handleProfileSigUpload(input) {
   const file = input.files?.[0];
   if (!file) return;
-  const ext  = file.name.split('.').pop().toLowerCase();
-  const path = `signatures/${currentUserId}/${Date.now()}.${ext}`;   // versioned: earlier signed records keep their signature
-  const { error } = await db.storage.from('documents').upload(path, file);
-  if (error) { showToast('שגיאה בהעלאת חתימה', 'error'); input.value = ''; return; }
-  const publicUrl = sbRef(path);
-  _profileSigUrl = publicUrl;
-  const sigImg = document.getElementById('prof-sig-img');
-  sbSetImg(sigImg, publicUrl);
-  document.getElementById('prof-sig-ph').style.display = 'none';
-  document.getElementById('prof-sig-remove-btn').style.display = '';
+  if (!file.type.startsWith('image/')) { showToast('יש לבחור קובץ תמונה', 'error'); input.value = ''; return; }
+  if (file.size > 2 * 1024 * 1024) { showToast('הקובץ גדול מ-2MB', 'error'); input.value = ''; return; }
+  const ext  = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+  // saved immediately — uploading again simply replaces the current signature for all future actions
+  const publicUrl = await saveUserSignature(currentUserId, file, ext);
   input.value = '';
+  if (!publicUrl) { showToast('שגיאה בשמירת החתימה', 'error'); return; }
+  _profileSigUrl = publicUrl;
+  _profileSigRender(publicUrl);
+  showToast('החתימה נשמרה', 'success');
 }
 
-function removeProfileSig() {
+function _profileSigRender(ref) {
+  const sigImg = document.getElementById('prof-sig-img');
+  if (ref) { delete sigImg.dataset.sbDone; sbSetImg(sigImg, ref); }
+  else { sigImg.style.display = 'none'; sigImg.removeAttribute('src'); }
+  document.getElementById('prof-sig-ph').style.display = ref ? 'none' : '';
+  document.getElementById('prof-sig-remove-btn').style.display = ref ? '' : 'none';
+  document.getElementById('prof-sig-pick-btn').innerHTML = ref ? '<i class="ti ti-refresh"></i>החלף חתימה' : '<i class="ti ti-upload"></i>בחר קובץ';
+}
+
+async function removeProfileSig() {
+  if (!confirm('להסיר את החתימה? לא תוכל לחתום על פעולות עד שתעלה חתימה חדשה.')) return;
+  const { error } = await db.from('profiles').update({ signature_url: null }).eq('id', currentUserId);
+  if (error) { showToast('שגיאה בהסרת החתימה', 'error'); return; }
   _profileSigUrl = null;
-  document.getElementById('prof-sig-img').style.display = 'none';
-  document.getElementById('prof-sig-ph').style.display = '';
-  document.getElementById('prof-sig-remove-btn').style.display = 'none';
+  if (_currentUserProfile) _currentUserProfile.signature_url = null;
+  _profileSigRender(null);
 }
 
 async function changeMyPassword() {
@@ -6253,7 +7081,7 @@ async function toggleStopPoint(wiId, currentVal) {
 function openStopRelease(wiId, wiName) {
   document.getElementById('sp-wi-id').value   = wiId;
   document.getElementById('sp-wi-name').textContent = wiName;
-  document.getElementById('sp-date').value    = new Date().toISOString().slice(0, 10);
+  document.getElementById('sp-date').value    = _pcLocalDate();
   document.getElementById('sp-result').selectedIndex = 0;
   document.getElementById('sp-notes').value   = '';
   document.getElementById('sp-err').textContent = '';
@@ -6544,9 +7372,12 @@ function _filterInspTable() {
 
     // אייקון תעודה
     const certIcon = o.certificate_url
-      ? `<a href="#" onclick="sbOpen('${o.certificate_url}');return false"
+      ? `<a href="#" data-sb-ref="${_attr(o.certificate_url)}" onclick="sbOpen(this.dataset.sbRef);return false"
            class="btn btn-sm" style="color:#16A34A;border-color:#86EFAC"
            title="פתח תעודת מעבדה"><i class="ti ti-file-certificate" style="font-size:15px"></i></a>`
+        // a wrong certificate can no longer be overwritten by the lab (the RPC refuses) — staff remove it so the lab can upload again
+        + ((currentSystemAdmin || ['admin', 'manager', 'inspector'].includes(currentUserRole))
+          ? ` <button class="btn btn-sm" style="color:#C0392B" title="הסר תעודה (המעבדה תוכל להעלות מחדש)" onclick="removeInspectionCertificate('${o.id}')"><i class="ti ti-trash" style="font-size:14px"></i></button>` : '')
       : `<button class="btn btn-sm" style="color:#CBD5E1;cursor:default" disabled
            title="ממתין לתעודת מעבדה"><i class="ti ti-clock" style="font-size:15px"></i></button>`;
 
@@ -6896,9 +7727,28 @@ async function openNewInspection(projectId, workItemId) {
   }
 
   // Default date = today
-  document.getElementById('insp-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('insp-date').value = _pcLocalDate();
 
   openM('m-new-inspection');
+}
+
+async function removeInspectionCertificate(orderId) {
+  const { data: o } = await db.from('inspection_orders').select('certificate_url').eq('id', orderId).maybeSingle();
+  if (!o?.certificate_url) return;
+  if (!confirm('להסיר את תעודת המעבדה? המעבדה תוכל להעלות תעודה חדשה דרך הקישור שנשלח אליה, וההזמנה תחזור למצב "ממתין".')) return;
+  // the file first: access to certificates/ is granted through the order's certificate_url, which is cleared next
+  const path = sbPathOf(o.certificate_url);
+  if (path) {
+    const { data: gone, error: rmErr } = await db.storage.from('documents').remove([path]);
+    // remove() answers with an empty list both when access is denied and when the file is already gone (e.g. an earlier
+    // attempt deleted it but the order update failed). Tell the two apart by checking whether the file can still be reached.
+    const stillThere = !(gone || []).length && !(await db.storage.from('documents').createSignedUrl(path, 10)).error;
+    if (rmErr || stillThere) { showToast('לא ניתן להסיר את קובץ התעודה', 'error'); return; }
+  }
+  const { data, error } = await db.from('inspection_orders').update({ certificate_url: null, status: 'pending' }).eq('id', orderId).select('id');
+  if (error || !data?.length) { showToast('שגיאה בהסרת התעודה', 'error'); return; }
+  showToast('התעודה הוסרה — המעבדה יכולה להעלות תעודה חדשה', 'success');
+  loadInspectionsScreen();
 }
 
 async function openEditInspection(id) {
@@ -7330,6 +8180,243 @@ async function openInspectionPDF(orderId) {
   }
 }
 
+
+// ─── NCR → PDF (export, share, e-mail link) ──────────────
+// Phase 1 of sending documents: the PDF is generated in the browser (same engine as the inspection order), downloaded, and
+// stored as an immutable timestamped version under findings/<id>/. E-mail uses a signed link (mailto cannot attach files);
+// real server-side e-mail with the file attached is a backlog item for when there are real customers.
+const _NCR_SEV = { low: ['דרגה 1', '#6B7280'], medium: ['דרגה 2', '#D97706'], high: ['דרגה 3', '#DC2626'], critical: ['קריטי', '#7C1F1F'] };
+const _NCR_STATUS = { open: 'פתוח', closure_requested: 'ממתין לאישור סגירה', closed: 'סגור' };
+const _ncrNl = s => _attr(s).replace(/\n/g, '<br>');
+
+async function _ncrPhotoData(ref, maxW = 1100) {
+  const url = await sbSign(ref); if (!url) return '';
+  return new Promise(res => {
+    const im = new Image(); im.crossOrigin = 'anonymous';
+    im.onload = () => {
+      const k = Math.min(1, maxW / im.naturalWidth), c = document.createElement('canvas');
+      c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      try { res(c.toDataURL('image/jpeg', 0.82)); } catch (_) { res(''); }
+    };
+    im.onerror = () => res('');
+    im.src = url;
+  });
+}
+
+function buildNcrPdfHTML(d) {
+  const f = d.f, sev = _NCR_SEV[f.severity] || _NCR_SEV.high;
+  const dt = x => x ? new Date(x.length === 10 ? x + 'T12:00' : x).toLocaleDateString('he-IL') : '–';
+  const row = (l, v) => `<tr><th>${l}</th><td>${v || '–'}</td></tr>`;
+  const text = (title, v, bg) => v ? `<div class="blk" style="${bg ? 'background:' + bg : ''}"><div class="blk-t">${title}</div><div class="blk-v">${_ncrNl(v)}</div></div>` : '';
+  const perPage = 6;
+  const photoPages = [];
+  [['תמונות פתיחה', d.openPhotos, d.openMore], ['תמונות סגירה (תיקון)', d.closePhotos, d.closeMore]].forEach(([ttl, list, more]) => {
+    for (let i = 0; i < list.length; i += perPage) {
+      photoPages.push(`<div class="ph-t">${ttl}${list.length > perPage ? ` (${i / perPage + 1}/${Math.ceil(list.length / perPage)})` : ''}</div><div class="ph-grid">${
+        list.slice(i, i + perPage).map(src => `<div class="ph"><img src="${src}"></div>`).join('')}</div>${more && i + perPage >= list.length ? `<div class="more">ועוד ${more} תמונות במערכת</div>` : ''}`);
+    }
+  });
+  const total = 1 + photoPages.length;
+  const ftr = n => `<div class="ftr"><span>הופק: ${new Date().toLocaleString('he-IL')}</span><span>QAField — ניהול איכות בנייה</span><span>אי-התאמה #${_attr(f.serial_number ?? '')} · עמוד ${n} מתוך ${total}</span></div>`;
+  const closure = f.status === 'closed' ? `<div class="blk" style="background:#F0FDF4"><div class="blk-t">אישור סגירה</div>
+      <div class="blk-v">נסגר בתאריך ${dt(f.closed_at)} ע"י ${_attr(f.closed_by_name || '–')}</div>
+      ${d.sigData ? `<div style="margin-top:8px"><img src="${d.sigData}" style="height:70px;max-width:260px;object-fit:contain"><div style="font-size:11px;color:#64748B">חתימה דיגיטלית</div></div>` : ''}</div>` : '';
+  return `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><title>אי-התאמה ${_attr(f.serial_number ?? '')}</title>
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#1A2B4A;background:#fff;width:794px}
+.pg{width:794px;min-height:1123px;padding:34px 44px 56px;position:relative;background:#fff}
+.hd{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid ${sev[1]};padding-bottom:14px;margin-bottom:16px}
+.hd img{max-height:54px;max-width:170px;object-fit:contain} .hd .co{font-size:13px;font-weight:700}
+.hd .ttl{text-align:left} .hd .ttl b{font-size:22px;display:block} .hd .ttl span{font-size:12px;color:#64748B}
+.hd .ttl span.sev{display:inline-block;padding:3px 12px;border-radius:999px;background:${sev[1]};color:#fff;font-size:12px;font-weight:700}
+h1{font-size:19px;margin:0 0 12px}
+table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12.5px}
+th{width:19%;text-align:right;background:#F1F5F9;color:#475569;padding:7px 10px;border:1px solid #E2E8F0;font-weight:700}
+td{padding:7px 10px;border:1px solid #E2E8F0}
+.blk{border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;margin-bottom:12px}
+.blk-t{font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px} .blk-v{font-size:13px;line-height:1.7}
+.ph-t{font-size:15px;font-weight:700;margin:6px 0 12px;border-bottom:2px solid #E2E8F0;padding-bottom:6px}
+.ph-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ph{border:1px solid #E2E8F0;border-radius:6px;height:300px;display:flex;align-items:center;justify-content:center;background:#F8FAFC}
+.ph img{max-width:100%;max-height:100%;object-fit:contain}
+.more{margin-top:10px;font-size:12px;color:#64748B}
+.ftr{position:absolute;bottom:18px;left:44px;right:44px;display:flex;justify-content:space-between;font-size:10px;color:#94A3B8;border-top:1px solid #E2E8F0;padding-top:6px}
+</style></head><body>
+<div class="pg">
+  <div class="hd"><div>${d.logo ? `<img src="${d.logo}">` : ''}<div class="co">${_attr(d.companyName)}</div></div>
+    <div class="ttl"><b>דוח אי-התאמה #${_attr(f.serial_number ?? '–')}</b><span class="sev">${sev[0]}</span> <span>${_NCR_STATUS[f.status] || ''}</span></div></div>
+  <h1>${_attr(f.title || '–')}</h1>
+  <table>
+    ${row('פרויקט', _attr(d.projName))}${row('קבלן', _attr(f.contractor))}${row('מיקום', _attr(f.location))}
+    ${row('נפתחה ע"י', _attr(f.opened_by_name))}${row('תאריך פתיחה', dt(f.created_at))}${row('תאריך התחלה', dt(f.start_date))}
+    ${row('יעד לביצוע', dt(f.due_date))}${row('הועבר לטיפול', _attr(f.transferred_to))}
+  </table>
+  ${text('תיאור התקלה', f.description)}${text('טיפול נדרש', f.required_treatment)}${text('פירוט הביצוע', f.treatment, '#F0FDF4')}${closure}
+  ${ftr(1)}
+</div>
+${photoPages.map((p, i) => `<div class="pg">${p}${ftr(i + 2)}</div>`).join('')}
+<div id="_ov" style="position:fixed;inset:0;background:rgba(26,43,74,.85);display:flex;align-items:center;justify-content:center;z-index:9999;color:#fff;font:700 15px Arial">מייצר PDF…</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+<script>
+window.addEventListener('load', async function () {
+  const ov = document.getElementById('_ov');
+  try {
+    ov.style.display = 'none';
+    await new Promise(r => setTimeout(r, 600));
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+    const pages = [...document.querySelectorAll('.pg')];
+    let truncated = false;
+    for (let i = 0; i < pages.length; i++) {
+      const canvas = await html2canvas(pages[i], { scale: 2, useCORS: true, allowTaint: false, backgroundColor: '#ffffff', logging: false, width: 794, windowWidth: 794 });
+      const img = canvas.toDataURL('image/jpeg', 0.9), ih = (canvas.height / canvas.width) * pw;
+      if (i > 0) pdf.addPage();
+      if (ih <= ph + 0.5) pdf.addImage(img, 'JPEG', 0, 0, pw, ih);
+      else { let y = 0, n = 0; while (y < ih && n < 6) { if (n > 0) pdf.addPage(); pdf.addImage(img, 'JPEG', 0, -y, pw, ih); y += ph; n++; } if (y < ih) truncated = true; }   // very long text: continue on the next sheet
+    }
+    const ab = pdf.output('arraybuffer');
+    if (window.opener) window.opener.postMessage({ type: 'qafield_pdf', data: ab, truncated }, '*', [ab]);
+    window.close();
+  } catch (err) {
+    ov.style.display = 'none';
+    if (window.opener) window.opener.postMessage({ type: 'qafield_pdf_error', error: err.message }, '*');
+  }
+});
+<\/script></body></html>`;
+}
+
+// Generates the PDF for a finding. MUST be called straight from a click handler (the popup is opened before any await).
+// Returns { blob, f, fileName } or null (a toast has been shown).
+async function generateNcrPdf(findingId) {
+  const win = window.open('', '_blank', 'width=860,height=700');
+  if (!win) { showToast('אנא אפשר חלונות קופצים בדפדפן', 'error'); return null; }
+  win.document.write('<html dir="rtl"><body style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:Arial;font-size:15px;color:#1A2B4A;background:#EEF4FB">מכין את הדוח…</body></html>');
+  win.document.close();
+  const { data: _sd } = await db.auth.getSession();
+  if (!_sd?.session) { if (!win.closed) win.close(); showToast('פג תוקף ההתחברות — היכנס מחדש', 'error'); return null; }
+  try {
+    const { data: f, error } = await db.from('findings').select('*').eq('id', findingId).single();
+    if (error || !f) throw new Error('האי-התאמה לא נמצאה');
+    const { data: atts } = await db.from('finding_attachments').select('url, phase, created_at').eq('finding_id', findingId).order('created_at');
+    const MAX = 12, open = (atts || []).filter(a => a.phase === 'open'), close = (atts || []).filter(a => a.phase === 'close');
+    const [openPhotos, closePhotos, sigData] = await Promise.all([
+      Promise.all(open.slice(0, MAX).map(a => _ncrPhotoData(a.url))), Promise.all(close.slice(0, MAX).map(a => _ncrPhotoData(a.url))),
+      f.signature_url ? sbDataUrl(f.signature_url).catch(() => '') : '',
+    ]);
+    await ensureCompanyLogoData();
+    const html = buildNcrPdfHTML({
+      f, projName: _allProjects.find(p => p.id === f.project_id)?.name || '', companyName: currentCompany?.name || '', logo: currentCompany?._logoData || '',
+      openPhotos: openPhotos.filter(Boolean), closePhotos: closePhotos.filter(Boolean), openMore: Math.max(0, open.length - MAX), closeMore: Math.max(0, close.length - MAX), sigData,
+    });
+    const { ab, truncated } = await _pdfFromHtml(win, html);
+    if (truncated) showToast('הדוח ארוך מאוד ונחתך בסופו — קצר את הטקסט ונסה שוב', 'error');
+    return { blob: new Blob([ab], { type: 'application/pdf' }), f, fileName: `אי_התאמה_${f.serial_number ?? f.id.slice(-6)}.pdf` };
+  } catch (e) {
+    if (!win.closed) win.close();
+    logClientError('ncr pdf failed', { msg: e.message });
+    showToast('שגיאה ביצירת ה-PDF: ' + _pdfErrMsg(e), 'error');
+    return null;
+  }
+}
+function _ncrDownload(blob, fileName) {
+  const u = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = u; a.download = fileName; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(u); a.remove(); }, 1500);
+}
+// Stores an immutable, timestamped copy (never overwritten) and returns its pointer, or null.
+async function _ncrStoreVersion(f, blob) {
+  const stamp = new Date().toISOString().replace(/[-:T.Z]/g, '') + Math.random().toString(36).slice(2, 5);
+  const path = `findings/${f.id}/ncr_${f.serial_number ?? 'x'}_${stamp}.pdf`;
+  const { error } = await db.storage.from('documents').upload(path, blob, { contentType: 'application/pdf' });
+  if (error) { logClientError('ncr pdf store failed', { msg: error.message }); return null; }
+  return sbRef(path);
+}
+async function _ncrLog(f, action, notes) {
+  try {
+    const { error } = await db.from('finding_activity').insert({ finding_id: f.id, company_id: currentCompanyId, action, actor_name: _currentUserProfile?.full_name || 'משתמש', notes });
+    if (error) throw error;
+  } catch (e) { logClientError('ncr activity log failed', { action, msg: e.message }); }   // the export itself still succeeded
+}
+
+const exportNcrPdf = _pdfOnce(_exportNcrPdf);
+async function _exportNcrPdf(findingId) {
+  const r = await generateNcrPdf(findingId); if (!r) return;
+  _ncrDownload(r.blob, r.fileName);
+  const ptr = await _ncrStoreVersion(r.f, r.blob);
+  await _ncrLog(r.f, 'exported', ptr ? 'ייצא דוח PDF' : 'ייצא דוח PDF (ללא שמירת גרסה בארכיון)');
+  showToast(ptr ? 'ה-PDF הורד ונשמרה גרסה בארכיון ✓' : 'ה-PDF הורד (שמירת הגרסה בארכיון נכשלה)', ptr ? 'success' : 'info');
+}
+
+// Mobile / supporting browsers: hand the real file to WhatsApp, Gmail, etc.
+const _ncrCanShareFiles = () => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([''], 'x.pdf', { type: 'application/pdf' })] })); } catch (_) { return false; } };
+const shareNcrPdf = _pdfOnce(_shareNcrPdf);
+async function _shareNcrPdf(findingId) {
+  const r = await generateNcrPdf(findingId); if (!r) return;
+  const file = new File([r.blob], r.fileName, { type: 'application/pdf' });
+  _ncrStoreVersion(r.f, r.blob).then(p => _ncrLog(r.f, 'exported', p ? 'שיתף דוח PDF' : 'שיתף דוח PDF (ללא שמירת גרסה)'));
+  try { await navigator.share({ files: [file], title: `אי-התאמה #${r.f.serial_number ?? ''}`, text: r.f.title || '' }); }
+  catch (e) { if (e.name !== 'AbortError') { _ncrDownload(r.blob, r.fileName); showToast('השיתוף לא נתמך כאן — הקובץ הורד', 'info'); } }
+}
+
+// ── e-mail: pick recipients (project users + any address, e.g. the contractor), open a draft with a link to the PDF ──
+let _ncrMail = { f: null, users: [] };
+const _ncrMailKey = c => c ? `qafield_ncr_mail_${currentCompanyId}_${currentUserId}_${c}` : null;
+// no ? & # % = in an address (they would add mailto parameters such as bcc=...), no double dots, a real domain with a TLD
+const _NCR_EMAIL_RE = /^(?!.*\.\.)[^\s@<>",;?&#%=()\[\]\\:]+@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}$/;
+const _mailtoAddr = a => a.replace(/[?&#%=]/g, c => encodeURIComponent(c));
+async function openNcrMail(findingId) {
+  const { data: f } = await db.from('findings').select('id, serial_number, title, contractor, project_id, severity, status, due_date').eq('id', findingId).single();
+  if (!f) { showToast('האי-התאמה לא נמצאה, או שפג תוקף ההתחברות', 'error'); return; }
+  const { data: users } = await db.rpc('get_project_user_emails', { p_project_id: f.project_id });
+  _ncrMail = { f, users: users || [] };
+  document.getElementById('ncrm-title').textContent = `אי-התאמה #${f.serial_number ?? ''} — ${f.title || ''}`;
+  document.getElementById('ncrm-err').textContent = '';
+  document.getElementById('ncrm-users').innerHTML = _ncrMail.users.length ? _ncrMail.users.map(u => `<label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer">
+      <input type="checkbox" class="ncrm-u" value="${_attr(u.user_id)}"> ${_attr(u.full_name || u.email)} <span style="color:#9AA3B0">${_attr(u.email)}</span></label>`).join('')
+    : '<div style="font-size:12px;color:#9AA3B0">אין משתמשים משויכים לפרויקט</div>';
+  const mk = _ncrMailKey(f.contractor); let saved = ''; try { saved = mk ? (localStorage.getItem(mk) || '') : ''; } catch (_) {}
+  document.getElementById('ncrm-extra').value = saved;
+  document.getElementById('ncrm-contractor-hint').textContent = f.contractor ? `כתובות אחרונות ששימשו לקבלן "${f.contractor}" נשמרות במחשב זה` : '';
+  openM('m-ncr-mail');
+}
+function _ncrMailRecipients() {
+  const chosen = _ncrMail.users.filter(u => [...document.querySelectorAll('.ncrm-u:checked')].some(c => c.value === u.user_id)).map(u => u.email);
+  const extra = document.getElementById('ncrm-extra').value.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
+  const bad = extra.filter(a => !_NCR_EMAIL_RE.test(a));
+  return { list: [...new Set([...chosen, ...extra.filter(a => _NCR_EMAIL_RE.test(a))])], bad, extra };
+}
+// The click handler opens the popup first (inside generateNcrPdf), so keep everything before it synchronous.
+const ncrMailSend = _pdfOnce(_ncrMailSend);
+async function _ncrMailSend() {
+  const errEl = document.getElementById('ncrm-err'); errEl.textContent = '';
+  const { list, bad, extra } = _ncrMailRecipients();
+  if (bad.length) { errEl.textContent = 'כתובת לא תקינה: ' + bad.join(', '); return; }
+  if (!list.length) { errEl.textContent = 'בחר נמען או הוסף כתובת'; return; }
+  if (list.length > 15) { errEl.textContent = 'עד 15 נמענים'; return; }
+  const f0 = _ncrMail.f, p = generateNcrPdf(f0.id);
+  const r = await p; if (!r) return;
+  const ptr = await _ncrStoreVersion(r.f, r.blob);
+  if (!ptr) { errEl.textContent = 'שמירת ה-PDF נכשלה — המייל לא נוצר. אפשר להוריד את הקובץ ולצרף ידנית.'; _ncrDownload(r.blob, r.fileName); return; }
+  const link = await sbSign(ptr, 90 * 86400);
+  if (!link) { errEl.textContent = 'יצירת הקישור נכשלה — המייל לא נוצר. אפשר להוריד את הקובץ ולצרף ידנית.'; _ncrDownload(r.blob, r.fileName); return; }
+  try { const mk = _ncrMailKey(r.f.contractor); if (mk) localStorage.setItem(mk, extra.join(', ')); } catch (_) {}
+  const proj = _allProjects.find(x => x.id === r.f.project_id)?.name || '';
+  const sev = (_NCR_SEV[r.f.severity] || _NCR_SEV.high)[0];
+  const subject = `אי-התאמה #${r.f.serial_number ?? ''} — ${r.f.title || ''}${proj ? ' (' + proj + ')' : ''}`;
+  const body = [`פרויקט: ${proj}`, `אי-התאמה #${r.f.serial_number ?? ''}: ${r.f.title || ''}`, `דרגה: ${sev}`, `סטטוס: ${_NCR_STATUS[r.f.status] || ''}`,
+    r.f.due_date ? `יעד לביצוע: ${new Date(r.f.due_date + 'T12:00').toLocaleDateString('he-IL')}` : null, '', 'הדוח המלא (PDF) — הקישור תקף 90 יום:', link].filter(x => x !== null).join('\n');
+  const to = list.map(_mailtoAddr).join(',');
+  let href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  if (href.length > 1900) href = `mailto:${to}?subject=${encodeURIComponent(subject.slice(0, 80))}&body=${encodeURIComponent(link)}`;
+  await _ncrLog(r.f, 'emailed', `שלח דוח PDF ל-${list.length} נמענים`);
+  const a = document.createElement('a'); a.href = href; document.body.appendChild(a); a.click(); a.remove();
+  closeById('m-ncr-mail');
+  showToast('נפתח מייל עם קישור לדוח (תקף 90 יום). לצירוף הקובץ עצמו — השתמש ב"הורד PDF"', 'success');
+}
+async function ncrMailDownload() { await exportNcrPdf(_ncrMail.f.id); }
 
 // הורדת קובץ PDF שמור
 async function downloadOrderFile(url, orderNum) {
@@ -7814,7 +8901,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;display:flex;ali
 
   // Pre-fill order number from URL param (?lab_upload&order=XXXXXX&project=...&date=...&location=...&inspector=...&contractor=...)
   const _urlParams    = new URLSearchParams(window.location.search);
-  const _urlOrder     = _urlParams.get('order');
+  const _urlOrder     = (_urlParams.get('order') || '').toUpperCase().replace(/[^A-F0-9]/g, '').slice(0, 6) || null;   // hex only
   const _urlProject   = _urlParams.get('project')    || '';
   const _urlDate      = _urlParams.get('date')        || '';
   const _urlLocation  = _urlParams.get('location')   || '';
@@ -7849,7 +8936,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;display:flex;ali
       box.innerHTML =
         `<div class="order-box-ttl">פרטי הזמנת הבדיקה</div>` +
         rows.map(([lbl, val]) =>
-          `<div class="order-row"><span class="order-lbl">${lbl}:</span><span>${val}</span></div>`
+          `<div class="order-row"><span class="order-lbl">${_attr(lbl)}:</span><span>${_attr(val)}</span></div>`   // all values come from the URL — never trusted
         ).join('');
       box.style.display = '';
     }
@@ -7964,8 +9051,15 @@ async function labSubmit() {
       p_cert_url:       publicUrl,
     });
 
-    if (rpcErr) throw new Error(rpcErr.message);
-    if (!rpc?.success) throw new Error(rpc?.error || 'הזמנה לא נמצאה במערכת');
+    if (rpcErr) throw new Error('שגיאה בשליחת התעודה — נסה שוב');
+    if (!rpc?.success) {
+      throw new Error({
+        invalid_order: 'הזמנה לא נמצאה במערכת', order_not_found: 'הזמנה לא נמצאה במערכת',
+        ambiguous_order: 'מספר ההזמנה אינו חד-משמעי — פנו לבקר האיכות',
+        already_submitted: 'כבר התקבלה תעודה להזמנה זו. לתיקון פנו לבקר האיכות',
+        invalid_file: 'הקובץ לא התקבל כראוי — נסו להעלות שוב', file_not_found: 'הקובץ לא התקבל כראוי — נסו להעלות שוב',
+      }[rpc?.error] || 'הזמנה לא נמצאה במערכת');
+    }
 
     labShowStatus(`✓ התעודה הועלתה בהצלחה! הזמנה #${rawNum} עודכנה.`, 'ok');
     btn.textContent = 'הועלה ✓';
