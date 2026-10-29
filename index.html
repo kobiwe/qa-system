@@ -1199,8 +1199,8 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <div id="pc-status-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
         <div class="card" style="padding:0;overflow-x:auto">
           <table>
-            <thead><tr><th>מס'</th><th>סוג</th><th>כותרת</th><th>ספק / חומר</th><th>תאריך הגשה</th><th>תוקף עד</th><th>סטטוס</th><th>תאריך מענה</th></tr></thead>
-            <tbody id="pc-tbody"><tr class="loading-row"><td colspan="8">טוען...</td></tr></tbody>
+            <thead><tr><th>סוג בקרה</th><th>כותרת</th><th>ספק / חומר</th><th>תאריך הגשה</th><th>תוקף עד</th><th>תאריך מענה</th><th>סטטוס</th></tr></thead>
+            <tbody id="pc-tbody"><tr class="loading-row"><td colspan="7">טוען...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1319,7 +1319,15 @@ body.theme-light .theme-opt-check{color:#10B981!important}
       <div class="form-row"><label class="form-lbl">איש קשר מטעם לקוח</label><input class="form-in" id="np-client-contact" type="text" placeholder="שם מלא"></div>
       <div class="form-row"><label class="form-lbl">טלפון איש קשר</label><input class="form-in" id="np-client-phone" type="tel" placeholder="050-0000000" style="direction:ltr"></div>
     </div>
-    <div class="form-row"><label class="form-lbl">מייל מעבדה <span style="font-size:10px;color:#9AA3B0;font-weight:400">(לשליחת הזמנות בדיקה)</span></label><input class="form-in" id="np-lab-email" type="email" placeholder="lab@company.com" style="direction:ltr;text-align:left"></div>
+    <div style="font-size:10px;color:#9AA3B0;margin:4px 0 6px">מעבדות הפרויקט — אחת או שתיים. עם שתיים, בהזמנת בדיקה בוחרים לאיזו מעבדה לפנות.</div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">מעבדה לבקרה — שם</label><input class="form-in" id="np-lab-control-name" type="text" placeholder="שם המעבדה"></div>
+      <div class="form-row"><label class="form-lbl">מעבדה לבקרה — מייל</label><input class="form-in" id="np-lab-email" type="email" placeholder="lab@company.com" style="direction:ltr;text-align:left"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-lbl">מעבדה לאבטחה — שם</label><input class="form-in" id="np-lab-assurance-name" type="text" placeholder="שם המעבדה"></div>
+      <div class="form-row"><label class="form-lbl">מעבדה לאבטחה — מייל</label><input class="form-in" id="np-lab-assurance-email" type="email" placeholder="lab@company.com" style="direction:ltr;text-align:left"></div>
+    </div>
 
     <div id="np-err" style="color:#C0392B;font-size:12px;margin-bottom:8px;min-height:16px"></div>
     <div class="modal-foot">
@@ -1650,7 +1658,7 @@ body.theme-light .theme-opt-check{color:#10B981!important}
           <div><div class="detail-lbl">מנהל פרויקט</div><div class="detail-val" id="d-pm">–</div><div style="font-size:12px;color:#6B7280;direction:ltr;text-align:right" id="d-pm-phone"></div></div>
           <div><div class="detail-lbl">חברת ביצוע</div><div class="detail-val" id="d-contractor">–</div><div style="font-size:12px;color:#6B7280;direction:ltr;text-align:right" id="d-contractor-phone"></div></div>
           <div><div class="detail-lbl">איש קשר לקוח</div><div class="detail-val" id="d-client">–</div><div style="font-size:12px;color:#6B7280;direction:ltr;text-align:right" id="d-client-phone"></div></div>
-          <div><div class="detail-lbl">מייל מעבדה</div><div class="detail-val" id="d-lab-email" style="direction:ltr;font-size:12px;color:#3B82F6">–</div></div>
+          <div><div class="detail-lbl">מעבדות</div><div class="detail-val" id="d-lab-email" style="direction:ltr;font-size:12px;color:#3B82F6">–</div></div>
         </div>
       </div>
     </div>
@@ -2066,18 +2074,18 @@ body.theme-light .theme-opt-check{color:#10B981!important}
       <input class="form-in" id="insp-location" type="text" placeholder="הערת מיקום נוספת / שטח ספציפי...">
     </div>
 
-    <div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 10px">פרטי הבודק</div>
+    <div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 10px">פרטי ההזמנה</div>
     <div class="form-grid">
-      <div class="form-row"><label class="form-lbl">שם הבודק *</label><input class="form-in" id="insp-inspector" type="text" placeholder="שם הבקר / המפקח..."></div>
+      <div class="form-row"><label class="form-lbl">שם מזמין הבדיקה *</label><input class="form-in" id="insp-inspector" type="text" placeholder="שם מזמין הבדיקה..."></div>
       <div class="form-row"><label class="form-lbl">קבלן</label><input class="form-in" id="insp-contractor" type="text" placeholder="שם הקבלן..."></div>
     </div>
-    <div class="form-grid">
-      <div class="form-row"><label class="form-lbl">תאריך בדיקה *</label><input class="form-in" id="insp-date" type="date"></div>
-      <div class="form-row"><label class="form-lbl">שעה</label><input class="form-in" id="insp-time" type="time" style="direction:ltr;text-align:left"></div>
-    </div>
+    <div class="form-row"><label class="form-lbl">תאריך בדיקה *</label><input class="form-in" id="insp-date" type="date"></div>
     <div class="form-row"><label class="form-lbl">הערות</label><textarea class="form-in" id="insp-notes" rows="2" placeholder="הוראות מיוחדות, ציוד נדרש..."></textarea></div>
 
     <div style="font-size:10px;font-weight:700;color:#9AA3B0;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 10px">פרטי מעבדה</div>
+    <div class="form-row" id="insp-lab-pick-row" style="display:none"><label class="form-lbl">לאיזו מעבדה לפנות *</label>
+      <select class="form-in" id="insp-lab-kind" onchange="_onInspLabPick()"></select>
+    </div>
     <div class="form-row"><label class="form-lbl">מבדקה מבצעת</label><input class="form-in" id="insp-lab" type="text" placeholder="שם המעבדה..."></div>
     <div class="form-grid">
       <div class="form-row"><label class="form-lbl">יצרן</label><input class="form-in" id="insp-producer" type="text" placeholder="יצרן החומר..."></div>
@@ -2842,7 +2850,7 @@ async function openProjectDetail(id) {
   document.getElementById('d-contractor-phone').textContent= p.contractor_phone      || '';
   document.getElementById('d-client').textContent          = p.client_contact        || '–';
   document.getElementById('d-client-phone').textContent    = p.client_contact_phone  || '';
-  document.getElementById('d-lab-email').textContent       = p.lab_email              || '–';
+  document.getElementById('d-lab-email').innerHTML         = _projLabs(p).map(l => `<div>${_attr(l.label)}: ${_attr(l.name || '')} ${_attr(l.email || '')}</div>`).join('') || '–';
 
   // Location
   document.getElementById('d-address').textContent = p.address || '–';
@@ -3192,6 +3200,9 @@ function openEditProject(id) {
   document.getElementById('np-client-contact').value    = p.client_contact        || '';
   document.getElementById('np-client-phone').value      = p.client_contact_phone  || '';
   document.getElementById('np-lab-email').value         = p.lab_email             || '';
+  document.getElementById('np-lab-control-name').value  = p.lab_control_name      || '';
+  document.getElementById('np-lab-assurance-name').value  = p.lab_assurance_name  || '';
+  document.getElementById('np-lab-assurance-email').value = p.lab_assurance_email || '';
 
   openM('m-new-project');
 }
@@ -3237,6 +3248,10 @@ async function createProject() {
     }
   }
 
+  for (const [id, lbl] of [['np-lab-email', 'מעבדה לבקרה'], ['np-lab-assurance-email', 'מעבדה לאבטחה']]) {
+    const v = document.getElementById(id).value.trim();
+    if (v && !_cleanLabEmail(v)) { errEl.textContent = 'כתובת המייל של ' + lbl + ' אינה תקינה'; return; }
+  }
   const payload = {
     name,
     description:           document.getElementById('np-desc').value.trim() || null,
@@ -3255,6 +3270,9 @@ async function createProject() {
     client_contact:        document.getElementById('np-client-contact').value.trim() || null,
     client_contact_phone:  document.getElementById('np-client-phone').value.trim() || null,
     lab_email:             _cleanLabEmail(document.getElementById('np-lab-email').value),
+    lab_control_name:      document.getElementById('np-lab-control-name').value.trim() || null,
+    lab_assurance_name:    document.getElementById('np-lab-assurance-name').value.trim() || null,
+    lab_assurance_email:   _cleanLabEmail(document.getElementById('np-lab-assurance-email').value),
   };
 
   if (editId) {
@@ -4996,6 +5014,9 @@ function goDocsNav(el) {
 
 let _docsFolders = [];
 let _docsSelectedFolder = null;
+const _docsOpen = new Set();   // parent folders currently expanded (all start collapsed)
+// Anyone may create folders and sub-folders; deleting one is limited to company admins / managers (enforced by folders_delete, migration 013)
+const _docsCanDelete = () => !!(currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager');
 
 async function loadDocsScreen() {
   const noteEl = document.getElementById('docs-scope-note');
@@ -5019,29 +5040,42 @@ function _renderDocsTree() {
   const tree = document.getElementById('docs-tree');
   const roots = _docsFolders.filter(f => !f.parent_id);
   const childrenOf = pid => _docsFolders.filter(f => f.parent_id === pid);
+  const canDelete = _docsCanDelete();
   const renderNode = f => {
     const kids = childrenOf(f.id);
+    const open = kids.length && _docsOpen.has(f.id);
     const sel = f.id === _docsSelectedFolder ? ' sel' : '';
+    const chev = kids.length
+      ? `<button onclick="event.stopPropagation();docsToggleFolder('${f.id}')" title="${open ? 'סגור' : 'פתח'}" style="background:none;border:none;cursor:pointer;color:#6B7280;padding:0 2px"><i class="ti ti-chevron-${open ? 'down' : 'left'}" style="font-size:13px"></i></button>`
+      : '<span style="display:inline-block;width:19px"></span>';
     return `<div class="docs-folder-node">
       <div class="proj-picker-item${sel}" style="border-bottom:none;border-radius:6px" onclick="selectDocsFolder('${f.id}')">
-        <i class="ti ti-folder" style="color:#F59E0B"></i>
-        <span style="flex:1">${f.name}</span>
-        <button onclick="event.stopPropagation();docsDeleteFolder('${f.id}')" title="מחק תיקייה" style="background:none;border:none;cursor:pointer;color:#CBD5E1;padding:2px"><i class="ti ti-trash" style="font-size:12px"></i></button>
+        ${chev}
+        <i class="ti ti-folder${open ? '-open' : ''}" style="color:#F59E0B"></i>
+        <span style="flex:1">${_attr(f.name)}</span>
+        ${kids.length ? `<span style="font-size:10px;color:#9AA3B0">${kids.length}</span>` : ''}
+        ${canDelete ? `<button onclick="event.stopPropagation();docsDeleteFolder('${f.id}')" title="מחק תיקייה" style="background:none;border:none;cursor:pointer;color:#CBD5E1;padding:2px"><i class="ti ti-trash" style="font-size:12px"></i></button>` : ''}
       </div>
-      ${kids.length ? `<div style="padding-right:20px">${kids.map(renderNode).join('')}</div>` : ''}
+      ${open ? `<div style="padding-right:20px">${kids.map(renderNode).join('')}</div>` : ''}
     </div>`;
   };
   tree.innerHTML = roots.map(renderNode).join('');
 }
 
+function docsToggleFolder(id) {
+  if (_docsOpen.has(id)) _docsOpen.delete(id); else _docsOpen.add(id);
+  _renderDocsTree();
+}
+
 async function selectDocsFolder(id) {
   _docsSelectedFolder = id;
+  if (_docsFolders.some(f => f.parent_id === id)) _docsOpen.add(id);   // opening a parent reveals its sub-folders
   _renderDocsTree();
   const folder = _docsFolders.find(f => f.id === id);
   const pnl = document.getElementById('docs-files-pnl');
   pnl.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:15px;font-weight:700"><i class="ti ti-folder-open" style="color:#F59E0B"></i> ${folder?.name || ''}</div>
+      <div style="font-size:15px;font-weight:700"><i class="ti ti-folder-open" style="color:#F59E0B"></i> ${_attr(folder?.name || '')}</div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-sm" onclick="docsAddFolder('${id}')"><i class="ti ti-folder-plus"></i>תת-תיקייה</button>
         <label class="btn btn-sm btn-p" style="cursor:pointer">
@@ -5061,8 +5095,8 @@ async function selectDocsFolder(id) {
   listEl.innerHTML = files.map(f => `
     <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bdr)">
       <i class="ti ti-file" style="color:#6B7280"></i>
-      <a href="#" data-sb-ref="${_attr(f.url)}" onclick="sbOpen(this.dataset.sbRef);return false" style="flex:1;font-size:12px;color:#374151;text-decoration:none">${f.name}</a>
-      <span style="font-size:10px;color:#9AA3B0">${f.uploaded_by_name || ''}</span>
+      <a href="#" data-sb-ref="${_attr(f.url)}" onclick="sbOpen(this.dataset.sbRef);return false" style="flex:1;font-size:12px;color:#374151;text-decoration:none">${_attr(f.name)}</a>
+      <span style="font-size:10px;color:#9AA3B0">${_attr(f.uploaded_by_name)}</span>
       <button class="btn btn-sm" onclick="docsDeleteFile('${f.id}','${id}')" title="מחק"><i class="ti ti-trash" style="color:#DC2626"></i></button>
     </div>`).join('');
 }
@@ -5071,18 +5105,18 @@ async function docsAddFolder(parentId) {
   if (!_activeProjectId) return;
   const name = prompt(parentId ? 'שם תת-התיקייה:' : 'שם התיקייה החדשה:');
   if (!name || !name.trim()) return;
-  // TODO: gate folder creation by permission once role rules for documents are defined.
   const { error } = await db.from('folders').insert({
     company_id: currentCompanyId, project_id: _activeProjectId, parent_id: parentId || null,
     name: name.trim(), is_default: false, created_by: currentUserId
   });
   if (error) { showToast('שגיאה ביצירת תיקייה: ' + error.message, 'error'); return; }
+  if (parentId) _docsOpen.add(parentId);
   await loadDocsScreen();
   showToast('תיקייה נוצרה', 'success');
 }
 
-// TODO: gate folder deletion by permission once role rules for documents are defined.
 async function docsDeleteFolder(id) {
+  if (!_docsCanDelete()) { showToast('מחיקת תיקיות מוגבלת למנהלים', 'error'); return; }
   const folder = _docsFolders.find(f => f.id === id);
   const hasKids = _docsFolders.some(f => f.parent_id === id);
   const msg = hasKids
@@ -5261,20 +5295,19 @@ function _pcRenderList() {
     pill(_pcStatusFilter, 'all', 'כל הסטטוסים', 'setPcStatusFilter') + Object.entries(PC_STATUS).map(([k, s]) => pill(_pcStatusFilter, k, s.label, 'setPcStatusFilter')).join('');
 
   const rows = _pcFiltered(), today = _pcToday(), tbody = document.getElementById('pc-tbody');
-  if (!rows.length) { tbody.innerHTML = emptyTR(8, 'ti-clipboard-check', 'אין טפסים', 'לחץ "טופס חדש" כדי להתחיל'); return; }
+  if (!rows.length) { tbody.innerHTML = emptyTR(7, 'ti-clipboard-check', 'אין טפסים', 'לחץ "טופס חדש" כדי להתחיל'); return; }
   tbody.innerHTML = rows.map(f => {
     const t = PC_TYPES[f.form_type] || {};
     const expired = f.valid_to && f.valid_to < today && f.status === 'approved';
     const what = [f.supplier_name, f.material].filter(Boolean).join(' · ') || '–';
     return `<tr style="cursor:pointer" onclick="openPcForm('${f.id}')">
-      <td style="font-size:11px;color:#6B7280;white-space:nowrap">${_pcEsc(t.short)} ${f.serial_number ?? ''}</td>
-      <td><i class="ti ${t.icon || 'ti-file'}" style="color:#6B7280;margin-left:4px"></i>${_pcEsc(t.label)}</td>
+      <td style="font-size:12px;white-space:nowrap"><i class="ti ${t.icon || 'ti-file'}" style="color:#6B7280;margin-left:4px"></i>${_pcEsc(t.label)} <span style="color:#6B7280">#${f.serial_number ?? ''}</span></td>
       <td><b style="font-size:12px">${_pcEsc(f.title)}</b></td>
       <td style="font-size:12px">${_pcEsc(what)}</td>
       <td style="font-size:12px">${_pcDate(f.submitted_date)}</td>
       <td style="font-size:12px${expired ? ';color:#DC2626;font-weight:700' : ''}">${_pcDate(f.valid_to)}${expired ? ' (פג תוקף)' : ''}</td>
-      <td>${_pcBadge(f.status)}</td>
       <td style="font-size:12px">${f.decided_at ? _pcDate(f.decided_at) : '–'}</td>
+      <td>${_pcBadge(f.status)}</td>
     </tr>`;
   }).join('');
 }
@@ -5758,11 +5791,10 @@ async function _pcSendMail() {
 // ── Excel export (current filter) ──
 function pcExportExcel() {
   const rows = _pcFiltered().map(f => ({
-    "מס'": f.serial_number ?? '', 'סוג': PC_TYPES[f.form_type]?.label || f.form_type, 'כותרת': f.title,
+    'סוג בקרה': PC_TYPES[f.form_type]?.label || f.form_type, "מס'": f.serial_number ?? '', 'כותרת': f.title,
     'ספק / קבלן': f.supplier_name || '', 'סניף': f.branch || '', 'חומר / תחום': f.material || '',
     'תאריך הגשה': f.submitted_date || '', 'תוקף מ': f.valid_from || '', 'תוקף עד': f.valid_to || '',
-    'סטטוס': PC_STATUS[f.status]?.label || f.status,
-    'תאריך קבלת מענה': f.decided_at ? _pcLocalDate(f.decided_at) : '', 'הוחלט ע"י': f.decided_by_name || '', 'הערת החלטה': f.decision_note || '',
+    'תאריך קבלת מענה': f.decided_at ? _pcLocalDate(f.decided_at) : '', 'סטטוס': PC_STATUS[f.status]?.label || f.status, 'הוחלט ע"י': f.decided_by_name || '', 'הערת החלטה': f.decision_note || '',
     'נפתח ע"י': f.created_by_name || '', 'הערות': f.notes || '',
   }));
   if (!rows.length) { showToast('אין טפסים לייצוא', 'info'); return; }
@@ -5789,6 +5821,7 @@ async function _pcDeepLink() {
 let _boardProjectId  = null;
 let _boardItems      = [];
 let _boardSubProjects = {};
+let _boardOrders     = [];       // the project's inspection orders (checklist rows link to them by order number)
 let _boardCertWiIds  = new Set(); // work_item_ids with at least one certificate
 let _boardInspWiIds  = new Set(); // work_item_ids with any inspection order
 let _inspWiItems    = [];
@@ -5823,11 +5856,11 @@ async function openProjectBoard(projectId) {
   // Parallel fetch: work items + KPI data
   const [{ data, error }, { data: findings }, { data: inspections }, { data: typeConfig }] = await Promise.all([
     db.from('work_items')
-      .select('*, checklist_instances(id, task_name, task_order, is_checked, checked_by, checked_at, signer_name, signer_role, signature_url, document_url)')
+      .select('*, checklist_instances(id, task_name, task_order, list_no, is_checked, checked_by, checked_at, signer_name, signer_role, signature_url, document_url, inspection_order_id), work_item_checklists(id, list_no, label)')
       .eq('project_id', projectId)
       .order('row_order'),
     db.from('findings').select('id, severity, status').eq('project_id', projectId),
-    db.from('inspection_orders').select('id, status, work_item_id, certificate_url').eq('project_id', projectId),
+    db.from('inspection_orders').select('id, status, work_item_id, certificate_url, scheduled_date, location').eq('project_id', projectId),
     db.from('checklist_type_config').select('type_name, required_signer').eq('company_id', currentCompanyId || '')
   ]);
 
@@ -5836,6 +5869,7 @@ async function openProjectBoard(projectId) {
   (typeConfig || []).forEach(t => { if (t.type_name) _typeSignerMap[t.type_name] = t.required_signer; });
 
   // Build sets for tree node indicators
+  _boardOrders = inspections || [];
   _boardCertWiIds = new Set((inspections || []).filter(o => o.certificate_url && o.work_item_id).map(o => o.work_item_id));
   _boardInspWiIds = new Set((inspections || []).filter(o => o.work_item_id).map(o => o.work_item_id));
 
@@ -6186,52 +6220,11 @@ function _renderBoardDetails(wi, contextLabel) {
       <i class="ti ti-chevron-left brd-wi-chev" id="wchev-${wi.id}" style="transform:rotate(-90deg)"></i>
     </div>
     <div class="brd-cl-wrap" id="cl-${wi.id}">
-      ${wi.checklist_instances.length === 0
+      ${wi.checklist_instances.length === 0 && !(wi.work_item_checklists || []).length
         ? '<div style="padding:12px 20px;font-size:12px;color:var(--t4)">אין משימות לסוג ביצוע זה</div>'
         : !canSign
         ? `<div style="padding:14px 16px;font-size:12px;color:var(--t3);display:flex;align-items:center;gap:8px"><i class="ti ti-lock" style="font-size:15px;color:var(--t4);flex-shrink:0"></i>רשימת תיוג זו שייכת ל<b>${_signerLabel(reqSigner)}</b> — אין הרשאת עריכה</div>`
-        : `<table class="brd-cl-tbl">
-            <colgroup>
-              <col style="width:50%">
-              <col style="width:10%">
-              <col style="width:10%">
-              <col style="width:10%">
-              <col style="width:10%">
-              <col style="width:10%">
-            </colgroup>
-            <thead><tr>
-              <th>משימה</th>
-              <th>תפקיד</th>
-              <th>שם מלא</th>
-              <th>תאריך חתימה</th>
-              <th>מסמך</th>
-              <th></th>
-            </tr></thead>
-            <tbody>${wi.checklist_instances
-              .sort((a, b) => a.task_order - b.task_order)
-              .map(ci => `
-              <tr id="ci-${ci.id}">
-                <td class="brd-cl-task${ci.is_checked ? ' done' : ''}" onclick="toggleCheckItem('${ci.id}','${wi.id}')">${ci.task_name}</td>
-                <td id="ci-role-${ci.id}" class="brd-cl-meta">${ci.is_checked && ci.signer_role ? _signerLabel(ci.signer_role) : ''}</td>
-                <td id="ci-name-${ci.id}" class="brd-cl-meta">${ci.is_checked && ci.signer_name ? _signerCellHtml(ci.signer_name, ci.signature_url) : ''}</td>
-                <td id="ci-date-${ci.id}">
-                  ${ci.is_checked && ci.checked_at
-                    ? `<span class="brd-cl-date" onclick="editCheckDate('${ci.id}')">${new Date(ci.checked_at).toLocaleDateString('he-IL')}</span>`
-                    : ''}
-                </td>
-                <td id="ci-doc-${ci.id}" style="text-align:center">
-                  ${ci.document_url
-                    ? `<a href="#" data-sb-ref="${_attr(ci.document_url)}" onclick="sbOpen(this.dataset.sbRef);return false" class="brd-cl-doc-link" title="פתח מסמך"><i class="ti ti-file-check"></i></a>`
-                    : ci.is_checked
-                      ? `<button class="brd-cl-up-btn" onclick="uploadClDoc('${ci.id}')" title="העלה מסמך"><i class="ti ti-upload"></i></button>`
-                      : ''}
-                </td>
-                <td style="text-align:center;cursor:pointer" onclick="toggleCheckItem('${ci.id}','${wi.id}')">
-                  <div class="chk ${ci.is_checked ? 'on' : ''}">${ci.is_checked ? '<i class="ti ti-check"></i>' : ''}</div>
-                </td>
-              </tr>`).join('')}
-            </tbody>
-          </table>`}
+        : _clListsHtml(wi)}
     </div>
   </div>`;
 
@@ -6240,6 +6233,207 @@ function _renderBoardDetails(wi, contextLabel) {
   // (toggleBoardChecklist removed so it stays closed)
   // Load inspections async
   _loadBoardInspections(wi.id);
+}
+
+// ─── BOARD: SEVERAL CHECKLISTS PER WORK ITEM ─────────────
+// A work item ("layer") can hold any number of checklists (list_no 1, 2, ...), each with a free description to tell them apart
+// (work_item_checklists.label). Existing data is list 1. Progress of the work item is over all its lists.
+
+const _clNo = c => c.list_no || 1;
+function _clListNos(wi) {
+  const nos = new Set(wi.checklist_instances.map(_clNo));
+  (wi.work_item_checklists || []).forEach(l => nos.add(l.list_no));
+  return [...nos].sort((a, b) => a - b);
+}
+const _clLabel = (wi, no) => (wi.work_item_checklists || []).find(l => l.list_no === no)?.label || '';
+const _clCanDeleteList = () => !!(currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager');
+
+// The "document" cell of a checklist row: own document > linked inspection order's certificate > upload (once ticked), + the link button
+function _clDocCellHtml(ci, checked) {
+  const ord = ci.inspection_order_id ? _boardOrders.find(o => o.id === ci.inspection_order_id) : null;
+  const num = ord ? ord.id.slice(-6).toUpperCase() : '';
+  let main = '';
+  if (ci.document_url) {
+    main = `<a href="#" data-sb-ref="${_attr(ci.document_url)}" onclick="sbOpen(this.dataset.sbRef);return false" class="brd-cl-doc-link" title="פתח מסמך"><i class="ti ti-file-check"></i></a>`;
+  } else if (ord && ord.certificate_url) {
+    main = `<a href="#" data-sb-ref="${_attr(ord.certificate_url)}" onclick="sbOpen(this.dataset.sbRef);return false" class="brd-cl-doc-link" title="תעודת מעבדה — הזמנה ${num}"><i class="ti ti-file-certificate"></i></a>`;
+  } else if (ord) {
+    main = `<span title="ההזמנה נשלחה — התעודה טרם הועלתה" style="font-size:10px;color:#D97706">⏳ ${num}</span>`;
+  } else if (checked) {
+    main = `<button class="brd-cl-up-btn" onclick="uploadClDoc('${ci.id}')" title="העלה מסמך"><i class="ti ti-upload"></i></button>`;
+  }
+  const link = ord
+    ? `<button class="brd-cl-up-btn" onclick="clUnlinkOrder('${ci.id}')" title="נתק מהזמנה ${num}"><i class="ti ti-link-off"></i></button>`
+    : `<button class="brd-cl-up-btn" onclick="clLinkOrder('${ci.id}')" title="שייך להזמנת בדיקה לפי מספר הזמנה"><i class="ti ti-link"></i></button>`;
+  return `<span style="display:inline-flex;align-items:center;gap:3px">${main}${link}</span>`;
+}
+
+function _clTableHtml(wi, items) {
+  return `<table class="brd-cl-tbl">
+    <colgroup>
+      <col style="width:50%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%">
+    </colgroup>
+    <thead><tr><th>משימה</th><th>תפקיד</th><th>שם מלא</th><th>תאריך חתימה</th><th>מסמך</th><th></th></tr></thead>
+    <tbody>${items.map(ci => `
+      <tr id="ci-${ci.id}">
+        <td class="brd-cl-task${ci.is_checked ? ' done' : ''}" onclick="toggleCheckItem('${ci.id}','${wi.id}')">${_attr(ci.task_name)}</td>
+        <td id="ci-role-${ci.id}" class="brd-cl-meta">${ci.is_checked && ci.signer_role ? _signerLabel(ci.signer_role) : ''}</td>
+        <td id="ci-name-${ci.id}" class="brd-cl-meta">${ci.is_checked && ci.signer_name ? _signerCellHtml(ci.signer_name, ci.signature_url) : ''}</td>
+        <td id="ci-date-${ci.id}">
+          ${ci.is_checked && ci.checked_at
+            ? `<span class="brd-cl-date" onclick="editCheckDate('${ci.id}')">${new Date(ci.checked_at).toLocaleDateString('he-IL')}</span>`
+            : ''}
+        </td>
+        <td id="ci-doc-${ci.id}" style="text-align:center">${_clDocCellHtml(ci, ci.is_checked)}</td>
+        <td style="text-align:center;cursor:pointer" onclick="toggleCheckItem('${ci.id}','${wi.id}')">
+          <div class="chk ${ci.is_checked ? 'on' : ''}">${ci.is_checked ? '<i class="ti ti-check"></i>' : ''}</div>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function _clListsHtml(wi) {
+  const nos = _clListNos(wi), canDel = _clCanDeleteList() && nos.length > 1;
+  const btn = (fn, icon, title) => `<button class="btn btn-sm" onclick="${fn}" title="${title}" style="padding:2px 7px"><i class="ti ${icon}"></i></button>`;
+  const blocks = nos.map(no => {
+    const items = wi.checklist_instances.filter(c => _clNo(c) === no).sort((a, b) => a.task_order - b.task_order);
+    const label = _clLabel(wi, no), done = items.filter(c => c.is_checked).length;
+    return `<div id="cll-${wi.id}-${no}" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:#F8FAFC;border:1px solid var(--bdr);border-bottom:none;font-size:12px">
+        <b>רשימת תיוג ${no}</b>${label ? `<span style="color:#6B7280">— ${_attr(label)}</span>` : ''}
+        <span id="cllcnt-${wi.id}-${no}" style="font-size:10px;color:#9AA3B0">${done}/${items.length}</span>
+        <span style="margin-right:auto;display:flex;gap:4px">
+          ${btn(`clEditLabel('${wi.id}',${no})`, 'ti-pencil', 'תיאור הרשימה')}
+          ${btn(`clAddList('${wi.id}',${no})`, 'ti-copy', 'שכפל רשימה')}
+          ${canDel ? btn(`clDeleteList('${wi.id}',${no})`, 'ti-trash', 'מחק רשימה') : ''}
+        </span>
+      </div>
+      ${_clTableHtml(wi, items)}
+    </div>`;
+  }).join('');
+  return blocks + `<div style="padding:4px 12px 0"><button class="btn btn-sm" onclick="clAddList('${wi.id}')"><i class="ti ti-plus"></i>רשימת תיוג חדשה</button></div>`;
+}
+
+// After a list was added / removed: refresh the panel (keeping the checklist open or closed), the tree node, the status and the totals.
+function _clAfterListChange(wi) {
+  const wrap = document.getElementById('cl-' + wi.id);
+  const wasHidden = wrap ? wrap.style.display === 'none' : false;
+  _renderBoardDetails(wi, document.getElementById('bnd-' + wi.id)?.dataset.label || wi.sub_element);
+  const wrap2 = document.getElementById('cl-' + wi.id);
+  if (wrap2 && wasHidden) { wrap2.style.display = 'none'; const ch = document.getElementById('wchev-' + wi.id); if (ch) ch.style.transform = ''; }
+  const { total, checked, pct } = _progOfWi(wi);
+  const dot = wi.is_stop_point && !wi.stop_released ? 'risk' : total && checked === total ? 'ok' : checked > 0 ? 'warn' : 'none';
+  const bnd = document.getElementById('bnd-' + wi.id);
+  if (bnd) {
+    const dotEl = bnd.querySelector('.brd-nd-dot'); if (dotEl) dotEl.className = `brd-nd-dot ${dot}`;
+    const barFill = bnd.querySelector('.brd-nd-bar-fill');
+    if (barFill) { barFill.style.width = pct + '%'; barFill.style.background = dot === 'ok' ? '#22C55E' : dot === 'warn' ? '#F59E0B' : dot === 'risk' ? '#EF4444' : '#C8CDD6'; }
+    const pctEl = bnd.querySelector('.brd-nd-pct'); if (pctEl) pctEl.textContent = `${checked}/${total}`;
+    bnd.classList.toggle('wi-done', total > 0 && checked === total);
+  }
+  const newStatus = checked === 0 ? 'pending' : checked === total ? 'completed' : 'in_progress';
+  if (wi.status !== newStatus) { wi.status = newStatus; db.from('work_items').update({ status: newStatus }).eq('id', wi.id).then(({ error }) => { if (error) logClientError('work item status update failed', { msg: error.message }); }); }
+  _updateBoardProgress();
+}
+
+// Per-list counters in the list headers (the work item's own counter is updated by the tick handler)
+function _clRefreshCounts(wi) {
+  for (const no of _clListNos(wi)) {
+    const el = document.getElementById(`cllcnt-${wi.id}-${no}`); if (!el) continue;
+    const items = wi.checklist_instances.filter(c => _clNo(c) === no);
+    el.textContent = `${items.filter(c => c.is_checked).length}/${items.length}`;
+  }
+}
+
+// New list: from a copy of list `srcNo` (duplicate), or — without srcNo — from the company's template for the item's execution type.
+async function clAddList(wiId, srcNo) {
+  const wi = _boardItems.find(i => i.id === wiId); if (!wi) return;
+  const label = prompt(srcNo ? `תיאור לרשימה החדשה (שכפול של רשימה ${srcNo}), למשל מקטע / חתך:` : 'תיאור לרשימת התיוג החדשה, למשל מקטע / חתך:', '');
+  if (label === null) return;
+  let tasks;
+  if (srcNo) {
+    tasks = wi.checklist_instances.filter(c => _clNo(c) === srcNo);
+  } else {
+    const { data: tpl } = await db.from('checklist_templates').select('task_name, task_order').eq('company_id', currentCompanyId).eq('type_name', wi.execution_type || '').order('task_order');
+    tasks = (tpl && tpl.length) ? tpl : wi.checklist_instances.filter(c => _clNo(c) === _clListNos(wi)[0]);
+  }
+  tasks = [...tasks].sort((a, b) => a.task_order - b.task_order);
+  if (!tasks.length) { showToast('אין משימות להעתקה — לא הוגדרה תבנית לסוג הביצוע', 'error'); return; }
+  // fresh from the DB: another user may have added a list meanwhile; (work_item_id, list_no) is unique so a collision fails cleanly
+  const { data: cur } = await db.from('work_item_checklists').select('list_no').eq('work_item_id', wiId);
+  const no = Math.max(1, ..._clListNos(wi), ...(cur || []).map(l => l.list_no)) + 1;
+  const { data: row, error: e1 } = await db.from('work_item_checklists')
+    .insert({ company_id: currentCompanyId, work_item_id: wiId, list_no: no, label: label.trim() || null, created_by: currentUserId }).select('id, list_no, label').single();
+  if (e1) { showToast(e1.code === '23505' ? 'רשימה חדשה נוצרה בינתיים על ידי משתמש אחר — נסה שוב' : 'שגיאה ביצירת הרשימה: ' + e1.message, 'error'); return; }
+  const { data: ins, error: e2 } = await db.from('checklist_instances')
+    .insert(tasks.map(t => ({ company_id: currentCompanyId, work_item_id: wiId, task_name: t.task_name, task_order: t.task_order, list_no: no })))
+    .select('id, task_name, task_order, list_no, is_checked, checked_by, checked_at, signer_name, signer_role, signature_url, document_url, inspection_order_id');
+  if (e2) {
+    await db.from('work_item_checklists').delete().eq('id', row.id);
+    showToast('שגיאה ביצירת הרשימה: ' + e2.message, 'error'); return;
+  }
+  (wi.work_item_checklists = wi.work_item_checklists || []).push(row);
+  wi.checklist_instances.push(...ins);
+  _clAfterListChange(wi);
+  showToast(`נוצרה רשימת תיוג ${no}`, 'success');
+}
+
+async function clEditLabel(wiId, no) {
+  const wi = _boardItems.find(i => i.id === wiId); if (!wi) return;
+  const label = prompt('תיאור הרשימה (למשל מקטע / חתך):', _clLabel(wi, no));
+  if (label === null) return;
+  const val = label.trim() || null, existing = (wi.work_item_checklists || []).find(l => l.list_no === no);
+  const { data, error } = existing
+    ? await db.from('work_item_checklists').update({ label: val }).eq('id', existing.id).select('id, list_no, label')
+    : await db.from('work_item_checklists').insert({ company_id: currentCompanyId, work_item_id: wiId, list_no: no, label: val, created_by: currentUserId }).select('id, list_no, label');
+  if (error || !data?.length) { showToast('שגיאה בשמירת התיאור' + (error ? ': ' + error.message : ''), 'error'); return; }
+  if (existing) existing.label = val; else (wi.work_item_checklists = wi.work_item_checklists || []).push(data[0]);
+  _clAfterListChange(wi);
+}
+
+async function clDeleteList(wiId, no) {
+  const wi = _boardItems.find(i => i.id === wiId); if (!wi || _clListNos(wi).length < 2) return;
+  if (!_clCanDeleteList()) { showToast('מחיקת רשימת תיוג מוגבלת למנהלים', 'error'); return; }
+  const items = wi.checklist_instances.filter(c => _clNo(c) === no), signed = items.filter(c => c.is_checked).length;
+  if (!confirm(`למחוק את רשימת תיוג ${no}${_clLabel(wi, no) ? ' (' + _clLabel(wi, no) + ')' : ''}?` + (signed ? `\nיש בה ${signed} משימות חתומות — החתימות יימחקו.` : ''))) return;
+  const { error } = await db.from('checklist_instances').delete().eq('work_item_id', wiId).eq('list_no', no);
+  if (error) { showToast('שגיאה במחיקת הרשימה: ' + error.message, 'error'); return; }
+  await db.from('work_item_checklists').delete().eq('work_item_id', wiId).eq('list_no', no);
+  wi.checklist_instances = wi.checklist_instances.filter(c => _clNo(c) !== no);
+  wi.work_item_checklists = (wi.work_item_checklists || []).filter(l => l.list_no !== no);
+  _clAfterListChange(wi);
+  showToast('הרשימה נמחקה', 'success');
+}
+
+// Typing an inspection order number into a checklist row links the row to that order: its lab certificate then shows in the row
+// (and appears by itself once the lab uploads it). The order is shown for confirmation first — a typo must not link the wrong test.
+async function clLinkOrder(ciId) {
+  const ci = _boardItems.flatMap(w => w.checklist_instances).find(c => c.id === ciId); if (!ci) return;
+  const raw = prompt('מספר הזמנת הבדיקה (6 התווים שמופיעים בהזמנה, למשל A1B2C3):', '');
+  if (raw === null) return;
+  const num = raw.trim().replace(/^#/, '').toUpperCase();
+  if (num.length < 4) { showToast('יש להקליד את מספר ההזמנה', 'error'); return; }
+  let hits = _boardOrders.filter(o => o.id.slice(-6).toUpperCase() === num);
+  if (!hits.length) {   // the order may have been created (or its certificate uploaded) after the board was loaded
+    const { data: fresh } = await db.from('inspection_orders').select('id, status, work_item_id, certificate_url, scheduled_date, location').eq('project_id', _boardProjectId);
+    if (fresh) { _boardOrders = fresh; hits = fresh.filter(o => o.id.slice(-6).toUpperCase() === num); }
+  }
+  if (hits.length !== 1) { showToast(hits.length ? 'מספר ההזמנה אינו חד-משמעי' : `לא נמצאה הזמנה ${num} בפרויקט זה`, 'error'); return; }
+  const o = hits[0], when = o.scheduled_date ? new Date(o.scheduled_date + 'T12:00').toLocaleDateString('he-IL') : '–';
+  if (!confirm(`לשייך את המשימה להזמנה ${num}?\nתאריך: ${when}\nמיקום: ${o.location || '–'}\n${o.certificate_url ? 'יש תעודת מעבדה.' : 'התעודה טרם הועלתה — תופיע כאן אוטומטית.'}`)) return;
+  const { data, error } = await db.from('checklist_instances').update({ inspection_order_id: o.id }).eq('id', ciId).select('id');
+  if (error || !data?.length) { showToast('שגיאה בשיוך ההזמנה' + (error ? ': ' + error.message : ''), 'error'); return; }
+  ci.inspection_order_id = o.id;
+  const cell = document.getElementById('ci-doc-' + ciId); if (cell) cell.innerHTML = _clDocCellHtml(ci, ci.is_checked);
+}
+
+async function clUnlinkOrder(ciId) {
+  const ci = _boardItems.flatMap(w => w.checklist_instances).find(c => c.id === ciId); if (!ci) return;
+  const { data, error } = await db.from('checklist_instances').update({ inspection_order_id: null }).eq('id', ciId).select('id');
+  if (error || !data?.length) { showToast('שגיאה בניתוק ההזמנה', 'error'); return; }
+  ci.inspection_order_id = null;
+  const cell = document.getElementById('ci-doc-' + ciId); if (cell) cell.innerHTML = _clDocCellHtml(ci, ci.is_checked);
 }
 
 async function _loadBoardInspections(workItemId) {
@@ -6394,12 +6588,12 @@ async function _toggleCheckItemImpl(ciId, wiId) {
     if (roleEl)  roleEl.textContent  = _signerLabel(currentSignerRole);
     if (sigNmEl) sigNmEl.innerHTML   = _signerCellHtml(currentUserFullName, sigRef);
     if (dateEl)  dateEl.innerHTML    = `<span class="brd-cl-date" onclick="editCheckDate('${ciId}')">${new Date(nowIso).toLocaleDateString('he-IL')}</span>`;
-    if (docEl)   docEl.innerHTML     = `<button class="brd-cl-up-btn" onclick="uploadClDoc('${ciId}')" title="העלה מסמך"><i class="ti ti-upload"></i></button>`;
+    if (docEl)   docEl.innerHTML     = _clDocCellHtml(ciData || { id: ciId }, true);
   } else {
     if (roleEl)  roleEl.textContent  = '';
     if (sigNmEl) sigNmEl.innerHTML   = '';
     if (dateEl)  dateEl.innerHTML    = '';
-    if (docEl)   docEl.innerHTML     = '';
+    if (docEl)   docEl.innerHTML     = _clDocCellHtml(ciData || { id: ciId }, false);
   }
 
   const { error } = await db.from('checklist_instances').update({
@@ -6419,7 +6613,7 @@ async function _toggleCheckItemImpl(ciId, wiId) {
     if (sigNmEl) sigNmEl.innerHTML   = wasChecked && ciData?.signer_name ? _signerCellHtml(ciData.signer_name, ciData.signature_url) : '';
     if (dateEl)  dateEl.innerHTML    = wasChecked && ciData?.checked_at
       ? `<span class="brd-cl-date" onclick="editCheckDate('${ciId}')">${new Date(ciData.checked_at).toLocaleDateString('he-IL')}</span>` : '';
-    if (docEl)   docEl.innerHTML     = '';
+    if (docEl)   docEl.innerHTML     = _clDocCellHtml(ciData || { id: ciId }, wasChecked);
     return;
   }
 
@@ -6432,6 +6626,7 @@ async function _toggleCheckItemImpl(ciId, wiId) {
     ci.signer_name = newVal ? (currentUserFullName || null) : null;
     ci.signer_role = newVal ? currentSignerRole : null;
     ci.signature_url = newVal ? sigRef : null;
+    _clRefreshCounts(wi);
 
     const total   = wi.checklist_instances.length;
     const checked = wi.checklist_instances.filter(c => c.is_checked).length;
@@ -6484,7 +6679,7 @@ async function _toggleCheckItemImpl(ciId, wiId) {
 
     if (wi.status !== newStatus) {
       wi.status = newStatus;
-      db.from('work_items').update({ status: newStatus }).eq('id', wiId);
+      db.from('work_items').update({ status: newStatus }).eq('id', wiId).then(({ error }) => { if (error) logClientError('work item status update failed', { msg: error.message }); });
     }
     break;
   }
@@ -7362,15 +7557,14 @@ function _filterInspTable() {
     return;
   }
   if (list.length === 0) {
-    tbody.innerHTML = `<tr class="loading-row"><td colspan="12" style="color:#9AA3B0">לא נמצאו תוצאות עבור "<b>${q}</b>"</td></tr>`;
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="12" style="color:#9AA3B0">לא נמצאו תוצאות עבור "<b>${_attr(q)}</b>"</td></tr>`;
     return;
   }
 
-  const cell = v => `<td style="font-size:11px;color:${v ? '#374151' : '#CBD5E1'}">${v || '–'}</td>`;
+  const cell = v => `<td style="font-size:11px;color:${v ? '#374151' : '#CBD5E1'}">${_attr(v) || '–'}</td>`;
 
   tbody.innerHTML = list.map(o => {
     const date    = o.scheduled_date ? new Date(o.scheduled_date + 'T12:00:00').toLocaleDateString('he-IL') : '–';
-    const time    = o.scheduled_time ? o.scheduled_time.slice(0,5) : '';
     const section = (o.section_from != null) ? `${o.section_from}–${o.section_to}` : '';
 
     // אייקון תעודה
@@ -7392,9 +7586,9 @@ function _filterInspTable() {
       ${cell(o.element)}
       ${cell(o.sub_element)}
       <td style="font-size:11px;direction:ltr;text-align:right;white-space:nowrap;color:${section ? '#374151' : '#CBD5E1'}">${section || '–'}</td>
-      <td style="font-size:12px">${o.inspector_name || '–'}</td>
-      <td style="font-size:12px">${o.contractor || '–'}</td>
-      <td style="direction:ltr;text-align:right;font-size:12px;white-space:nowrap">${date}${time ? `<div style="font-size:10px;color:#9AA3B0">${time}</div>` : ''}</td>
+      <td style="font-size:12px">${_attr(o.inspector_name) || '–'}</td>
+      <td style="font-size:12px">${_attr(o.contractor) || '–'}</td>
+      <td style="direction:ltr;text-align:right;font-size:12px;white-space:nowrap">${date}</td>
       <td>${inspStatusBadge(o.status)}</td>
       <td style="display:flex;gap:4px;align-items:center">
         ${certIcon}
@@ -7646,7 +7840,7 @@ function _inspFormClear() {
    'insp-lab','insp-producer','insp-material','insp-quantity'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
-  ['insp-date','insp-time'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['insp-date'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   ['insp-project','insp-work-item','insp-status','insp-result','insp-side','insp-time-prec'].forEach(id => {
     const el = document.getElementById(id); if (el) el.selectedIndex = 0;
   });
@@ -7669,6 +7863,9 @@ function _inspFormClear() {
   if (_sob) _sob.style.display = 'none';
   const _hint = document.getElementById('insp-lab-hint');
   if (_hint) _hint.style.display = 'none';
+  const _lpr = document.getElementById('insp-lab-pick-row');
+  if (_lpr) { _lpr.style.display = 'none'; delete _lpr.dataset.pid; }
+  const _lk = document.getElementById('insp-lab-kind'); if (_lk) _lk.innerHTML = '';
 }
 
 function _inspFormPayload() {
@@ -7683,12 +7880,12 @@ function _inspFormPayload() {
     inspector_name: document.getElementById('insp-inspector').value.trim() || null,
     contractor:    document.getElementById('insp-contractor').value.trim() || null,
     scheduled_date: document.getElementById('insp-date').value || null,
-    scheduled_time: document.getElementById('insp-time').value || null,
     notes:         document.getElementById('insp-notes').value.trim() || null,
     status:         document.getElementById('insp-status').value || 'pending',
     result:         document.getElementById('insp-result').value || null,
     result_notes:   document.getElementById('insp-result-notes').value.trim() || null,
     lab_name:       document.getElementById('insp-lab').value.trim() || null,
+    lab_kind:       _inspLabKind(),
     producer:       document.getElementById('insp-producer').value.trim() || null,
     material:       document.getElementById('insp-material').value.trim() || null,
     quantity:       document.getElementById('insp-quantity').value.trim() || null,
@@ -7797,9 +7994,9 @@ async function openEditInspection(id) {
   document.getElementById('insp-inspector').value     = o.inspector_name || '';
   document.getElementById('insp-contractor').value    = o.contractor || '';
   document.getElementById('insp-date').value          = o.scheduled_date || '';
-  document.getElementById('insp-time').value          = o.scheduled_time ? o.scheduled_time.slice(0,5) : '';
   document.getElementById('insp-notes').value          = o.notes || '';
   document.getElementById('insp-lab').value            = o.lab_name || '';
+  _fillInspLabPick(_allProjects.find(x => x.id === o.project_id), o.lab_kind);
   document.getElementById('insp-producer').value       = o.producer || '';
   document.getElementById('insp-material').value       = o.material || '';
   document.getElementById('insp-quantity').value       = o.quantity || '';
@@ -7818,7 +8015,7 @@ async function openEditInspection(id) {
   const _sob = document.getElementById('insp-save-only-btn');
   if (_sob) {
     const _editProject = _allProjects.find(pr => pr.id === o.project_id);
-    if (o.status === 'draft' && _editProject?.lab_email) {
+    if (o.status === 'draft' && _projLabs(_editProject).some(l => l.email)) {
       _sob.style.display = '';
       _sob.innerHTML = '<i class="ti ti-mail-forward"></i>שלח למעבדה';
       _sob.setAttribute('onclick', 'submitInspectionAndSend()');
@@ -7897,6 +8094,38 @@ async function saveQuickResult() {
   await loadInspectionsScreen();
 }
 
+// Which of the project's labs this order goes to: the picker when the project has two labs with an address, else the only one.
+function _inspLabKind() {
+  const project = _allProjects.find(p => p.id === document.getElementById('insp-project')?.value);
+  const lab = _projLabFor(project, document.getElementById('insp-lab-kind')?.value);
+  return lab ? lab.kind : null;
+}
+
+// Fills the lab picker (shown only when the project has more than one lab to send to).
+function _fillInspLabPick(project, selectedKind) {
+  const row = document.getElementById('insp-lab-pick-row'), sel = document.getElementById('insp-lab-kind');
+  if (!row || !sel) return;
+  const labs = _projLabs(project).filter(l => l.email);
+  sel.innerHTML = labs.length > 1
+    ? '<option value="">— בחר מעבדה —</option>' + labs.map(l => `<option value="${l.kind}">${_attr(l.label)}${l.name ? ' — ' + _attr(l.name) : ''}</option>`).join('')
+    : '';
+  row.style.display = labs.length > 1 ? '' : 'none';
+  if (labs.length > 1 && selectedKind) sel.value = selectedKind;
+  _onInspLabPick();
+}
+
+// Choosing a lab pre-fills the lab name (unless the user already typed one) and refreshes the "sent to" hint.
+function _onInspLabPick() {
+  const project = _allProjects.find(p => p.id === document.getElementById('insp-project')?.value);
+  const lab = _projLabFor(project, document.getElementById('insp-lab-kind')?.value);
+  const nameEl = document.getElementById('insp-lab');
+  if (nameEl && (!nameEl.value.trim() || nameEl.value === nameEl.dataset.auto)) {   // never overwrite a name the user typed
+    nameEl.value = lab?.name || '';
+    nameEl.dataset.auto = nameEl.value;
+  }
+  _updateInspSubmitBtn();
+}
+
 function _updateInspSubmitBtn() {
   // אם הפרויקט שנבחר מוגדר עם מייל מעבדה — הכפתור הראשי הופך ל"צור ושלח"
   const isEditMode = !!document.getElementById('insp-id').value;
@@ -7904,7 +8133,15 @@ function _updateInspSubmitBtn() {
 
   const projectId  = document.getElementById('insp-project').value;
   const project    = _allProjects.find(p => p.id === projectId);
-  const hasLabMail = !!(project?.lab_email);
+  const hasLabMail = _projLabs(project).some(l => l.email);
+  // the picker is rebuilt only when the project changes (not when just the picked lab changes)
+  const pickRow = document.getElementById('insp-lab-pick-row');
+  if (project && pickRow && pickRow.dataset.pid !== projectId) {
+    pickRow.dataset.pid = projectId;
+    _fillInspLabPick(project, null);   // calls back into this function
+    return;
+  }
+  const pickedLab = _projLabFor(project, document.getElementById('insp-lab-kind')?.value);
 
   const sb   = document.getElementById('insp-submit-btn');
   const sob  = document.getElementById('insp-save-only-btn');
@@ -7918,7 +8155,9 @@ function _updateInspSubmitBtn() {
     if (sob) { sob.style.display = ''; sob.setAttribute('onclick', 'submitInspection()'); }
     if (hint) {
       hint.style.display = 'flex';
-      hint.innerHTML = '<i class="ti ti-mail-check" style="color:#16A34A;font-size:13px"></i><span style="color:#166534">הזמנה תישלח אוטומטית ל-' + _attr(project.lab_email) + '</span>';
+      hint.innerHTML = pickedLab
+        ? '<i class="ti ti-mail-check" style="color:#16A34A;font-size:13px"></i><span style="color:#166534">הזמנה תישלח אוטומטית ל-' + _attr(pickedLab.email) + '</span>'
+        : '<i class="ti ti-mail-question" style="color:#D97706;font-size:13px"></i><span style="color:#92400E">לפרויקט שתי מעבדות — בחר לאיזו לפנות</span>';
     }
   } else {
     sb.innerHTML = '<i class="ti ti-calendar-check"></i>צור הזמנה';
@@ -7937,11 +8176,13 @@ async function submitInspectionAndSend() {
   errEl.textContent = '';
   const p = _inspFormPayload();
   if (!p.project_id)      { errEl.textContent = 'יש לבחור פרויקט'; return; }
-  if (!p.inspector_name)  { errEl.textContent = 'שם הבודק הוא שדה חובה'; return; }
+  if (!p.inspector_name)  { errEl.textContent = 'שם מזמין הבדיקה הוא שדה חובה'; return; }
   if (!p.scheduled_date)  { errEl.textContent = 'תאריך בדיקה הוא שדה חובה'; return; }
 
   const project = _allProjects.find(pr => pr.id === p.project_id);
-  if (!project?.lab_email) { errEl.textContent = 'לא הוגדר מייל מעבדה לפרויקט — עדכן בפרטי הפרויקט'; return; }
+  const lab = _projLabFor(project, p.lab_kind);
+  if (!_projLabs(project).some(l => l.email)) { errEl.textContent = 'לא הוגדר מייל מעבדה לפרויקט — עדכן בפרטי הפרויקט'; return; }
+  if (!lab) { errEl.textContent = 'יש לבחור לאיזו מעבדה לפנות'; return; }
 
   // ── שלב 2: פתח popup לפני כל await ──────────────────────
   const win = window.open('', '_blank', 'width=860,height=700,left=100,top=100');
@@ -7954,11 +8195,10 @@ async function submitInspectionAndSend() {
   btn.disabled = true;
 
   const treePos = _getInspTreePosPayload();
-  const { data: newOrder, error: insErr } = await db
-    .from('inspection_orders')
-    .insert({ ...p, ...treePos, status: 'pending', created_by: currentUserId, company_id: currentCompanyId })
-    .select()
-    .single();
+  const draftId = document.getElementById('insp-id').value;   // editing a draft: it becomes the sent order (tree position stays immutable)
+  const { data: newOrder, error: insErr } = await (draftId
+    ? db.from('inspection_orders').update({ ...p, status: 'pending' }).eq('id', draftId).select().single()
+    : db.from('inspection_orders').insert({ ...p, ...treePos, status: 'pending', created_by: currentUserId, company_id: currentCompanyId }).select().single());
 
   if (insErr || !newOrder) {
     btn.disabled = false;
@@ -8023,7 +8263,6 @@ async function submitInspectionAndSend() {
   // ── שלב 5: בנה mailto ────────────────────────────────────
   const dateStr  = newOrder.scheduled_date
     ? new Date(newOrder.scheduled_date + 'T12:00').toLocaleDateString('he-IL') : '–';
-  const timeStr  = newOrder.scheduled_time || '';
   // The lab has no login, so the e-mailed link is a long-lived signed URL (90 days) instead of a permanent public one.
   const pdfLink  = pdfUrl ? await sbSign(pdfUrl, 90 * 86400) : '';
   const pdfLine  = pdfLink ? `\nטופס הזמנת הבדיקה (PDF):\n${pdfLink}\n` : '';
@@ -8032,7 +8271,7 @@ async function submitInspectionAndSend() {
     lab_upload: '',
     order:      orderNum,
     project:    project.name,
-    date:       dateStr + (timeStr ? ' ' + timeStr : ''),
+    date:       dateStr,
     location:   newOrder.location        || '',
     inspector:  newOrder.inspector_name  || '',
     contractor: newOrder.contractor      || '',
@@ -8045,8 +8284,8 @@ async function submitInspectionAndSend() {
     `פרויקט: ${project.name}\n` +
     `מספר הזמנה: #${orderNum}\n` +
     `מיקום: ${newOrder.location || '–'}\n` +
-    `תאריך: ${dateStr}${timeStr ? ' ' + timeStr : ''}\n` +
-    `בודק: ${newOrder.inspector_name || '–'}\n` +
+    `תאריך: ${dateStr}\n` +
+    `מזמין הבדיקה: ${newOrder.inspector_name || '–'}\n` +
     `קבלן: ${newOrder.contractor || '–'}\n` +
     (newOrder.notes ? `הערות: ${newOrder.notes}\n` : '') +
     pdfLine +
@@ -8059,7 +8298,7 @@ async function submitInspectionAndSend() {
   closeById('m-new-inspection');
   await loadInspectionsScreen();
 
-  window.location.href = `mailto:${_mailtoAddr(project.lab_email || '')}?subject=${subject}&body=${body}`;
+  window.location.href = `mailto:${_mailtoAddr(lab.email)}?subject=${subject}&body=${body}`;
 }
 
 async function submitInspection() {
@@ -8067,7 +8306,7 @@ async function submitInspection() {
   errEl.textContent = '';
   const p = _inspFormPayload();
   if (!p.project_id) { errEl.textContent = 'יש לבחור פרויקט'; return; }
-  if (!p.inspector_name) { errEl.textContent = 'שם הבודק הוא שדה חובה'; return; }
+  if (!p.inspector_name) { errEl.textContent = 'שם מזמין הבדיקה הוא שדה חובה'; return; }
   if (!p.scheduled_date) { errEl.textContent = 'תאריך בדיקה הוא שדה חובה'; return; }
 
   const editId = document.getElementById('insp-id').value;
@@ -8371,6 +8610,12 @@ const _ncrMailKey = c => c ? `qafield_ncr_mail_${currentCompanyId}_${currentUser
 const _NCR_EMAIL_RE = /^(?!.*\.\.)[^\s@<>",;?&#%=()\[\]\\:]+@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}$/;
 const _cleanLabEmail = v => { v = (v || '').trim(); return v && _NCR_EMAIL_RE.test(v) ? v : null; };
 const _mailtoAddr = a => a.replace(/[?&#%=]/g, c => encodeURIComponent(c));
+// A project has one or two labs: control (lab_email is its address) and assurance. Only labs with an address can be sent to.
+const _projLabs = p => !p ? [] : [
+  { kind: 'control',   label: 'מעבדה לבקרה',  name: p.lab_control_name,   email: p.lab_email },
+  { kind: 'assurance', label: 'מעבדה לאבטחה', name: p.lab_assurance_name, email: p.lab_assurance_email },
+].filter(l => l.name || l.email);
+const _projLabFor = (p, kind) => { const ls = _projLabs(p).filter(l => l.email); return ls.find(l => l.kind === kind) || (ls.length === 1 ? ls[0] : null); };
 async function openNcrMail(findingId) {
   const { data: f } = await db.from('findings').select('id, serial_number, title, contractor, project_id, severity, status, due_date').eq('id', findingId).single();
   if (!f) { showToast('האי-התאמה לא נמצאה, או שפג תוקף ההתחברות', 'error'); return; }
@@ -8439,13 +8684,15 @@ async function downloadOrderFile(url, orderNum) {
 }
 
 function buildInspectionOrderHTML(order, project, wi, checks) {
+  // free text typed by users ends up in a document written into a same-origin popup — escape every string field once, up front
+  const _esc = r => r && typeof r === 'object' ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typeof v === 'string' ? _attr(v) : v])) : r;
+  order = _esc(order); project = _esc(project); wi = _esc(wi); checks = (checks || []).map(_esc);
   const fmtDate     = d => d ? new Date(d + 'T12:00').toLocaleDateString('he-IL') : '–';
-  const fmtTime     = t => t ? t.slice(0, 5) : '–';
   const orderNum    = order.id.slice(-6).toUpperCase();
   const today       = new Date().toLocaleDateString('he-IL');
   const statusHe    = { pending:'ממתינה', completed:'בוצעה', cancelled:'בוטלה' }[order.status] || order.status || '–';
   const companyLogo = currentCompany?._logoData || '';   // embedded data URL — filled by ensureCompanyLogoData()
-  const companyName = currentCompany?.name     || '';
+  const companyName = _attr(currentCompany?.name || '');
   const locationText = order.location || (wi ? [wi.structure, wi.sub_structure, wi.element].filter(Boolean).join(' / ') : '–');
 
   const locationTableBody = wi
@@ -8536,11 +8783,7 @@ function buildInspectionOrderHTML(order, project, wi, checks) {
     <td class="lbl">מבדקה מבצעת</td><td>${order.lab_name || '–'}</td>
   </tr>
   <tr>
-    <td class="lbl">שעת ביצוע מבוקשת</td><td>${fmtTime(order.scheduled_time)}</td>
     <td class="lbl">קבלן</td><td>${order.contractor || '–'}</td>
-  </tr>
-  <tr>
-    <td class="lbl">דיוק בשעת הנטילה</td><td>${order.time_precision || 'משוער'}</td>
     <td class="lbl">יצרן</td><td>${order.producer || '–'}</td>
   </tr>
   <tr>
@@ -8552,8 +8795,11 @@ function buildInspectionOrderHTML(order, project, wi, checks) {
     <td class="lbl">שם הפרויקט</td><td>${project?.name || '–'}</td>
   </tr>
   <tr>
+    <td class="lbl">דיוק בשעת הנטילה</td><td>${order.time_precision || 'משוער'}</td>
     <td class="lbl">סטאטוס</td><td>${statusHe}</td>
-    <td class="lbl">נתוני מיקום</td><td>${locationText}</td>
+  </tr>
+  <tr>
+    <td class="lbl">נתוני מיקום</td><td colspan="3">${locationText}</td>
   </tr>
 </table>
 
@@ -8715,9 +8961,10 @@ async function sendToLab(orderId) {
   if (error || !order) { win.close(); showToast('שגיאה בטעינת ההזמנה', 'error'); return; }
 
   const project = _allProjects.find(p => p.id === order.project_id);
-  if (!project?.lab_email) {
+  const lab = _projLabFor(project, order.lab_kind);
+  if (!lab) {
     win.close();
-    showToast('לא הוגדר מייל מעבדה לפרויקט זה — עדכן בפרטי הפרויקט', 'error');
+    showToast(_projLabs(project).some(l => l.email) ? 'לא נבחרה מעבדה בהזמנה — ערוך את ההזמנה ובחר מעבדה' : 'לא הוגדר מייל מעבדה לפרויקט זה — עדכן בפרטי הפרויקט', 'error');
     return;
   }
 
@@ -8783,7 +9030,6 @@ async function sendToLab(orderId) {
   const orderNum  = order.id.slice(-6).toUpperCase();
   const dateStr   = order.scheduled_date
     ? new Date(order.scheduled_date + 'T12:00').toLocaleDateString('he-IL') : '–';
-  const timeStr   = order.scheduled_time || '';
   // The lab has no login, so the e-mailed link is a long-lived signed URL (90 days) instead of a permanent public one.
   const pdfLink   = pdfUrl ? await sbSign(pdfUrl, 90 * 86400) : '';
   const pdfLine   = pdfLink
@@ -8795,7 +9041,7 @@ async function sendToLab(orderId) {
     lab_upload: '',
     order:      orderNum,
     project:    project.name,
-    date:       dateStr + (timeStr ? ' ' + timeStr : ''),
+    date:       dateStr,
     location:   order.location   || '',
     inspector:  order.inspector_name || '',
     contractor: order.contractor || '',
@@ -8808,8 +9054,8 @@ async function sendToLab(orderId) {
     `פרויקט: ${project.name}\n` +
     `מספר הזמנה: #${orderNum}\n` +
     `מיקום: ${order.location || '–'}\n` +
-    `תאריך: ${dateStr}${timeStr ? ' ' + timeStr : ''}\n` +
-    `בודק: ${order.inspector_name || '–'}\n` +
+    `תאריך: ${dateStr}\n` +
+    `מזמין הבדיקה: ${order.inspector_name || '–'}\n` +
     `קבלן: ${order.contractor || '–'}\n` +
     (order.notes ? `הערות: ${order.notes}\n` : '') +
     pdfLine +
@@ -8818,7 +9064,7 @@ async function sendToLab(orderId) {
     `בברכה`
   );
 
-  window.location.href = `mailto:${_mailtoAddr(project.lab_email || '')}?subject=${subject}&body=${body}`;
+  window.location.href = `mailto:${_mailtoAddr(lab.email)}?subject=${subject}&body=${body}`;
 }
 
 // ─── LAB UPLOAD PAGE ─────────────────────────────────────
