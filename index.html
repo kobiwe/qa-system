@@ -2454,7 +2454,7 @@ function subscribeCertificateUpdates() {
       const o = payload.old;
       // תעודה חדשה שהועלתה (לא הייתה לפני)
       if (n?.certificate_url && !o?.certificate_url) {
-        const orderNum = n.id ? n.id.slice(-6).toUpperCase() : '';
+        const orderNum = _ordNo(n);
         showToast(`תעודת מעבדה התקבלה — הזמנה #${orderNum}`, 'success');
         // רענן את טבלת ההזמנות אם הסקרין פתוח
         const inspScreen = document.getElementById('s-inspections');
@@ -2664,7 +2664,7 @@ function _renderActionCenter(stops, longPending, overdue, projMap) {
   longPending.slice(0, 3).forEach(o => items.push({
     cls: 'ac-warn', icon: 'ti-clock', label: 'בדיקה ממתינה (48ש+)',
     proj: projMap[o.project_id] || '–',
-    title: o.location || `הזמנה #${(o.id || '').substring(0, 6)}`,
+    title: o.location || `הזמנה #${_ordNo(o)}`,
     date: o.created_at, action: `go('inspections',document.getElementById('nav-inspections'))`
   }));
 
@@ -2782,11 +2782,11 @@ function _renderActivityFeed(find, insp, projMap) {
   insp.slice(0, 6).forEach(o => {
     if (o.status === 'completed') {
       events.push({ ts: o.updated_at || o.created_at, icon: 'ti-file-check', bg: '#DCFCE7', clr: '#16A34A',
-        text: `תעודת מעבדה: ${o.location || '#' + (o.id || '').substring(0, 6)}`,
+        text: `תעודת מעבדה: ${o.location || '#' + _ordNo(o)}`,
         sub: projMap[o.project_id] || '' });
     } else {
       events.push({ ts: o.created_at, icon: 'ti-calendar-plus', bg: '#DBEAFE', clr: '#2563EB',
-        text: `הזמנת בדיקה: ${o.location || '#' + (o.id || '').substring(0, 6)}`,
+        text: `הזמנת בדיקה: ${o.location || '#' + _ordNo(o)}`,
         sub: projMap[o.project_id] || '' });
     }
   });
@@ -5068,8 +5068,11 @@ function docsToggleFolder(id) {
 }
 
 async function selectDocsFolder(id) {
+  const wasSelected = _docsSelectedFolder === id;
   _docsSelectedFolder = id;
-  if (_docsFolders.some(f => f.parent_id === id)) _docsOpen.add(id);   // opening a parent reveals its sub-folders
+  if (_docsFolders.some(f => f.parent_id === id)) {   // a click on a parent opens it; a second click closes it
+    if (wasSelected && _docsOpen.has(id)) _docsOpen.delete(id); else _docsOpen.add(id);
+  }
   _renderDocsTree();
   const folder = _docsFolders.find(f => f.id === id);
   const pnl = document.getElementById('docs-files-pnl');
@@ -5860,7 +5863,7 @@ async function openProjectBoard(projectId) {
       .eq('project_id', projectId)
       .order('row_order'),
     db.from('findings').select('id, severity, status').eq('project_id', projectId),
-    db.from('inspection_orders').select('id, status, work_item_id, certificate_url, scheduled_date, location').eq('project_id', projectId),
+    db.from('inspection_orders').select('id, order_number, status, work_item_id, certificate_url, scheduled_date, location').eq('project_id', projectId),
     db.from('checklist_type_config').select('type_name, required_signer').eq('company_id', currentCompanyId || '')
   ]);
 
@@ -6146,6 +6149,9 @@ function _renderBoardDetails(wi, contextLabel) {
     <button class="brd-det-btn" onclick="openNewFindingFromWI('${wi.id}')">
       <i class="ti ti-alert-triangle" style="color:#F59E0B"></i>אי התאמה חדשה
     </button>
+    ${wi.checklist_instances.length ? `<button class="brd-det-btn" onclick="clAddList('${wi.id}')" title="יוצר עותק נקי של רשימת התיוג — בלי סימונים וחתימות">
+      <i class="ti ti-copy" style="color:#6B7280"></i>שכפל רשימת תיוג
+    </button>` : ''}
   </div>`;
 
   // KPI strip
@@ -6240,6 +6246,8 @@ function _renderBoardDetails(wi, contextLabel) {
 // (work_item_checklists.label). Existing data is list 1. Progress of the work item is over all its lists.
 
 const _clNo = c => c.list_no || 1;
+// the order PDF shows the item's checklist once (the first list), not every duplicated list
+const _firstList = rows => { const first = Math.min(...rows.map(_clNo)); return rows.filter(r => _clNo(r) === first); };
 function _clListNos(wi) {
   const nos = new Set(wi.checklist_instances.map(_clNo));
   (wi.work_item_checklists || []).forEach(l => nos.add(l.list_no));
@@ -6251,7 +6259,7 @@ const _clCanDeleteList = () => !!(currentSystemAdmin || currentUserRole === 'adm
 // The "document" cell of a checklist row: own document > linked inspection order's certificate > upload (once ticked), + the link button
 function _clDocCellHtml(ci, checked) {
   const ord = ci.inspection_order_id ? _boardOrders.find(o => o.id === ci.inspection_order_id) : null;
-  const num = ord ? ord.id.slice(-6).toUpperCase() : '';
+  const num = ord ? _ordNo(ord) : '';
   let main = '';
   if (ci.document_url) {
     main = `<a href="#" data-sb-ref="${_attr(ci.document_url)}" onclick="sbOpen(this.dataset.sbRef);return false" class="brd-cl-doc-link" title="פתח מסמך"><i class="ti ti-file-check"></i></a>`;
@@ -6293,26 +6301,52 @@ function _clTableHtml(wi, items) {
   </table>`;
 }
 
+const _clCollapsed = new Set();   // "workItemId:listNo" of lists the user folded (all lists start open)
+
 function _clListsHtml(wi) {
   const nos = _clListNos(wi), canDel = _clCanDeleteList() && nos.length > 1;
-  const btn = (fn, icon, title) => `<button class="btn btn-sm" onclick="${fn}" title="${title}" style="padding:2px 7px"><i class="ti ${icon}"></i></button>`;
-  const blocks = nos.map(no => {
+  return nos.map(no => {
     const items = wi.checklist_instances.filter(c => _clNo(c) === no).sort((a, b) => a.task_order - b.task_order);
-    const label = _clLabel(wi, no), done = items.filter(c => c.is_checked).length;
+    const done = items.filter(c => c.is_checked).length, closed = _clCollapsed.has(`${wi.id}:${no}`);
     return `<div id="cll-${wi.id}-${no}" style="margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:#F8FAFC;border:1px solid var(--bdr);border-bottom:none;font-size:12px">
-        <b>רשימת תיוג ${no}</b>${label ? `<span style="color:#6B7280">— ${_attr(label)}</span>` : ''}
+      <div onclick="clToggleList('${wi.id}',${no})" style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg-b);border:1px solid var(--bdr);${closed ? '' : 'border-bottom:none;'}font-size:12px;cursor:pointer">
+        <i class="ti ti-chevron-${closed ? 'left' : 'down'}" id="cllchev-${wi.id}-${no}" style="color:#6B7280"></i>
+        <b style="white-space:nowrap">רשימת תיוג ${no}</b>
+        <input id="cld-${wi.id}-${no}" class="form-in" type="text" value="${_attr(_clLabel(wi, no))}" placeholder="תיאור (מקטע / חתך...)" maxlength="120"
+          onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter')this.blur()" onchange="clSaveLabel('${wi.id}',${no},this.value)"
+          style="flex:1;min-width:120px;padding:4px 8px;font-size:12px;background:#fff">
         <span id="cllcnt-${wi.id}-${no}" style="font-size:10px;color:#9AA3B0">${done}/${items.length}</span>
-        <span style="margin-right:auto;display:flex;gap:4px">
-          ${btn(`clEditLabel('${wi.id}',${no})`, 'ti-pencil', 'תיאור הרשימה')}
-          ${btn(`clAddList('${wi.id}',${no})`, 'ti-copy', 'שכפל רשימה')}
-          ${canDel ? btn(`clDeleteList('${wi.id}',${no})`, 'ti-trash', 'מחק רשימה') : ''}
-        </span>
+        ${canDel ? `<button class="btn btn-sm" onclick="event.stopPropagation();clDeleteList('${wi.id}',${no})" title="מחק רשימה" style="padding:2px 7px"><i class="ti ti-trash"></i></button>` : ''}
       </div>
-      ${_clTableHtml(wi, items)}
+      <div id="cllbody-${wi.id}-${no}" style="${closed ? 'display:none' : ''}">${_clTableHtml(wi, items)}</div>
     </div>`;
   }).join('');
-  return blocks + `<div style="padding:4px 12px 0"><button class="btn btn-sm" onclick="clAddList('${wi.id}')"><i class="ti ti-plus"></i>רשימת תיוג חדשה</button></div>`;
+}
+
+function clToggleList(wiId, no) {
+  const key = `${wiId}:${no}`, closed = !_clCollapsed.has(key);
+  if (closed) _clCollapsed.add(key); else _clCollapsed.delete(key);
+  const body = document.getElementById(`cllbody-${wiId}-${no}`), chev = document.getElementById(`cllchev-${wiId}-${no}`);
+  if (body) body.style.display = closed ? 'none' : '';
+  if (chev) chev.className = `ti ti-chevron-${closed ? 'left' : 'down'}`;
+  const head = body?.previousElementSibling; if (head) head.style.borderBottom = closed ? '' : 'none';
+}
+
+// Parent nodes of the tree (structure / sub-structure / element) show totals over their work items — recompute them after a change below
+function _refreshTreeAncestors(wiId) {
+  let container = document.getElementById('bnd-' + wiId)?.parentElement;
+  while (container && container.classList?.contains('brd-children')) {
+    const head = container.previousElementSibling;
+    if (head?.classList.contains('brd-nd')) {
+      const arr = [...container.querySelectorAll('.brd-nd[data-wi-id]')].map(n => _boardItems.find(w => w.id === n.dataset.wiId)).filter(Boolean);
+      const { total, checked, pct } = _progOfArr(arr), dot = _dotCls(arr);
+      const dotEl = head.querySelector('.brd-nd-dot'); if (dotEl) dotEl.className = `brd-nd-dot ${dot}`;
+      const fill = head.querySelector('.brd-nd-bar-fill');
+      if (fill) { fill.style.width = pct + '%'; fill.style.background = dot === 'ok' ? '#22C55E' : dot === 'warn' ? '#F59E0B' : dot === 'risk' ? '#EF4444' : '#C8CDD6'; }
+      const pc = head.querySelector('.brd-nd-pct'); if (pc) pc.textContent = `${checked}/${total}`;
+    }
+    container = container.parentElement;
+  }
 }
 
 // After a list was added / removed: refresh the panel (keeping the checklist open or closed), the tree node, the status and the totals.
@@ -6332,6 +6366,7 @@ function _clAfterListChange(wi) {
     const pctEl = bnd.querySelector('.brd-nd-pct'); if (pctEl) pctEl.textContent = `${checked}/${total}`;
     bnd.classList.toggle('wi-done', total > 0 && checked === total);
   }
+  _refreshTreeAncestors(wi.id);
   const newStatus = checked === 0 ? 'pending' : checked === total ? 'completed' : 'in_progress';
   if (wi.status !== newStatus) { wi.status = newStatus; db.from('work_items').update({ status: newStatus }).eq('id', wi.id).then(({ error }) => { if (error) logClientError('work item status update failed', { msg: error.message }); }); }
   _updateBoardProgress();
@@ -6346,50 +6381,51 @@ function _clRefreshCounts(wi) {
   }
 }
 
-// New list: from a copy of list `srcNo` (duplicate), or — without srcNo — from the company's template for the item's execution type.
+// Duplicates the work item's checklist as a clean copy (same tasks, nothing ticked, no signatures) — from list `srcNo`, else the first list.
+const _clAdding = new Set();   // work items with a duplicate in flight (a double click must not run it twice)
 async function clAddList(wiId, srcNo) {
+  if (_clAdding.has(wiId)) return;
+  _clAdding.add(wiId);
+  try { await _clAddListImpl(wiId, srcNo); } finally { _clAdding.delete(wiId); }
+}
+async function _clAddListImpl(wiId, srcNo) {
   const wi = _boardItems.find(i => i.id === wiId); if (!wi) return;
-  const label = prompt(srcNo ? `תיאור לרשימה החדשה (שכפול של רשימה ${srcNo}), למשל מקטע / חתך:` : 'תיאור לרשימת התיוג החדשה, למשל מקטע / חתך:', '');
-  if (label === null) return;
-  let tasks;
-  if (srcNo) {
-    tasks = wi.checklist_instances.filter(c => _clNo(c) === srcNo);
-  } else {
-    const { data: tpl } = await db.from('checklist_templates').select('task_name, task_order').eq('company_id', currentCompanyId).eq('type_name', wi.execution_type || '').order('task_order');
-    tasks = (tpl && tpl.length) ? tpl : wi.checklist_instances.filter(c => _clNo(c) === _clListNos(wi)[0]);
-  }
-  tasks = [...tasks].sort((a, b) => a.task_order - b.task_order);
-  if (!tasks.length) { showToast('אין משימות להעתקה — לא הוגדרה תבנית לסוג הביצוע', 'error'); return; }
+  const src = srcNo || _clListNos(wi)[0] || 1;
+  const tasks = wi.checklist_instances.filter(c => _clNo(c) === src).sort((a, b) => a.task_order - b.task_order);
+  if (!tasks.length) { showToast('אין רשימת תיוג לשכפול', 'error'); return; }
   // fresh from the DB: another user may have added a list meanwhile; (work_item_id, list_no) is unique so a collision fails cleanly
   const { data: cur } = await db.from('work_item_checklists').select('list_no').eq('work_item_id', wiId);
   const no = Math.max(1, ..._clListNos(wi), ...(cur || []).map(l => l.list_no)) + 1;
   const { data: row, error: e1 } = await db.from('work_item_checklists')
-    .insert({ company_id: currentCompanyId, work_item_id: wiId, list_no: no, label: label.trim() || null, created_by: currentUserId }).select('id, list_no, label').single();
+    .insert({ company_id: currentCompanyId, work_item_id: wiId, list_no: no, label: null, created_by: currentUserId }).select('id, list_no, label').single();
   if (e1) { showToast(e1.code === '23505' ? 'רשימה חדשה נוצרה בינתיים על ידי משתמש אחר — נסה שוב' : 'שגיאה ביצירת הרשימה: ' + e1.message, 'error'); return; }
   const { data: ins, error: e2 } = await db.from('checklist_instances')
     .insert(tasks.map(t => ({ company_id: currentCompanyId, work_item_id: wiId, task_name: t.task_name, task_order: t.task_order, list_no: no })))
     .select('id, task_name, task_order, list_no, is_checked, checked_by, checked_at, signer_name, signer_role, signature_url, document_url, inspection_order_id');
   if (e2) {
-    await db.from('work_item_checklists').delete().eq('id', row.id);
+    const { data: gone } = await db.from('work_item_checklists').delete().eq('id', row.id).select('id');
+    if (!gone?.length) { (wi.work_item_checklists = wi.work_item_checklists || []).push(row); _clAfterListChange(wi); }   // could not undo: show the empty list so it can be removed by a manager
     showToast('שגיאה ביצירת הרשימה: ' + e2.message, 'error'); return;
   }
   (wi.work_item_checklists = wi.work_item_checklists || []).push(row);
   wi.checklist_instances.push(...ins);
+  _clCollapsed.delete(`${wiId}:${no}`);
   _clAfterListChange(wi);
+  const inp = document.getElementById(`cld-${wiId}-${no}`);
+  if (inp) { inp.scrollIntoView({ block: 'center' }); inp.focus(); }   // the description is typed right away
   showToast(`נוצרה רשימת תיוג ${no}`, 'success');
 }
 
-async function clEditLabel(wiId, no) {
+// The description is an inline field in the list header; it saves when the field loses focus
+async function clSaveLabel(wiId, no, value) {
   const wi = _boardItems.find(i => i.id === wiId); if (!wi) return;
-  const label = prompt('תיאור הרשימה (למשל מקטע / חתך):', _clLabel(wi, no));
-  if (label === null) return;
-  const val = label.trim() || null, existing = (wi.work_item_checklists || []).find(l => l.list_no === no);
+  const val = (value || '').trim() || null, existing = (wi.work_item_checklists || []).find(l => l.list_no === no);
+  if (!existing && !val) return;
   const { data, error } = existing
     ? await db.from('work_item_checklists').update({ label: val }).eq('id', existing.id).select('id, list_no, label')
     : await db.from('work_item_checklists').insert({ company_id: currentCompanyId, work_item_id: wiId, list_no: no, label: val, created_by: currentUserId }).select('id, list_no, label');
   if (error || !data?.length) { showToast('שגיאה בשמירת התיאור' + (error ? ': ' + error.message : ''), 'error'); return; }
   if (existing) existing.label = val; else (wi.work_item_checklists = wi.work_item_checklists || []).push(data[0]);
-  _clAfterListChange(wi);
 }
 
 async function clDeleteList(wiId, no) {
@@ -6402,6 +6438,7 @@ async function clDeleteList(wiId, no) {
   await db.from('work_item_checklists').delete().eq('work_item_id', wiId).eq('list_no', no);
   wi.checklist_instances = wi.checklist_instances.filter(c => _clNo(c) !== no);
   wi.work_item_checklists = (wi.work_item_checklists || []).filter(l => l.list_no !== no);
+  _clCollapsed.delete(`${wiId}:${no}`);
   _clAfterListChange(wi);
   showToast('הרשימה נמחקה', 'success');
 }
@@ -6410,14 +6447,14 @@ async function clDeleteList(wiId, no) {
 // (and appears by itself once the lab uploads it). The order is shown for confirmation first — a typo must not link the wrong test.
 async function clLinkOrder(ciId) {
   const ci = _boardItems.flatMap(w => w.checklist_instances).find(c => c.id === ciId); if (!ci) return;
-  const raw = prompt('מספר הזמנת הבדיקה (6 התווים שמופיעים בהזמנה, למשל A1B2C3):', '');
+  const raw = prompt('מספר הזמנת הבדיקה (5 ספרות, למשל 10001):', '');
   if (raw === null) return;
   const num = raw.trim().replace(/^#/, '').toUpperCase();
   if (num.length < 4) { showToast('יש להקליד את מספר ההזמנה', 'error'); return; }
-  let hits = _boardOrders.filter(o => o.id.slice(-6).toUpperCase() === num);
+  let hits = _boardOrders.filter(o => String(_ordNo(o)).toUpperCase() === num);
   if (!hits.length) {   // the order may have been created (or its certificate uploaded) after the board was loaded
-    const { data: fresh } = await db.from('inspection_orders').select('id, status, work_item_id, certificate_url, scheduled_date, location').eq('project_id', _boardProjectId);
-    if (fresh) { _boardOrders = fresh; hits = fresh.filter(o => o.id.slice(-6).toUpperCase() === num); }
+    const { data: fresh } = await db.from('inspection_orders').select('id, order_number, status, work_item_id, certificate_url, scheduled_date, location').eq('project_id', _boardProjectId);
+    if (fresh) { _boardOrders = fresh; hits = fresh.filter(o => String(_ordNo(o)).toUpperCase() === num); }
   }
   if (hits.length !== 1) { showToast(hits.length ? 'מספר ההזמנה אינו חד-משמעי' : `לא נמצאה הזמנה ${num} בפרויקט זה`, 'error'); return; }
   const o = hits[0], when = o.scheduled_date ? new Date(o.scheduled_date + 'T12:00').toLocaleDateString('he-IL') : '–';
@@ -6441,7 +6478,7 @@ async function _loadBoardInspections(workItemId) {
   if (!container) return;
 
   const { data: orders } = await db.from('inspection_orders')
-    .select('id, scheduled_date, status, result, pdf_url, certificate_url')
+    .select('id, order_number, scheduled_date, status, result, pdf_url, certificate_url')
     .eq('work_item_id', workItemId)
     .order('scheduled_date', { ascending: false });
 
@@ -6482,7 +6519,7 @@ async function _loadBoardInspections(workItemId) {
       ? `<a href="#" data-sb-ref="${_attr(o.certificate_url)}" onclick="sbOpen(this.dataset.sbRef);return false" class="btn btn-sm" style="color:#16A34A;border-color:#86EFAC" title="תעודת מעבדה"><i class="ti ti-file-certificate"></i></a>`
       : '';
     return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #F8FAFC;font-size:11px">
-      <span style="color:#9AA3B0;min-width:46px;font-size:10px;font-weight:700">${o.id.slice(-6).toUpperCase()}</span>
+      <span style="color:#9AA3B0;min-width:46px;font-size:10px;font-weight:700">${_ordNo(o)}</span>
       <span style="color:#374151">${date}</span>
       ${statusLabel[o.status] || ''}
       ${o.result ? resultLabel[o.result] || '' : ''}
@@ -6683,6 +6720,7 @@ async function _toggleCheckItemImpl(ciId, wiId) {
     }
     break;
   }
+  _refreshTreeAncestors(wiId);
   _updateBoardProgress();
 }
 
@@ -7547,7 +7585,7 @@ function _filterInspTable() {
     : _allInspOrders.filter(o => o.status === _inspFilter);
   list = q
     ? list.filter(o =>
-        [o.id, o.sub_project, o.structure, o.sub_structure, o.element, o.sub_element,
+        [o.id, o.order_number, o.sub_project, o.structure, o.sub_structure, o.element, o.sub_element,
          o.inspector_name, o.contractor, o.location, o.notes]
           .some(v => v && String(v).toLowerCase().includes(q)))
     : list;
@@ -7579,7 +7617,7 @@ function _filterInspTable() {
            title="ממתין לתעודת מעבדה"><i class="ti ti-clock" style="font-size:15px"></i></button>`;
 
     return `<tr>
-      <td><b style="font-size:11px;color:#9AA3B0">${o.id.slice(-6).toUpperCase()}</b></td>
+      <td><b style="font-size:11px;color:#9AA3B0">${_ordNo(o)}</b></td>
       ${cell(o.sub_project)}
       ${cell(o.structure)}
       ${cell(o.sub_structure)}
@@ -8053,7 +8091,7 @@ async function openEditInspection(id) {
 
 async function openQuickResult(orderId) {
   const { data: o, error } = await db.from('inspection_orders')
-    .select('id, status, result, result_notes, inspector_name, scheduled_date, project_id')
+    .select('id, order_number, status, result, result_notes, inspector_name, scheduled_date, project_id')
     .eq('id', orderId).single();
   if (error || !o) { showToast('שגיאה בטעינת ההזמנה', 'error'); return; }
 
@@ -8208,8 +8246,8 @@ async function submitInspectionAndSend() {
   }
 
   // ── שלב 4: ייצר PDF ────────────────────────────────────────
-  const orderNum    = newOrder.id.slice(-6).toUpperCase();
-  const storagePath = `inspection-orders/order_${orderNum}.pdf`;
+  const orderCode = _ordCode(newOrder), orderNum = _ordNo(newOrder);
+  const storagePath = `inspection-orders/order_${orderCode}.pdf`;
 
   let pdfUrl = null;
 
@@ -8220,7 +8258,7 @@ async function submitInspectionAndSend() {
       workItem = wi;
       const { data: ci } = await db.from('checklist_instances')
         .select('*').eq('work_item_id', newOrder.work_item_id).order('task_order');
-      checks = ci || [];
+      checks = _firstList(ci || []);
     }
 
     await ensureCompanyLogoData();
@@ -8270,6 +8308,7 @@ async function submitInspectionAndSend() {
   const uploadParams = new URLSearchParams({
     lab_upload: '',
     order:      orderNum,
+    p:          project.id,
     project:    project.name,
     date:       dateStr,
     location:   newOrder.location        || '',
@@ -8343,7 +8382,7 @@ async function openInspectionPDF(orderId) {
   if (error || !order) { win.close(); alert('שגיאה בטעינת ההזמנה'); return; }
 
   const project  = _allProjects.find(p => p.id === order.project_id);
-  const orderNum = order.id.slice(-6).toUpperCase();
+  const orderCode = _ordCode(order), orderNum = _ordNo(order);
 
   let workItem = null, checks = [];
   if (order.work_item_id) {
@@ -8351,13 +8390,13 @@ async function openInspectionPDF(orderId) {
     workItem = wi;
     const { data: ci } = await db.from('checklist_instances')
       .select('*').eq('work_item_id', order.work_item_id).order('task_order');
-    checks = ci || [];
+    checks = _firstList(ci || []);
   }
 
   await ensureCompanyLogoData();
   const html         = buildInspectionOrderHTML(order, project, workItem, checks);
   const downloadName = `הזמנת_בדיקה_${orderNum}.pdf`;
-  const storagePath  = `inspection-orders/order_${orderNum}.pdf`;
+  const storagePath  = `inspection-orders/order_${orderCode}.pdf`;
 
   // כתוב את ה-HTML לחלון — הוא כולל סקריפטים שייצרו PDF וישלחו חזרה
   win.document.open();
@@ -8615,6 +8654,10 @@ const _projLabs = p => !p ? [] : [
   { kind: 'control',   label: 'מעבדה לבקרה',  name: p.lab_control_name,   email: p.lab_email },
   { kind: 'assurance', label: 'מעבדה לאבטחה', name: p.lab_assurance_name, email: p.lab_assurance_email },
 ].filter(l => l.name || l.email);
+// What people see and type is the per-project running number (order_number, from 10000); the last 6 characters of the id stay
+// the "upload code" that identifies the order in lab links and certificate / PDF file names.
+const _ordCode = o => (o?.id || '').slice(-6).toUpperCase();
+const _ordNo = o => o?.order_number ?? _ordCode(o);
 const _projLabFor = (p, kind) => { const ls = _projLabs(p).filter(l => l.email); return ls.find(l => l.kind === kind) || (ls.length === 1 ? ls[0] : null); };
 async function openNcrMail(findingId) {
   const { data: f } = await db.from('findings').select('id, serial_number, title, contractor, project_id, severity, status, due_date').eq('id', findingId).single();
@@ -8688,7 +8731,7 @@ function buildInspectionOrderHTML(order, project, wi, checks) {
   const _esc = r => r && typeof r === 'object' ? Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typeof v === 'string' ? _attr(v) : v])) : r;
   order = _esc(order); project = _esc(project); wi = _esc(wi); checks = (checks || []).map(_esc);
   const fmtDate     = d => d ? new Date(d + 'T12:00').toLocaleDateString('he-IL') : '–';
-  const orderNum    = order.id.slice(-6).toUpperCase();
+  const orderCode = _ordCode(order), orderNum = _ordNo(order);
   const today       = new Date().toLocaleDateString('he-IL');
   const statusHe    = { pending:'ממתינה', completed:'בוצעה', cancelled:'בוטלה' }[order.status] || order.status || '–';
   const companyLogo = currentCompany?._logoData || '';   // embedded data URL — filled by ensureCompanyLogoData()
@@ -8972,8 +9015,8 @@ async function sendToLab(orderId) {
 
   if (!pdfUrl) {
     // אין PDF שמור — ניצור ונעלה ל-Storage
-    const orderNum    = order.id.slice(-6).toUpperCase();
-    const storagePath = `inspection-orders/order_${orderNum}.pdf`;
+    const orderCode = _ordCode(order), orderNum = _ordNo(order);
+    const storagePath = `inspection-orders/order_${orderCode}.pdf`;
 
     let workItem = null, checks = [];
     if (order.work_item_id) {
@@ -8981,7 +9024,7 @@ async function sendToLab(orderId) {
       workItem = wi;
       const { data: ci } = await db.from('checklist_instances')
         .select('*').eq('work_item_id', order.work_item_id).order('task_order');
-      checks = ci || [];
+      checks = _firstList(ci || []);
     }
 
     await ensureCompanyLogoData();
@@ -9027,7 +9070,7 @@ async function sendToLab(orderId) {
   win.close();
 
   // בנה וכתוב mailto
-  const orderNum  = order.id.slice(-6).toUpperCase();
+  const orderCode = _ordCode(order), orderNum = _ordNo(order);
   const dateStr   = order.scheduled_date
     ? new Date(order.scheduled_date + 'T12:00').toLocaleDateString('he-IL') : '–';
   // The lab has no login, so the e-mailed link is a long-lived signed URL (90 days) instead of a permanent public one.
@@ -9040,6 +9083,7 @@ async function sendToLab(orderId) {
   const uploadParams = new URLSearchParams({
     lab_upload: '',
     order:      orderNum,
+    p:          project.id,
     project:    project.name,
     date:       dateStr,
     location:   order.location   || '',
@@ -9115,7 +9159,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;display:flex;ali
   <div class="lab-brand-sub">מערכת ניהול איכות ובטיחות בנייה</div>
   <div class="lab-ttl">העלאת תעודת מעבדה</div>
   <div id="lab-order-box" class="order-box" style="display:none"></div>
-  <div class="lab-desc" id="lab-main-desc">בחרו את קובץ התעודה (PDF). המערכת תנסה לזהות את מספר ההזמנה אוטומטית מתוך הקובץ.</div>
+  <div class="lab-desc" id="lab-main-desc">בחרו את קובץ התעודה (PDF) והעלו אותו.</div>
 
   <div class="drop-zone" id="lab-drop">
     <input type="file" id="lab-file-input" accept="application/pdf" onchange="labFileSelected(this)">
@@ -9127,9 +9171,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;display:flex;ali
   <div style="margin-bottom:16px">
     <label class="lbl">מספר הזמנה <span id="lab-auto-tag" class="auto-tag" style="display:none">זוהה אוטומטית</span><span id="lab-locked-tag" class="auto-tag" style="display:none;background:#DBEAFE;color:#1E40AF">מזוהה מהקישור</span></label>
     <div class="inp-row">
-      <input class="inp" id="lab-order-num" type="text" placeholder="ABC123" maxlength="6" oninput="labUpdateSubmit()">
+      <input class="inp" id="lab-order-num" type="text" placeholder="10001" maxlength="9" readonly>
     </div>
-    <div class="hint" id="lab-order-hint">6 תווים — כפי שמופיע בהזמנת הבדיקה שקיבלתם</div>
+    <div class="hint" id="lab-order-hint"></div>
   </div>
 
   <button class="btn-up" id="lab-submit-btn" onclick="labSubmit()" disabled>העלה תעודה</button>
@@ -9145,30 +9189,42 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;display:flex;ali
   dz.addEventListener('drop', e => {
     e.preventDefault(); dz.classList.remove('over');
     const f = e.dataTransfer.files[0];
-    if (f && f.type === 'application/pdf') { _labFile = f; labUpdateFileUI(f); if (!_labOrderLocked) labExtractOrderNum(f); }
+    if (f && f.type === 'application/pdf') { _labFile = f; labUpdateFileUI(f); }
     else if (f) labShowStatus('יש לבחור קובץ PDF בלבד', 'err');
   });
 
-  // Pre-fill order number from URL param (?lab_upload&order=XXXXXX&project=...&date=...&location=...&inspector=...&contractor=...)
+  // The e-mailed link identifies the order: ?lab_upload&p=<project id>&order=<order number>&project=...&date=...&location=...&inspector=...&contractor=...
+  // (the order number alone is only unique inside a project, so the project id is required; without a valid link nothing can be uploaded)
   const _urlParams    = new URLSearchParams(window.location.search);
-  const _urlOrder     = (_urlParams.get('order') || '').toUpperCase().replace(/[^A-F0-9]/g, '').slice(0, 6) || null;   // hex only
+  const _urlProjectId = (_urlParams.get('p') || '').toLowerCase();
+  const _urlOrder     = /^[1-9][0-9]{0,8}$/.test(_urlParams.get('order') || '') ? _urlParams.get('order') : null;
   const _urlProject   = _urlParams.get('project')    || '';
   const _urlDate      = _urlParams.get('date')        || '';
   const _urlLocation  = _urlParams.get('location')   || '';
   const _urlInspector = _urlParams.get('inspector')  || '';
   const _urlContractor= _urlParams.get('contractor') || '';
+  const _linkOk = _urlOrder && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(_urlProjectId);
 
-  if (_urlOrder) {
+  if (!_linkOk) {
+    document.getElementById('lab-main-desc').textContent = 'הקישור אינו תקין או חסר. יש לפתוח את הקישור מהמייל שנשלח אליכם עם הזמנת הבדיקה.';
+    ['lab-drop', 'lab-submit-btn'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    const fld = document.getElementById('lab-order-num')?.closest('div[style]'); if (fld) fld.style.display = 'none';
+  }
+
+  if (_linkOk) {
     // Lock order number field
     const inp = document.getElementById('lab-order-num');
     if (inp) {
-      inp.value    = _urlOrder.toUpperCase().slice(0, 6);
+      inp.value    = _urlOrder;
       inp.readOnly = true;
       inp.style.cssText += ';background:#F0F9FF;color:#1E40AF;font-weight:700;cursor:default';
       document.getElementById('lab-locked-tag').style.display = '';
       document.getElementById('lab-order-hint').textContent   = 'מספר ההזמנה זוהה אוטומטית מהקישור שנשלח אליכם';
       window._labOrderLocked = true;
+      window._labProjectId   = _urlProjectId;
+      window._labOrderNumber = parseInt(_urlOrder, 10);
       labUpdateSubmit();
+      labCheckOrder(true);
     }
 
     // Show order details box
@@ -9202,7 +9258,6 @@ function labFileSelected(input) {
   if (!f) return;
   _labFile = f;
   labUpdateFileUI(f);
-  labExtractOrderNum(f);
 }
 
 function labUpdateFileUI(f) {
@@ -9215,54 +9270,27 @@ function labUpdateFileUI(f) {
 
 function labUpdateSubmit() {
   const hasFile  = !!_labFile;
-  const inp      = document.getElementById('lab-order-num');
-  const hasOrder = inp && inp.value.trim().length >= 5;
+  const hasOrder = !!(window._labProjectId && window._labOrderNumber);
   const btn      = document.getElementById('lab-submit-btn');
   if (btn) btn.disabled = !(hasFile && hasOrder);
 }
 
-async function labExtractOrderNum(file) {
-  try {
-    if (!window.pdfjsLib) {
-      await new Promise((resolve, reject) => {
-        const s  = document.createElement('script');
-        s.src    = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-        s.onload = resolve; s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-    const ab   = await file.arrayBuffer();
-    const pdf  = await pdfjsLib.getDocument({ data: ab }).promise;
-    let text   = '';
-    for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
-      const page    = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      text += content.items.map(x => x.str).join(' ') + ' ';
-    }
-
-    // Look for #XXXXXX or standalone 6-char hex block
-    const match = text.match(/[#\s\-\/]([A-Fa-f0-9]{6})(?:[^A-Fa-f0-9]|$)/);
-    if (match) {
-      const inp = document.getElementById('lab-order-num');
-      if (inp && !inp.value) {
-        inp.value = match[1].toUpperCase();
-        const tag = document.getElementById('lab-auto-tag');
-        if (tag) tag.style.display = '';
-        labUpdateSubmit();
-      }
-    }
-  } catch(e) {
-    // חילוץ נכשל בשקט — המשתמש ימלא ידנית
-  }
+// Asks the database whether this order exists and still waits for a certificate; on the page load the form is replaced by the answer
+async function labCheckOrder(onLoad) {
+  const { data, error } = await db.rpc('lab_order_status', { p_project_id: window._labProjectId, p_order_number: window._labOrderNumber });
+  if (error) { if (onLoad) return; throw new Error('שגיאה בבדיקת ההזמנה — נסו שוב'); }
+  const msg = data?.status === 'not_found' ? 'הזמנה לא נמצאה במערכת — יש לפתוח את הקישור מהמייל שנשלח אליכם'
+            : data?.status === 'submitted' ? 'כבר התקבלה תעודה להזמנה זו. לתיקון פנו לבקר האיכות' : '';
+  if (!msg) return;
+  if (!onLoad) throw new Error(msg);
+  document.getElementById('lab-main-desc').textContent = msg;
+  ['lab-drop', 'lab-submit-btn'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 }
 
 async function labSubmit() {
-  const rawNum  = document.getElementById('lab-order-num').value.trim().toUpperCase();
-  if (!rawNum || rawNum.length < 5) { labShowStatus('יש להזין מספר הזמנה תקין (5-6 תווים)', 'err'); return; }
-  if (!_labFile)                     { labShowStatus('יש לבחור קובץ PDF', 'err'); return; }
+  const projectId = window._labProjectId, orderNo = window._labOrderNumber;
+  if (!projectId || !orderNo) { labShowStatus('הקישור אינו תקין — יש לפתוח את הקישור מהמייל', 'err'); return; }
+  if (!_labFile)              { labShowStatus('יש לבחור קובץ PDF', 'err'); return; }
 
   const btn         = document.getElementById('lab-submit-btn');
   btn.disabled      = true;
@@ -9270,8 +9298,9 @@ async function labSubmit() {
   labShowStatus('מחפש הזמנה...', 'info');
 
   try {
+    await labCheckOrder(false);   // nothing is uploaded for an unknown or already answered order
     // Upload to Supabase Storage with anon key
-    const storagePath = `certificates/cert_${rawNum}_${Date.now()}.pdf`;
+    const storagePath = `certificates/cert_${projectId}_${orderNo}_${Date.now()}.pdf`;
     const resp = await fetch(
       `${SUPABASE_URL}/storage/v1/object/documents/${storagePath}`,
       {
@@ -9297,27 +9326,25 @@ async function labSubmit() {
 
     // Update inspection_orders via SECURITY DEFINER RPC (bypasses RLS)
     const { data: rpc, error: rpcErr } = await db.rpc('submit_lab_certificate', {
-      p_order_short_id: rawNum,
-      p_cert_url:       publicUrl,
+      p_project_id:   projectId,
+      p_order_number: orderNo,
+      p_cert_url:     publicUrl,
     });
 
     if (rpcErr) throw new Error('שגיאה בשליחת התעודה — נסה שוב');
     if (!rpc?.success) {
       throw new Error({
         invalid_order: 'הזמנה לא נמצאה במערכת', order_not_found: 'הזמנה לא נמצאה במערכת',
-        ambiguous_order: 'מספר ההזמנה אינו חד-משמעי — פנו לבקר האיכות',
         already_submitted: 'כבר התקבלה תעודה להזמנה זו. לתיקון פנו לבקר האיכות',
         invalid_file: 'הקובץ לא התקבל כראוי — נסו להעלות שוב', file_not_found: 'הקובץ לא התקבל כראוי — נסו להעלות שוב',
       }[rpc?.error] || 'הזמנה לא נמצאה במערכת');
     }
 
-    labShowStatus(`✓ התעודה הועלתה בהצלחה! הזמנה #${rawNum} עודכנה.`, 'ok');
+    labShowStatus(`✓ התעודה הועלתה בהצלחה! הזמנה #${orderNo} עודכנה.`, 'ok');
     btn.textContent = 'הועלה ✓';
     _labFile = null;
     document.getElementById('lab-file-name').style.display   = 'none';
     document.getElementById('dz-text-msg').style.display     = '';
-    document.getElementById('lab-order-num').value           = '';
-    document.getElementById('lab-auto-tag').style.display    = 'none';
 
   } catch(e) {
     labShowStatus('שגיאה: ' + e.message, 'err');

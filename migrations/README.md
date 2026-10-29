@@ -24,3 +24,9 @@ same-company / foreign-company / anonymous / lab access with real API calls.
 001-006 are the changes made Sept-Oct 2026 (baseline recorded on prod; actually applied on staging).
 The pre-existing base schema itself (tables like projects/findings/work_items) is not captured here — to rebuild an
 environment from scratch use `scripts/clone_schema.js <targetRef>` from a live source project.
+
+**014 (order numbers) — operations note:** `projects.next_order_number` is guarded by a trigger: a plain `update` on it (SQL console / Management API) is silently
+reverted, only the numbering trigger may move it. To reset a counter on purpose, disable `trg_guard_next_order_number` on `projects` for that statement and re-enable it.
+`restore.js` is not affected (it runs with `session_replication_role = replica`).
+**015 (lab by order number):** drops the old `submit_lab_certificate(text, text)`; e-mailed lab links from before this release stop working (accepted: no customers yet).
+Run order for 014 + 015 in production: backup -> `node scripts/migrate.js prod` -> push the code to `main` -> `node scripts/smoke.js prod`.
