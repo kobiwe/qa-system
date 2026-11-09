@@ -528,6 +528,11 @@ tr:hover td{background:var(--acc-bg)!important;transition:background .15s}
 .brd-cl-task{cursor:pointer!important;font-weight:500;color:var(--t1)}
 .brd-cl-task.done{text-decoration:line-through;color:var(--t4)!important}
 .brd-cl-meta{font-size:11.5px;color:var(--t3);white-space:nowrap}
+.req-tag{display:inline-flex;align-items:center;gap:3px;margin-inline-start:8px;padding:0 6px;border-radius:9px;font-size:10.5px;font-weight:600;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;vertical-align:middle;white-space:nowrap}
+.req-tag.locked{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}
+.req-edit{margin-inline-start:4px;color:#9AA3B0;cursor:pointer;font-size:12px;vertical-align:middle}
+.req-edit:hover{color:#3B82F6}
+.brd-cl-task.locked{cursor:not-allowed}
 .brd-cl-date{cursor:pointer;padding:2px 6px;border-radius:4px;font-size:11px;color:var(--t3);display:inline-block;transition:background .1s}
 .brd-cl-date:hover{background:var(--acc-bg);color:var(--acc)}
 .brd-cl-doc-link{color:var(--acc);font-size:15px;display:inline-block;line-height:1}
@@ -1072,10 +1077,12 @@ body.theme-light .theme-opt-check{color:#10B981!important}
           <div style="display:flex;gap:8px">
             <button class="btn" id="users-company-settings-btn" onclick="openEditCompany(currentCompanyId)" style="display:none"><i class="ti ti-building-cog"></i>הגדרות חברה</button>
             <button class="btn" id="users-type-config-btn" onclick="openTypeConfigModal()" style="display:none"><i class="ti ti-signature"></i>הגדר חתמים</button>
+            <button class="btn" onclick="openPermMatrix()"><i class="ti ti-table"></i>טבלת הרשאות</button>
             <button class="btn btn-p" onclick="openNewUserModal()"><i class="ti ti-user-plus"></i>משתמש חדש</button>
           </div>
         </div>
         <div class="alert a-info"><i class="ti ti-shield-lock"></i>עמוד זה נגיש לאדמינים בלבד. שינויי תפקיד נכנסים לתוקף בכניסה הבאה של המשתמש.</div>
+        <div id="users-requests-card"></div>
 
         <div class="card" style="padding:0" id="users-table-card">
           <div style="text-align:center;padding:32px"><span class="spinner"></span> טוען...</div>
@@ -1209,7 +1216,10 @@ body.theme-light .theme-opt-check{color:#10B981!important}
       <div class="screen" id="s-docs">
         <div class="sec-hdr">
           <h2>מסמכים</h2>
-          <button class="btn btn-p" onclick="docsAddFolder(null)"><i class="ti ti-folder-plus"></i>תיקייה חדשה</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="docsToggleShowArchived()"><i class="ti ti-archive"></i>הצג / הסתר ארכיון</button>
+            <button class="btn btn-p" onclick="docsAddFolder(null)"><i class="ti ti-folder-plus"></i>תיקייה חדשה</button>
+          </div>
         </div>
         <div id="docs-scope-note" style="font-size:11px;color:#9AA3B0;margin-bottom:10px"></div>
         <div class="brd-split">
@@ -1352,6 +1362,12 @@ body.theme-light .theme-opt-check{color:#10B981!important}
         <option value="admin">אדמין</option>
       </select>
     </div>
+    <div class="form-row"><label class="form-lbl">תפקיד מקצועי (קובע מי רשאי לחתום על מה)</label>
+      <select class="form-in" id="nu-signer"></select>
+    </div>
+    <div class="form-row"><label class="form-lbl">טלפון</label><input class="form-in" id="nu-phone" type="tel" placeholder="050-0000000" style="direction:ltr;text-align:left"></div>
+    <div id="nu-from-request" style="display:none;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:8px 10px;font-size:12px;color:#1E40AF;margin-bottom:10px"></div>
+    <input type="hidden" id="nu-req-id"><input type="hidden" id="nu-req-project">
     <div class="form-row" id="nu-company-row" style="display:none">
       <label class="form-lbl">חברה *</label>
       <select class="form-in" id="nu-company"><option value="">— בחר חברה —</option></select>
@@ -1506,13 +1522,7 @@ body.theme-light .theme-opt-check{color:#10B981!important}
     </div>
     <div class="form-row">
       <label class="form-lbl">תפקיד מקצועי (חתימה)</label>
-      <select class="form-in" id="eu-signer-role">
-        <option value="">— ללא —</option>
-        <option value="qa_inspector">בקר איכות</option>
-        <option value="site_manager">מנהל עבודה</option>
-        <option value="surveyor">מודד מוסמך</option>
-        <option value="qa_assurance">הבטחת איכות (רשאי לאשר בבקרה מקדימה)</option>
-      </select>
+      <select class="form-in" id="eu-signer-role"></select>
     </div>
     <div class="form-row">
       <label class="form-lbl">חתימה (מוטבעת אוטומטית בפעולות המשתמש)</label>
@@ -1559,13 +1569,8 @@ body.theme-light .theme-opt-check{color:#10B981!important}
     <div class="form-row"><label class="form-lbl">שם מלא</label><input class="form-in" id="prof-name" type="text" placeholder="שם מלא"></div>
     <div class="form-row">
       <label class="form-lbl">תפקיד מקצועי (לצורך חתימה ברשימות תיוג)</label>
-      <select class="form-in" id="prof-signer-role">
-        <option value="">— ללא תפקיד מקצועי —</option>
-        <option value="qa_inspector">בקר איכות</option>
-        <option value="site_manager">מנהל עבודה</option>
-        <option value="surveyor">מודד מוסמך</option>
-        <option value="qa_assurance" id="prof-qa-opt" disabled>הבטחת איכות (מוגדר על ידי אדמין)</option>
-      </select>
+      <select class="form-in" id="prof-signer-role" disabled></select>
+      <div style="font-size:11px;color:var(--t3);margin-top:4px">התפקיד המקצועי מוגדר על ידי אדמין החברה בלבד. לשינוי — פנה לאדמין.</div>
     </div>
     <!-- Signature image -->
     <div class="ncr-sec" style="margin-top:8px">
@@ -1685,7 +1690,10 @@ body.theme-light .theme-opt-check{color:#10B981!important}
     <!-- צוות הפרויקט -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 10px">
       <div class="detail-section-hdr" style="margin:0">צוות הפרויקט</div>
-      <button class="btn btn-sm btn-p" id="detail-add-member-btn" onclick="openAddMember()" style="display:none"><i class="ti ti-user-plus"></i>הוסף משתמש</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" id="detail-request-user-btn" onclick="openUserRequest()" style="display:none"><i class="ti ti-mail-plus"></i>בקש משתמש חדש</button>
+        <button class="btn btn-sm btn-p" id="detail-add-member-btn" onclick="openAddMember()" style="display:none"><i class="ti ti-user-plus"></i>הוסף משתמש</button>
+      </div>
     </div>
     <div id="detail-members-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px"></div>
 
@@ -1712,6 +1720,49 @@ body.theme-light .theme-opt-check{color:#10B981!important}
       <button class="btn btn-p" onclick="confirmAddMember()"><i class="ti ti-user-plus"></i>הוסף</button>
       <button class="btn" onclick="closeById('m-add-member')">ביטול</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL: חותם נדרש לשורת צ'קליסט -->
+<div class="modal-bg" id="m-row-signer" onclick="closeM(event,'m-row-signer')">
+  <div class="modal" style="width:400px">
+    <div class="modal-ttl">מי רשאי לחתום בשורה<button class="modal-x" onclick="closeById('m-row-signer')"><i class="ti ti-x"></i></button></div>
+    <div id="rs-task" style="font-size:12px;color:var(--t3);margin-bottom:10px"></div>
+    <div class="form-row"><label class="form-lbl">התפקיד שאמור לחתום</label><select class="form-in" id="rs-role"></select></div>
+    <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-bottom:8px"><input type="checkbox" id="rs-same-name"> החל על כל השורות עם אותו שם בפריט העבודה (כל הרשימות)</label>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:8px">מהנדס ביצוע ומנהל עבודה חליפיים; בקר איכות חותם במקום בקר חשמל / גורם חיצוני. שורה שכבר נחתמה לא מושפעת.</div>
+    <div id="rs-err" style="color:#C0392B;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" onclick="saveRowSigner()">שמור</button>
+      <button class="btn" onclick="closeById('m-row-signer')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: בקשה למשתמש חדש (מנהל פרויקט → אדמין) -->
+<div class="modal-bg" id="m-user-request" onclick="closeM(event,'m-user-request')">
+  <div class="modal" style="width:420px">
+    <div class="modal-ttl">בקשה למשתמש חדש בפרויקט<button class="modal-x" onclick="closeById('m-user-request')"><i class="ti ti-x"></i></button></div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:10px">הבקשה נשלחת לאדמין החברה. לאחר אישורו ייווצר המשתמש וישויך לפרויקט.</div>
+    <div class="form-row"><label class="form-lbl">שם מלא *</label><input class="form-in" id="ur-name" type="text"></div>
+    <div class="form-row"><label class="form-lbl">אימייל *</label><input class="form-in" id="ur-email" type="email" style="direction:ltr;text-align:left"></div>
+    <div class="form-row"><label class="form-lbl">טלפון</label><input class="form-in" id="ur-phone" type="tel" style="direction:ltr;text-align:left"></div>
+    <div class="form-row"><label class="form-lbl">תפקיד מקצועי מבוקש</label><select class="form-in" id="ur-signer"></select></div>
+    <div class="form-row"><label class="form-lbl">הערה לאדמין</label><input class="form-in" id="ur-note" type="text" maxlength="500"></div>
+    <div id="ur-err" style="color:#C0392B;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+    <div class="modal-foot">
+      <button class="btn btn-p" id="ur-send-btn" onclick="submitUserRequest()"><i class="ti ti-send"></i>שלח בקשה</button>
+      <button class="btn" onclick="closeById('m-user-request')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: טבלת הרשאות -->
+<div class="modal-bg" id="m-perm-matrix" onclick="closeM(event,'m-perm-matrix')">
+  <div class="modal" style="width:820px;max-width:96vw">
+    <div class="modal-ttl">טבלת הרשאות — מי יכול מה<button class="modal-x" onclick="closeById('m-perm-matrix')"><i class="ti ti-x"></i></button></div>
+    <div id="perm-matrix-body" style="max-height:70vh;overflow:auto"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeById('m-perm-matrix')">סגור</button></div>
   </div>
 </div>
 
@@ -2203,11 +2254,11 @@ body.theme-light .theme-opt-check{color:#10B981!important}
       <div id="ncrm-contractor-hint" style="font-size:10.5px;color:#9AA3B0"></div>
     </div>
     <div style="font-size:11.5px;color:#64748B;background:#F8FAFC;border:1px solid #E8EDF3;border-radius:8px;padding:8px 12px;margin-bottom:8px;line-height:1.6">
-      המייל יכיל <b>קישור</b> לדוח (תקף 90 יום), כי פתיחת מייל רגילה אינה יכולה לצרף קובץ. כדי לצרף את הקובץ עצמו — "הורד PDF" וצרף ידנית.
+      המייל נשלח מהמערכת, <b>עם דוח ה-PDF מצורף</b>, והתשובות חוזרות אליך. אם השליחה האוטומטית אינה זמינה, ייפתח מייל רגיל עם <b>קישור</b> לדוח (תקף 90 יום).
     </div>
     <div id="ncrm-err" style="color:#C0392B;font-size:12px;margin:6px 0;min-height:16px"></div>
     <div class="modal-foot">
-      <button class="btn btn-p" onclick="ncrMailSend()"><i class="ti ti-mail"></i>צור PDF ופתח מייל</button>
+      <button class="btn btn-p" onclick="ncrMailSend()"><i class="ti ti-mail"></i>צור PDF ושלח מייל</button>
       <button class="btn" onclick="ncrMailDownload()"><i class="ti ti-file-download"></i>הורד PDF</button>
       <button class="btn" onclick="closeById('m-ncr-mail')">ביטול</button>
     </div>
@@ -2438,6 +2489,39 @@ let currentCompany      = null;
 let currentSystemAdmin  = false;
 let currentSignerRole   = null;   // professional designation: qa_inspector / site_manager / surveyor
 let _typeSignerMap      = {};     // execution_type → required_signer
+
+// Professional roles (profiles.signer_role). Granted by a company admin only (DB-enforced) — they decide who may sign which checklist row.
+const SIGNER_ROLES = [
+  ['qa_inspector',        'בקר איכות'],
+  ['site_manager',        'מנהל עבודה'],
+  ['execution_engineer',  'מהנדס ביצוע'],
+  ['surveyor',            'מודד'],
+  ['supervisor',          'מפקח'],
+  ['electrical_inspector','בקר חשמל'],
+  ['qa_assurance',        'הבטחת איכות (רשאי לאשר בבקרה מקדימה)'],
+];
+// Mirror of public.can_sign_as (migration 016) — the database is the real gate, this only drives the UI.
+function _canSignAs(signer, required) {
+  if (!required) return true;
+  if (!signer) return false;
+  if (required === 'site_manager' || required === 'execution_engineer') return signer === 'site_manager' || signer === 'execution_engineer';
+  if (required === 'electrical_inspector') return signer === 'electrical_inspector' || signer === 'qa_inspector';
+  return signer === required;
+}
+// Fill a <select> with the role list. opts: blank (label of the empty option), requiredOnly (omit qa_assurance — it is not a checklist signer)
+function _fillRoleSelect(id, opts = {}) {
+  const el = document.getElementById(id); if (!el) return;
+  const cur = el.value;
+  el.innerHTML = (opts.blank != null ? `<option value="">${opts.blank}</option>` : '')
+    + SIGNER_ROLES.filter(([v]) => !(opts.requiredOnly && v === 'qa_assurance')).map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+  el.value = cur;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  _fillRoleSelect('nu-signer', { blank: '— ללא —' });
+  _fillRoleSelect('eu-signer-role', { blank: '— ללא —' });
+  _fillRoleSelect('prof-signer-role', { blank: '— ללא תפקיד מקצועי —' });
+  _fillRoleSelect('ur-signer', { blank: '— לא ידוע —' });
+});
 let _certRealtimeSub   = null;
 
 // ─── REALTIME: תעודות מעבדה ───────────────────────────────
@@ -2688,9 +2772,9 @@ function _renderActionCenter(stops, longPending, overdue, projMap) {
   el.innerHTML = items.map(it => `<div class="dash-ac-item ${it.cls}" onclick="${it.action}">
     <div class="dash-ac-icon"><i class="ti ${it.icon}"></i></div>
     <div style="flex:1;min-width:0">
-      <div class="dash-ac-lbl">${it.label}</div>
-      <div class="dash-ac-title">${it.title}</div>
-      <div class="dash-ac-sub">${it.proj}${it.date ? ' · ' + _timeAgo(it.date) : ''}</div>
+      <div class="dash-ac-lbl">${_attr(it.label)}</div>
+      <div class="dash-ac-title">${_attr(it.title)}</div>
+      <div class="dash-ac-sub">${_attr(it.proj)}${it.date ? ' · ' + _timeAgo(it.date) : ''}</div>
     </div>
     <button class="dash-ac-btn" onclick="event.stopPropagation();${it.action}">פתח →</button>
   </div>`).join('');
@@ -2727,7 +2811,7 @@ function _renderQualityHealth(proj, find, stops, longPending) {
     ].filter(Boolean).join('');
     return `<div class="dash-qh-item">
       <div class="dash-qh-name">
-        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:58%">${p.name}</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:58%">${_attr(p.name)}</span>
         <span style="font-size:10px;font-weight:700;color:${lclr}">${label}</span>
       </div>
       <div class="dash-qh-bar"><div class="dash-qh-fill ${cls}" style="width:${pct}%"></div></div>
@@ -2755,7 +2839,7 @@ function _renderHeatmap(proj, find, stops) {
       ...Array(Math.min(stp,  2)).fill(`<div class="dash-hm-dot" style="background:#C0392B"></div>`),
     ].join('');
     return `<div class="dash-hm-tile ${cls}" onclick="go('nc',document.getElementById('nav-nc'))">
-      <div class="dash-hm-name">${p.name}</div>
+      <div class="dash-hm-name">${_attr(p.name)}</div>
       ${dots ? `<div class="dash-hm-dots">${dots}</div>` : ''}
       <div class="dash-hm-sub">${total} פתוחים${stp > 0 ? ` · ${stp} עצירה` : ''}</div>
     </div>`;
@@ -2772,21 +2856,21 @@ function _renderActivityFeed(find, insp, projMap) {
   find.slice(0, 12).forEach(f => {
     if (f.status === 'closed') {
       events.push({ ts: f.updated_at || f.created_at, icon: 'ti-circle-check', bg: '#DCFCE7', clr: '#16A34A',
-        text: `נסגר: ${f.title || '–'}`, sub: projMap[f.project_id] || '' });
+        text: `נסגר: ${_attr(f.title || '–')}`, sub: projMap[f.project_id] || '' });
     } else {
       events.push({ ts: f.created_at, icon: 'ti-alert-circle', bg: '#FFF7ED', clr: '#D97706',
-        text: `אי התאמה חדשה: ${f.title || '–'}`, sub: projMap[f.project_id] || '' });
+        text: `אי התאמה חדשה: ${_attr(f.title || '–')}`, sub: projMap[f.project_id] || '' });
     }
   });
 
   insp.slice(0, 6).forEach(o => {
     if (o.status === 'completed') {
       events.push({ ts: o.updated_at || o.created_at, icon: 'ti-file-check', bg: '#DCFCE7', clr: '#16A34A',
-        text: `תעודת מעבדה: ${o.location || '#' + _ordNo(o)}`,
+        text: `תעודת מעבדה: ${_attr(o.location || '#' + _ordNo(o))}`,
         sub: projMap[o.project_id] || '' });
     } else {
       events.push({ ts: o.created_at, icon: 'ti-calendar-plus', bg: '#DBEAFE', clr: '#2563EB',
-        text: `הזמנת בדיקה: ${o.location || '#' + _ordNo(o)}`,
+        text: `הזמנת בדיקה: ${_attr(o.location || '#' + _ordNo(o))}`,
         sub: projMap[o.project_id] || '' });
     }
   });
@@ -2803,7 +2887,7 @@ function _renderActivityFeed(find, insp, projMap) {
     <div class="dash-act-ic" style="background:${e.bg};color:${e.clr}"><i class="ti ${e.icon}"></i></div>
     <div style="min-width:0">
       <div class="dash-act-title">${e.text}</div>
-      <div class="dash-act-sub">${e.sub}${e.ts ? ' · ' + _timeAgo(e.ts) : ''}</div>
+      <div class="dash-act-sub">${_attr(e.sub)}${e.ts ? ' · ' + _timeAgo(e.ts) : ''}</div>
     </div>
   </div>`).join('');
 }
@@ -2874,7 +2958,7 @@ async function openProjectDetail(id) {
         html: `<div style="width:16px;height:16px;background:#3B82F6;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>`,
         className: '', iconAnchor: [8, 8]
       });
-      L.marker([p.latitude, p.longitude], { icon }).addTo(_detailMap).bindPopup(p.name).openPopup();
+      L.marker([p.latitude, p.longitude], { icon }).addTo(_detailMap).bindPopup(_attr(p.name)).openPopup();
     }, 150);
   } else {
     mapWrap.style.display = 'none';
@@ -2915,10 +2999,10 @@ async function openProjectDetail(id) {
   tbody.innerHTML = find.length > 0
     ? find.map(f => `<tr>
         <td><b>${f.id}</b></td>
-        <td>${f.title || '–'}</td>
+        <td>${_attr(f.title || '–')}</td>
         <td>${severityBadge(f.severity)}</td>
         <td>${statusBadge(f.status)}</td>
-        <td>${f.contractor || '–'}</td>
+        <td>${_attr(f.contractor || '–')}</td>
         <td>${f.due_date ? new Date(f.due_date).toLocaleDateString('he-IL') : '–'}</td>
       </tr>`).join('')
     : '<tr class="loading-row"><td colspan="6">אין ממצאים לפרויקט זה</td></tr>';
@@ -2935,8 +3019,10 @@ async function loadProjectMembers(projectId) {
   const listEl = document.getElementById('detail-members-list');
   if (!listEl) return;
   listEl.innerHTML = '<div style="font-size:12px;color:#9AA3B0;padding:4px 0">טוען...</div>';
-  const isAdmin = currentUserRole === 'admin' || currentSystemAdmin;
+  // admin: any project; project manager: projects they are a member of (the database decides — see can_manage_project)
+  const isAdmin = currentUserRole === 'admin' || currentSystemAdmin || currentUserRole === 'manager';
   document.getElementById('detail-add-member-btn').style.display = isAdmin ? '' : 'none';
+  document.getElementById('detail-request-user-btn').style.display = currentUserRole === 'manager' ? '' : 'none';
 
   const { data: members } = await db
     .from('project_members')
@@ -2964,8 +3050,120 @@ async function loadProjectMembers(projectId) {
 async function removeProjectMember(memberId, projectId) {
   if (!confirm('להסיר משתמש זה מהפרויקט?')) return;
   const { error } = await db.from('project_members').delete().eq('id', memberId);
-  if (error) { alert('שגיאה: ' + error.message); return; }
+  if (error) { alert('שגיאה: ' + _friendlyErr(error.message)); return; }
   loadProjectMembers(projectId);
+}
+
+// ─── NEW-USER REQUESTS (project manager → company admin) ─────────────────────
+function openUserRequest() {
+  ['ur-name', 'ur-email', 'ur-phone', 'ur-note'].forEach(i => { document.getElementById(i).value = ''; });
+  document.getElementById('ur-signer').value = '';
+  document.getElementById('ur-err').textContent = '';
+  openM('m-user-request');
+}
+
+async function submitUserRequest() {
+  const errEl = document.getElementById('ur-err');
+  const full_name = document.getElementById('ur-name').value.trim();
+  const email = document.getElementById('ur-email').value.trim();
+  errEl.textContent = '';
+  if (full_name.length < 2) { errEl.textContent = 'שם מלא הוא שדה חובה'; return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { errEl.textContent = 'כתובת אימייל לא תקינה'; return; }
+  const btn = document.getElementById('ur-send-btn'); btn.disabled = true;
+  const { error } = await db.from('user_requests').insert({
+    company_id: currentCompanyId, project_id: _currentDetailId, full_name, email,
+    phone: document.getElementById('ur-phone').value.trim() || null,
+    signer_role: document.getElementById('ur-signer').value || null,
+    note: document.getElementById('ur-note').value.trim() || null,
+  });
+  btn.disabled = false;
+  if (error) { errEl.textContent = error.code === '23505' ? 'כבר קיימת בקשה פתוחה לכתובת הזו בפרויקט' : 'שגיאה: ' + _friendlyErr(error.message); return; }
+  closeById('m-user-request');
+  showToast('הבקשה נשלחה לאישור האדמין', 'success');
+}
+
+let _userRequests = {};
+async function loadUserRequests() {
+  const card = document.getElementById('users-requests-card');
+  if (!card) return;
+  const { data } = await db.from('user_requests')
+    .select('id, project_id, full_name, email, phone, signer_role, note, requested_by_name, created_at, projects(name)')
+    .eq('status', 'pending').order('created_at');
+  const rows = data || [];
+  _userRequests = {}; rows.forEach(r => { _userRequests[r.id] = r; });
+  if (!rows.length) { card.innerHTML = ''; return; }
+  card.innerHTML = `<div class="card" style="margin-bottom:14px;border-color:#FDE68A;background:#FFFBEB">
+    <div style="font-weight:700;font-size:13px;margin-bottom:8px"><i class="ti ti-mail-plus"></i> בקשות למשתמשים חדשים (${rows.length})</div>
+    ${rows.map(r => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #FDE68A;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        <b>${_attr(r.full_name)}</b> <span style="direction:ltr;unicode-bidi:embed;font-size:12px;color:#64748B">${_attr(r.email)}</span>
+        <div style="font-size:11px;color:#64748B">פרויקט: ${_attr(r.projects?.name || '–')}${r.signer_role ? ' · ' + _attr(_signerLabel(r.signer_role)) : ''}${r.phone ? ' · ' + _attr(r.phone) : ''} · ביקש/ה: ${_attr(r.requested_by_name || '–')}</div>
+        ${r.note ? `<div style="font-size:11px;color:#92400E">${_attr(r.note)}</div>` : ''}
+      </div>
+      <button class="btn btn-sm btn-p" onclick="approveUserRequest('${_attr(r.id)}')"><i class="ti ti-check"></i>אשר וצור משתמש</button>
+      <button class="btn btn-sm" onclick="rejectUserRequest('${_attr(r.id)}')"><i class="ti ti-x"></i>דחה</button>
+    </div>`).join('')}
+  </div>`;
+}
+
+function approveUserRequest(id) {
+  const r = _userRequests[id]; if (!r) return;
+  openNewUserModal({ ...r, project_name: r.projects?.name });
+}
+
+async function rejectUserRequest(id) {
+  const note = prompt('סיבת הדחייה (אופציונלי):');
+  if (note === null) return;
+  const { error } = await db.from('user_requests').update({ status: 'rejected', decision_note: note.trim() || null }).eq('id', id);
+  if (error) { showToast('שגיאה: ' + _friendlyErr(error.message), 'error'); return; }
+  loadUserRequests();
+}
+
+// ─── PERMISSION MATRIX (read-only reference for admins) ──────────────────────
+function openPermMatrix() {
+  const Y = '<span style="color:#16A34A;font-weight:700">✓</span>', N = '<span style="color:#CBD5E1">—</span>';
+  const roleRows = [
+    ['לראות פרויקט', 'כל פרויקטי החברה', 'פרויקטים שהוא חבר בהם', 'פרויקטים שהוא חבר בהם', 'פרויקטים שהוא חבר בהם'],
+    ['ליצור פרויקט', Y, Y + ' (ומצורף אליו אוטומטית)', N, N],
+    ['לערוך פרטי פרויקט', Y, Y + ' (בפרויקט שלו)', N, N],
+    ['למחוק פרויקט', Y, N, N, N],
+    ['ליצור משתמש / לשנות תפקיד', Y, 'בקשה לאדמין', N, N],
+    ['להוסיף / להסיר משתמש בפרויקט', Y, Y + ' (בפרויקט שלו)', N, N],
+    ['ייבוא עץ מבנה, יצירה ומחיקה של פריטי עבודה ושורות צ\'קליסט', Y, Y + ' (בפרויקט שלו)', N, N],
+    ['שכפול רשימת תיוג, עדכון סטטוס פריט', Y, Y, Y, Y],
+    ['הגדרת "חותם נדרש" לשורה / לסוג ביצוע', Y, Y + ' (לשורה, בפרויקט שלו)', N, N],
+    ['ביטול חתימה / תיקון תאריך חתימה של אחר', Y, Y + ' (בפרויקט שלו)', N, N],
+    ['ממצאים והזמנות בדיקה: יצירה ועריכה', Y, Y, Y, Y],
+    ['מחיקת ממצא', Y, Y, 'רק ממצא שפתח', 'רק ממצא שפתח'],
+    ['יצירת תיקייה בתיקיות המסמכים', Y, Y, Y, Y],
+    ['העברת תיקיית ברירת מחדל לארכיון', Y, Y + ' (בפרויקט שלו)', N, N],
+    ['ארכוב / מחיקת תיקייה שפתח בעצמו', Y, Y, Y, Y],
+    ['מחיקת תיקיית ברירת מחדל', N, N, N, N],
+  ];
+  const signRows = [
+    ['שורה ללא "חותם נדרש"', 'כל חבר בפרויקט'],
+    ['בקר איכות', 'בקר איכות'],
+    ['מנהל עבודה / מהנדס ביצוע', 'מנהל עבודה או מהנדס ביצוע (חליפיים)'],
+    ['מודד', 'מודד בלבד'],
+    ['מפקח', 'מפקח בלבד'],
+    ['בקר חשמל', 'בקר חשמל, או בקר איכות (חותם במקום גורם חיצוני)'],
+  ];
+  const th = 'padding:6px 8px;background:#F1F5F9;font-size:11px;text-align:right;position:sticky;top:0';
+  const td = 'padding:6px 8px;border-top:1px solid #EEF0F4;font-size:12px;vertical-align:top';
+  document.getElementById('perm-matrix-body').innerHTML = `
+    <div style="font-weight:700;font-size:13px;margin:4px 0 6px">פעולות במערכת לפי סוג משתמש</div>
+    <table style="width:100%;border-collapse:collapse"><thead><tr>
+      <th style="${th}">פעולה</th><th style="${th}">אדמין</th><th style="${th}">מנהל פרויקט</th><th style="${th}">בקר איכות</th><th style="${th}">משתמש</th></tr></thead>
+      <tbody>${roleRows.map(r => `<tr><td style="${td}">${r[0]}</td>${r.slice(1).map(c => `<td style="${td}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    <div style="font-weight:700;font-size:13px;margin:16px 0 6px">מי רשאי לחתום (לפי התפקיד המקצועי של המשתמש)</div>
+    <table style="width:100%;border-collapse:collapse"><thead><tr><th style="${th}">החותם הנדרש בשורה</th><th style="${th}">מי רשאי לחתום</th></tr></thead>
+      <tbody>${signRows.map(r => `<tr><td style="${td}">${r[0]}</td><td style="${td}">${r[1]}</td></tr>`).join('')}</tbody></table>
+    <div style="font-size:11px;color:var(--t3);margin-top:10px;line-height:1.7">
+      • אדמין ללא תפקיד מקצועי מתאים אינו רשאי לחתום בשורה שמיועדת לתפקיד אחר. החתימה אישית.<br>
+      • העלאת תוכניות (תיקיית "תוכניות לביצוע" ותתי-תיקיות): מפקח, מנהל פרויקט ואדמין בלבד.<br>
+      • התפקיד המקצועי נקבע על ידי האדמין בלבד; משתמש אינו יכול לשנות אותו בעצמו.<br>
+      • כל הכללים נאכפים במסד הנתונים, לא רק בממשק.</div>`;
+  openM('m-perm-matrix');
 }
 
 let _addMemberProjectId = null;
@@ -3003,7 +3201,7 @@ async function confirmAddMember() {
     company_id: currentCompanyId,
     added_by: currentUserId
   });
-  if (error) { document.getElementById('add-member-err').textContent = 'שגיאה: ' + error.message; return; }
+  if (error) { document.getElementById('add-member-err').textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
   closeById('m-add-member');
   loadProjectMembers(_addMemberProjectId);
 }
@@ -3068,12 +3266,12 @@ function _renderFindingsTable(find) {
       const bg       = f.status !== 'closed' ? (sevBg[sev] || '') : '';
       return `<tr style="cursor:pointer;${bg ? `background:${bg}` : ''}" onclick="openFindingDetail('${f.id}')">
         <td style="border-right:3px solid ${sevBorder[sev]};padding-right:12px;font-size:11px;color:#6B7280">${f.serial_number ?? '–'}</td>
-        <td><b style="font-size:12px">${f.title || '–'}</b></td>
-        <td>${f._projName}</td>
-        <td style="font-size:11px;color:#6B7280">${f.location || '–'}</td>
+        <td><b style="font-size:12px">${_attr(f.title || '–')}</b></td>
+        <td>${_attr(f._projName)}</td>
+        <td style="font-size:11px;color:#6B7280">${_attr(f.location || '–')}</td>
         <td>${severityBadge(sev)}</td>
         <td>${statusBadge(f.status)}</td>
-        <td style="font-size:11px;color:#6B7280">${f.contractor || '–'}</td>
+        <td style="font-size:11px;color:#6B7280">${_attr(f.contractor || '–')}</td>
         <td style="font-size:11px${dueClr ? `;color:${dueClr};font-weight:700` : ''}">${due}</td>
         <td onclick="event.stopPropagation()">
           <button class="btn btn-sm" onclick="openEditFinding('${f.id}')" title="ערוך"><i class="ti ti-pencil"></i></button>
@@ -3162,6 +3360,7 @@ async function loadProjectSelect() {
 // ─── CREATE RECORDS ───────────────────────────────────────
 
 function openNewProjectModal() {
+  if (!(currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager')) { showToast('אין הרשאה ליצור פרויקט — ניתן להצטרף לפרויקט קיים בלבד', 'error'); return; }
   // Reset to "new project" mode
   document.getElementById('np-id').value = '';
   document.getElementById('np-modal-title').textContent = 'פרויקט חדש';
@@ -3278,7 +3477,7 @@ async function createProject() {
   if (editId) {
     // UPDATE existing project
     const { error } = await db.from('projects').update(payload).eq('id', editId);
-    if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+    if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
     // Update local cache
     const idx = _allProjects.findIndex(x => x.id === editId);
     if (idx !== -1) _allProjects[idx] = { ..._allProjects[idx], ...payload };
@@ -3287,7 +3486,7 @@ async function createProject() {
     // INSERT new project — default folder tree is seeded server-side by trg_seed_default_folders
     const { data: created, error } = await db.from('projects')
       .insert({ ...payload, company_id: currentCompanyId }).select('id').single();
-    if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+    if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
     showToast('הפרויקט נוצר בהצלחה', 'success');
     createdProjectId = created?.id || null;
   }
@@ -3368,7 +3567,7 @@ async function _ncrContractorChange(sel) {
   if (!name || !name.trim()) { await _loadContractorsForProject(projectId); return; }
   const { error } = await db.from('contractors')
     .insert({ company_id: currentCompanyId, project_id: projectId, name: name.trim() });
-  if (error) { showToast('שגיאה בהוספת קבלן: ' + error.message, 'error'); await _loadContractorsForProject(projectId); return; }
+  if (error) { showToast('שגיאה בהוספת קבלן: ' + _friendlyErr(error.message), 'error'); await _loadContractorsForProject(projectId); return; }
   await _loadContractorsForProject(projectId, name.trim());
   showToast('קבלן נוסף', 'success');
 }
@@ -3514,7 +3713,7 @@ async function submitNCR() {
   }
 
   btn.disabled = false;
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+  if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
 
   // Upload pending photos
   if (_ncrPhotos.length > 0 && findingId) {
@@ -3615,18 +3814,18 @@ async function openFindingDetail(id) {
       <div class="ncr-info-item"><div class="ncr-info-lbl">מס' סידורי</div><div class="ncr-info-val">${f.serial_number ?? '–'}</div></div>
       <div class="ncr-info-item"><div class="ncr-info-lbl">דרגה</div><div class="ncr-info-val">${severityBadge(sev)}</div></div>
       <div class="ncr-info-item"><div class="ncr-info-lbl">סטטוס</div><div class="ncr-info-val">${statusBadge(f.status)}</div></div>
-      <div class="ncr-info-item"><div class="ncr-info-lbl">פרויקט</div><div class="ncr-info-val">${proj?.name || '–'}</div></div>
-      <div class="ncr-info-item"><div class="ncr-info-lbl">קבלן</div><div class="ncr-info-val">${f.contractor || '–'}</div></div>
-      <div class="ncr-info-item"><div class="ncr-info-lbl">מיקום</div><div class="ncr-info-val">${f.location || '–'}</div></div>
-      <div class="ncr-info-item"><div class="ncr-info-lbl">פותח</div><div class="ncr-info-val">${f.opened_by_name || '–'}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">פרויקט</div><div class="ncr-info-val">${_attr(proj?.name || '–')}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">קבלן</div><div class="ncr-info-val">${_attr(f.contractor || '–')}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">מיקום</div><div class="ncr-info-val">${_attr(f.location || '–')}</div></div>
+      <div class="ncr-info-item"><div class="ncr-info-lbl">פותח</div><div class="ncr-info-val">${_attr(f.opened_by_name || '–')}</div></div>
       <div class="ncr-info-item"><div class="ncr-info-lbl">תאריך פתיחה</div><div class="ncr-info-val">${openedDate}</div></div>
       <div class="ncr-info-item"><div class="ncr-info-lbl">תאריך התחלה</div><div class="ncr-info-val">${startDate}</div></div>
       <div class="ncr-info-item"><div class="ncr-info-lbl">יעד לביצוע</div><div class="ncr-info-val"${dueClr ? ` style="color:${dueClr};font-weight:700"` : ''}>${dueDate}</div></div>
-      <div class="ncr-info-item"><div class="ncr-info-lbl">הועבר לטיפול</div><div class="ncr-info-val">${f.transferred_to || '–'}</div></div>
-      ${f.description ? `<div class="ncr-info-item" style="grid-column:1/-1"><div class="ncr-info-lbl">תיאור התקלה</div><div class="ncr-info-val" style="line-height:1.6">${f.description}</div></div>` : ''}
-      ${f.required_treatment ? `<div class="ncr-info-item" style="grid-column:1/-1"><div class="ncr-info-lbl">טיפול נדרש</div><div class="ncr-info-val" style="line-height:1.6">${f.required_treatment}</div></div>` : ''}
-      ${f.treatment ? `<div class="ncr-info-item" style="grid-column:1/-1;background:#F0FDF4"><div class="ncr-info-lbl">פירוט הביצוע</div><div class="ncr-info-val" style="line-height:1.6">${f.treatment}</div></div>` : ''}
-      ${closedDate ? `<div class="ncr-info-item" style="grid-column:1/-1;background:#F0FDF4"><div class="ncr-info-lbl">✓ נסגר ב</div><div class="ncr-info-val">${closedDate} ע"י ${f.closed_by_name || '–'}</div></div>` : ''}
+      <div class="ncr-info-item"><div class="ncr-info-lbl">הועבר לטיפול</div><div class="ncr-info-val">${_attr(f.transferred_to || '–')}</div></div>
+      ${f.description ? `<div class="ncr-info-item" style="grid-column:1/-1"><div class="ncr-info-lbl">תיאור התקלה</div><div class="ncr-info-val" style="line-height:1.6">${_attr(f.description)}</div></div>` : ''}
+      ${f.required_treatment ? `<div class="ncr-info-item" style="grid-column:1/-1"><div class="ncr-info-lbl">טיפול נדרש</div><div class="ncr-info-val" style="line-height:1.6">${_attr(f.required_treatment)}</div></div>` : ''}
+      ${f.treatment ? `<div class="ncr-info-item" style="grid-column:1/-1;background:#F0FDF4"><div class="ncr-info-lbl">פירוט הביצוע</div><div class="ncr-info-val" style="line-height:1.6">${_attr(f.treatment)}</div></div>` : ''}
+      ${closedDate ? `<div class="ncr-info-item" style="grid-column:1/-1;background:#F0FDF4"><div class="ncr-info-lbl">✓ נסגר ב</div><div class="ncr-info-val">${closedDate} ע"י ${_attr(f.closed_by_name || '–')}</div></div>` : ''}
     </div>`;
 
   // ── ACTION BUTTONS ──
@@ -3696,7 +3895,7 @@ async function _fdLoadTimeline(findingId) {
       return `<div class="ncr-tl-item">
         <div class="ncr-tl-dot ${dc}"></div>
         <div class="ncr-tl-time">${dtStr}</div>
-        <div class="ncr-tl-action">${a.actor_name || 'מערכת'} — ${a.notes || a.action}</div>
+        <div class="ncr-tl-action">${_attr(a.actor_name || 'מערכת')} — ${_attr(a.notes || a.action)}</div>
       </div>`;
     }).join('') + `</div>`;
 }
@@ -3723,9 +3922,9 @@ async function openEditFinding(id) {
   if (wrap && proj) {
     wrap.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#F1F5F9;border:1.5px solid #E2E8F0;border-radius:8px">
       <i class="ti ti-building" style="color:#6B7280;font-size:14px;flex-shrink:0"></i>
-      <span style="font-size:13px;font-weight:600;color:#374151;flex:1">${proj.name}</span>
+      <span style="font-size:13px;font-weight:600;color:#374151;flex:1">${_attr(proj.name)}</span>
     </div>
-    <select id="nf-project" style="display:none"><option value="${proj.id}" selected>${proj.name}</option></select>`;
+    <select id="nf-project" style="display:none"><option value="${proj.id}" selected>${_attr(proj.name)}</option></select>`;
   }
   document.getElementById('nf-id').value         = f.id;
   document.getElementById('nf-title').value       = f.title || '';
@@ -4054,7 +4253,7 @@ async function submitClosure() {
     signature_url: sigUrl
   }).eq('id', id);
 
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; if (btn) btn.disabled = false; return; }
+  if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); if (btn) btn.disabled = false; return; }
 
   // Log activity
   await db.from('finding_activity').insert({
@@ -4143,7 +4342,7 @@ async function saveCompanySettings() {
   if (!currentCompanyId) return;
   const name = document.getElementById('company-name-input')?.value?.trim() || '';
   const { error } = await db.from('companies').update({ name }).eq('id', currentCompanyId);
-  if (error) { showToast('שגיאה: ' + error.message, 'error'); return; }
+  if (error) { showToast('שגיאה: ' + _friendlyErr(error.message), 'error'); return; }
   if (currentCompany) currentCompany.name = name;
   showToast('הגדרות חברה נשמרו ✓', 'success');
 }
@@ -4315,7 +4514,7 @@ async function saveEditCompany() {
   };
 
   const { error } = await db.from('companies').update(payload).eq('id', id);
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+  if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
   // Update local cache if editing own company
   if (id === currentCompanyId && currentCompany) {
     currentCompany.name = payload.name;
@@ -4372,7 +4571,7 @@ async function createCompany() {
     showToast(`חברה "${name}" נוצרה ✓`, 'success');
     await loadCompaniesScreen();
   } catch(e) {
-    errEl.textContent = 'שגיאה: ' + e.message;
+    errEl.textContent = 'שגיאה: ' + _friendlyErr(e.message);
   }
   btn.disabled = false; btn.textContent = 'צור חברה + אדמין';
 }
@@ -4391,6 +4590,7 @@ async function loadUsersScreen() {
   if (tcBtn) tcBtn.style.display = (currentUserRole === 'admin' || currentSystemAdmin) ? '' : 'none';
   const tableCard = document.getElementById('users-table-card');
   tableCard.innerHTML = '<div style="text-align:center;padding:32px"><span class="spinner"></span> טוען...</div>';
+  loadUserRequests();
 
   // Parallel fetch: profiles + memberships + companies (system_admin only) + emails (admin-only RPC —
   // profiles has no email column; auth.users is only readable server-side via SECURITY DEFINER).
@@ -4410,7 +4610,7 @@ async function loadUsersScreen() {
   const companiesData = currentSystemAdmin ? (results[3]?.data || []) : [];
 
   if (error) {
-    tableCard.innerHTML = `<div style="padding:20px;color:#C0392B"><i class="ti ti-alert-circle"></i> שגיאה בטעינה: ${error.message}</div>`;
+    tableCard.innerHTML = `<div style="padding:20px;color:#C0392B"><i class="ti ti-alert-circle"></i> שגיאה בטעינה: ${_attr(error.message)}</div>`;
     return;
   }
 
@@ -4521,7 +4721,7 @@ async function openUserProjects(userId, userName, userRole) {
     const cls = statusBadgeCls[p.status] || 'b-gray';
     return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #EEF0F4;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#fff;transition:background .1s" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#fff'">
       <input type="checkbox" data-proj="${p.id}" ${checked} style="width:16px;height:16px;cursor:pointer;accent-color:#3B82F6;flex-shrink:0">
-      <span style="flex:1;font-size:13px;font-weight:600;color:#1E293B">${p.name}</span>
+      <span style="flex:1;font-size:13px;font-weight:600;color:#1E293B">${_attr(p.name)}</span>
       <span class="badge ${cls}" style="font-size:9px">${statusText[p.status] || p.status || ''}</span>
     </label>`;
   }).join('');
@@ -4551,18 +4751,27 @@ async function saveUserProjects() {
   if (ops.length > 0) {
     const results = await Promise.all(ops);
     const err = results.find(r => r.error);
-    if (err) { errEl.textContent = 'שגיאה: ' + err.error.message; return; }
+    if (err) { errEl.textContent = 'שגיאה: ' + _friendlyErr(err.error.message); return; }
   }
 
   closeById('m-user-projects');
   loadUsersScreen();
 }
 
-async function openNewUserModal() {
-  document.getElementById('nu-name').value = '';
-  document.getElementById('nu-email').value = '';
+// prefill: an approved user request { id, project_id, full_name, email, phone, signer_role, project_name }
+async function openNewUserModal(prefill) {
+  if (!(currentUserRole === 'admin' || currentSystemAdmin)) { showToast('רק אדמין יכול ליצור משתמשים — ניתן לשלוח בקשה מפרטי הפרויקט', 'error'); return; }
+  document.getElementById('nu-name').value = prefill?.full_name || '';
+  document.getElementById('nu-email').value = prefill?.email || '';
   document.getElementById('nu-pass').value = '';
   document.getElementById('nu-role').value = 'user';
+  document.getElementById('nu-signer').value = prefill?.signer_role || '';
+  document.getElementById('nu-phone').value = prefill?.phone || '';
+  document.getElementById('nu-req-id').value = prefill?.id || '';
+  document.getElementById('nu-req-project').value = prefill?.project_id || '';
+  const fr = document.getElementById('nu-from-request');
+  fr.style.display = prefill ? '' : 'none';
+  fr.textContent = prefill ? `בקשה שאושרה: המשתמש יצורף אוטומטית לפרויקט "${prefill.project_name || ''}"` : '';
   document.getElementById('nu-err').textContent = '';
 
   // הצג שדה חברה רק ל-system_admin
@@ -4638,7 +4847,7 @@ async function removeEuSig() {
   const id = document.getElementById('eu-id').value;
   if (!id || !confirm('להסיר את החתימה של המשתמש?')) return;
   const { error } = await db.from('profiles').update({ signature_url: null }).eq('id', id);
-  if (error) { document.getElementById('eu-err').textContent = 'שגיאה: ' + error.message; return; }
+  if (error) { document.getElementById('eu-err').textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
   _euSigRender(null);
   if (id === currentUserId && _currentUserProfile) _currentUserProfile.signature_url = null;
 }
@@ -4663,7 +4872,7 @@ async function saveEditUser() {
     errEl.textContent = /system admin profile/.test(error.message) ? 'לא ניתן לערוך פרופיל של מנהל מערכת'
       : /only an admin may/.test(error.message) ? 'רק אדמין רשאי לשנות תפקידים'
       : /quality assurance role/.test(error.message) ? 'רק אדמין רשאי להעניק את תפקיד הבטחת האיכות'
-      : 'שגיאה: ' + error.message;
+      : 'שגיאה: ' + _friendlyErr(error.message);
     return;
   }
   closeById('m-edit-user');
@@ -4689,7 +4898,7 @@ async function sendPasswordReset() {
   btn.innerHTML = '<i class="ti ti-mail"></i> שלח מייל איפוס';
 
   if (error) {
-    errEl.textContent = 'שגיאה: ' + error.message;
+    errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message);
   } else {
     msg.style.display = '';
     setTimeout(() => { msg.style.display = 'none'; }, 4000);
@@ -4697,6 +4906,7 @@ async function sendPasswordReset() {
 }
 
 async function createUser() {
+  if (!(currentUserRole === 'admin' || currentSystemAdmin)) return;   // the database refuses it anyway (profiles_insert)
   const full_name = document.getElementById('nu-name').value.trim();
   const email = document.getElementById('nu-email').value.trim();
   const password = document.getElementById('nu-pass').value;
@@ -4716,7 +4926,12 @@ async function createUser() {
   btn.textContent = 'יוצר...';
 
   try {
-    const { data, error } = await db.auth.signUp({
+    // IMPORTANT: sign up through a throw-away client with no persisted session. Calling db.auth.signUp on the main
+    // client replaces the logged-in admin's session with the new user's (meeting 5.11.2026 bug).
+    const signupClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'qaf-signup-tmp' }
+    });
+    const { data, error } = await signupClient.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: null }
@@ -4724,7 +4939,7 @@ async function createUser() {
 
     if (error) {
       if (error.message === 'User already registered') {
-        errEl.innerHTML = `משתמש קיים – הרץ ב-<a href="https://supabase.com/dashboard/project/hkdacdibkwgtcgaqxxjo/sql/new" target="_blank" style="color:#3B82F6">SQL Editor</a>:<br><code style="font-size:10px;direction:ltr;display:block;margin-top:4px">INSERT INTO profiles (id,full_name,role) SELECT id,'${full_name}','${role}' FROM auth.users WHERE email='${email}' ON CONFLICT (id) DO UPDATE SET full_name=EXCLUDED.full_name,role=EXCLUDED.role;</code>`;
+        errEl.textContent = 'כתובת האימייל כבר רשומה במערכת. אם זה משתמש קיים — שייך אותו לפרויקט ממסך המשתמשים (או בקש ממנו "שכחתי סיסמה").';
       } else {
         errEl.textContent = error.message;
       }
@@ -4739,7 +4954,23 @@ async function createUser() {
     const companyId = currentSystemAdmin
       ? (document.getElementById('nu-company').value || currentCompanyId)
       : currentCompanyId;
-    await db.from('profiles').upsert({ id: data.user.id, full_name, role, company_id: companyId });
+    const signer_role = document.getElementById('nu-signer').value || null;
+    const phone = document.getElementById('nu-phone').value.trim() || null;
+    const { error: pe } = await db.from('profiles').upsert({ id: data.user.id, full_name, role, company_id: companyId, signer_role, phone });
+    if (pe) {
+      errEl.textContent = pe.code === '23503' || /foreign key/i.test(pe.message)
+        ? 'כתובת האימייל כבר רשומה במערכת (בלי פרופיל בחברה). פנה למנהל המערכת.'
+        : 'שגיאה בשמירת הפרופיל: ' + _friendlyErr(pe.message);
+      btn.disabled = false; btn.textContent = 'צור משתמש'; return;
+    }
+
+    // created from an approved request: join the requesting project and close the request
+    const reqId = document.getElementById('nu-req-id').value, reqProject = document.getElementById('nu-req-project').value;
+    if (reqId && reqProject) {
+      const { error: me } = await db.from('project_members').insert({ project_id: reqProject, user_id: data.user.id, company_id: companyId, added_by: currentUserId });
+      const { error: re } = await db.from('user_requests').update({ status: 'approved' }).eq('id', reqId);
+      if (me || re) showToast('המשתמש נוצר, אך שיוך הפרויקט / סגירת הבקשה נכשלו: ' + (me || re).message, 'error');
+    }
 
     closeById('m-new-user');
     document.getElementById('nu-name').value = '';
@@ -4775,7 +5006,7 @@ function severityBadge(s) {
     high:     '<span class="badge b-fail">דרגה 3</span>',
     medium:   '<span class="badge b-warn">דרגה 2</span>',
     low:      '<span class="badge b-gray">דרגה 1</span>',
-  })[s] || `<span class="badge b-gray">${s || '–'}</span>`;
+  })[s] || `<span class="badge b-gray">${_attr(s || '–')}</span>`;
 }
 
 function statusBadge(s) {
@@ -4784,7 +5015,7 @@ function statusBadge(s) {
     in_progress: '<span class="badge b-warn">בטיפול</span>',
     closed:      '<span class="badge b-ok">סגור</span>',
     pending:     '<span class="badge b-warn">ממתין</span>',
-  })[s] || `<span class="badge b-gray">${s || '–'}</span>`;
+  })[s] || `<span class="badge b-gray">${_attr(s || '–')}</span>`;
 }
 
 function projectStatusBadge(s) {
@@ -4890,10 +5121,10 @@ function _renderProjectField(wrapperId, selectId, onChangeFn) {
     wrap.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#E8F1FB;border:1.5px solid #BFDBFE;border-radius:8px">
         <i class="ti ti-building" style="color:#3B82F6;font-size:14px;flex-shrink:0"></i>
-        <span style="font-size:13px;font-weight:700;color:#3B82F6;flex:1">${p.name}</span>
+        <span style="font-size:13px;font-weight:700;color:#3B82F6;flex:1">${_attr(p.name)}</span>
         <span style="font-size:10px;color:#9AA3B0" title="להחלפה השתמש בבורר הפרויקט העליון">נעול לפרויקט הפעיל</span>
       </div>
-      <select id="${selectId}" style="display:none" onchange="${onChangeFn}"><option value="${_activeProjectId}">${p.name}</option></select>`;
+      <select id="${selectId}" style="display:none" onchange="${onChangeFn}"><option value="${_activeProjectId}">${_attr(p.name)}</option></select>`;
   } else {
     // Show regular select
     const existingSel = document.getElementById(selectId);
@@ -4952,18 +5183,19 @@ function toggleProjPicker(e) {
     ? _allProjects.map(p => {
         const badge = { active:'b-open', planning:'b-gray', completed:'b-ok', on_hold:'b-warn' }[p.status] || 'b-gray';
         return `<div class="proj-picker-item${p.id === _activeProjectId ? ' sel' : ''}" onclick="event.stopPropagation();setActiveProject('${p.id}')">
-          <span style="flex:1">${p.name}</span>
+          <span style="flex:1">${_attr(p.name)}</span>
           <span class="badge ${badge}" style="font-size:9px">${projectStatusBadge(p.status).replace(/<[^>]+>/g,'').trim()}</span>
         </div>`;
       }).join('')
     : '<div style="padding:12px 14px;font-size:12px;color:#9AA3B0">אין פרויקטים</div>';
 
   const closePicker = `document.getElementById('proj-picker').style.display='none'`;
+  const canCreateProject = currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager';   // others are only assigned to existing projects
   picker.innerHTML += `<div style="position:sticky;bottom:0;background:var(--bg);border-top:1px solid #E5E7EB">
-    <div class="proj-picker-item" style="font-weight:700;color:#3B82F6" onclick="event.stopPropagation();${closePicker};openNewProjectModal()">
+    ${canCreateProject ? `<div class="proj-picker-item" style="font-weight:700;color:#3B82F6" onclick="event.stopPropagation();${closePicker};openNewProjectModal()">
       <i class="ti ti-plus" style="font-size:14px"></i>
       <span style="flex:1">פרויקט חדש</span>
-    </div>
+    </div>` : ''}
     ${_activeProjectId ? `<div class="proj-picker-item" style="font-weight:700;color:#3B82F6" onclick="event.stopPropagation();${closePicker};openProjectDetail('${_activeProjectId}')">
       <i class="ti ti-settings" style="font-size:14px"></i>
       <span style="flex:1">פרטי הפרויקט הנוכחי / עריכה</span>
@@ -5015,8 +5247,23 @@ function goDocsNav(el) {
 let _docsFolders = [];
 let _docsSelectedFolder = null;
 const _docsOpen = new Set();   // parent folders currently expanded (all start collapsed)
-// Anyone may create folders and sub-folders; deleting one is limited to company admins / managers (enforced by folders_delete, migration 013)
+// Rules (enforced by the database, migration 016 — the UI only hides what would be refused):
+//  * anyone in the project may create folders and sub-folders and upload files
+//  * the DEFAULT tree is protected: it cannot be deleted, only archived — by admins / project managers
+//  * a folder somebody opened can be archived / deleted (when empty) by its owner or a manager
+//  * plans ("תוכניות לביצוע" and everything under it): uploads / deletes only by a supervisor, project manager or admin
 const _docsCanDelete = () => !!(currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager');
+const _docsIsManager = _docsCanDelete;
+const _docsCanUploadPlans = () => !!(_docsIsManager() || currentSignerRole === 'supervisor');
+let _docsShowArchived = false;
+const _docsFolderById = id => _docsFolders.find(f => f.id === id);
+function _docsIsPlans(f) {   // is the folder inside the default plans tree?
+  let cur = f, guard = 0;
+  while (cur && cur.parent_id && guard++ < 20) cur = _docsFolderById(cur.parent_id);
+  return !!(cur && !cur.parent_id && cur.is_default && cur.name === 'תוכניות לביצוע');
+}
+const _docsCanArchive = f => f.is_default ? _docsIsManager() : (_docsIsManager() || f.created_by === currentUserId);
+const _docsCanUploadTo = f => !f.archived_at && (!_docsIsPlans(f) || _docsCanUploadPlans());
 
 async function loadDocsScreen() {
   const noteEl = document.getElementById('docs-scope-note');
@@ -5038,9 +5285,9 @@ async function loadDocsScreen() {
 
 function _renderDocsTree() {
   const tree = document.getElementById('docs-tree');
-  const roots = _docsFolders.filter(f => !f.parent_id);
-  const childrenOf = pid => _docsFolders.filter(f => f.parent_id === pid);
-  const canDelete = _docsCanDelete();
+  const visible = f => _docsShowArchived || !f.archived_at;
+  const roots = _docsFolders.filter(f => !f.parent_id && visible(f));
+  const childrenOf = pid => _docsFolders.filter(f => f.parent_id === pid && visible(f));
   const renderNode = f => {
     const kids = childrenOf(f.id);
     const open = kids.length && _docsOpen.has(f.id);
@@ -5054,7 +5301,10 @@ function _renderDocsTree() {
         <i class="ti ti-folder${open ? '-open' : ''}" style="color:#F59E0B"></i>
         <span style="flex:1">${_attr(f.name)}</span>
         ${kids.length ? `<span style="font-size:10px;color:#9AA3B0">${kids.length}</span>` : ''}
-        ${canDelete ? `<button onclick="event.stopPropagation();docsDeleteFolder('${f.id}')" title="מחק תיקייה" style="background:none;border:none;cursor:pointer;color:#CBD5E1;padding:2px"><i class="ti ti-trash" style="font-size:12px"></i></button>` : ''}
+        ${f.archived_at ? '<span style="font-size:9px;color:#92400E;background:#FEF3C7;border-radius:4px;padding:0 4px">ארכיון</span>' : ''}
+        ${f.is_default ? '<i class="ti ti-lock" title="תיקיית ברירת מחדל — אי אפשר למחוק, רק להעביר לארכיון" style="font-size:11px;color:#CBD5E1"></i>' : ''}
+        ${_docsCanArchive(f) ? `<button onclick="event.stopPropagation();docsToggleArchive('${f.id}')" title="${f.archived_at ? 'שחזר מהארכיון' : 'העבר לארכיון'}" style="background:none;border:none;cursor:pointer;color:#CBD5E1;padding:2px"><i class="ti ti-${f.archived_at ? 'archive-off' : 'archive'}" style="font-size:13px"></i></button>` : ''}
+        ${!f.is_default && _docsCanArchive(f) ? `<button onclick="event.stopPropagation();docsDeleteFolder('${f.id}')" title="מחק תיקייה ריקה" style="background:none;border:none;cursor:pointer;color:#CBD5E1;padding:2px"><i class="ti ti-trash" style="font-size:13px"></i></button>` : ''}
       </div>
       ${open ? `<div style="padding-right:20px">${kids.map(renderNode).join('')}</div>` : ''}
     </div>`;
@@ -5079,12 +5329,13 @@ async function selectDocsFolder(id) {
   pnl.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div style="font-size:15px;font-weight:700"><i class="ti ti-folder-open" style="color:#F59E0B"></i> ${_attr(folder?.name || '')}</div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-sm" onclick="docsAddFolder('${id}')"><i class="ti ti-folder-plus"></i>תת-תיקייה</button>
-        <label class="btn btn-sm btn-p" style="cursor:pointer">
+      <div style="display:flex;gap:8px;align-items:center">
+        ${folder?.archived_at ? '<span style="font-size:11px;color:#92400E">התיקייה בארכיון — לקריאה בלבד</span>' : ''}
+        ${folder && !folder.archived_at ? `<button class="btn btn-sm" onclick="docsAddFolder('${id}')"><i class="ti ti-folder-plus"></i>תת-תיקייה</button>` : ''}
+        ${folder && _docsCanUploadTo(folder) ? `<label class="btn btn-sm btn-p" style="cursor:pointer">
           <i class="ti ti-upload"></i>העלה קובץ
           <input type="file" style="display:none" onchange="docsUploadFile(this,'${id}')" multiple>
-        </label>
+        </label>` : (folder && !folder.archived_at ? '<span style="font-size:11px;color:#9AA3B0"><i class="ti ti-lock"></i> העלאת תוכניות: מפקח / מנהל פרויקט</span>' : '')}
       </div>
     </div>
     <div id="docs-files-list"><span class="spinner"></span> טוען...</div>`;
@@ -5100,7 +5351,7 @@ async function selectDocsFolder(id) {
       <i class="ti ti-file" style="color:#6B7280"></i>
       <a href="#" data-sb-ref="${_attr(f.url)}" onclick="sbOpen(this.dataset.sbRef);return false" style="flex:1;font-size:12px;color:#374151;text-decoration:none">${_attr(f.name)}</a>
       <span style="font-size:10px;color:#9AA3B0">${_attr(f.uploaded_by_name)}</span>
-      <button class="btn btn-sm" onclick="docsDeleteFile('${f.id}','${id}')" title="מחק"><i class="ti ti-trash" style="color:#DC2626"></i></button>
+      ${(_docsIsPlans(folder || {}) ? _docsCanUploadPlans() : (f.uploaded_by === currentUserId || _docsIsManager())) ? `<button class="btn btn-sm" onclick="docsDeleteFile('${f.id}','${id}')" title="מחק"><i class="ti ti-trash" style="color:#DC2626"></i></button>` : ''}
     </div>`).join('');
 }
 
@@ -5112,27 +5363,22 @@ async function docsAddFolder(parentId) {
     company_id: currentCompanyId, project_id: _activeProjectId, parent_id: parentId || null,
     name: name.trim(), is_default: false, created_by: currentUserId
   });
-  if (error) { showToast('שגיאה ביצירת תיקייה: ' + error.message, 'error'); return; }
+  if (error) { showToast('שגיאה ביצירת תיקייה: ' + _friendlyErr(error.message), 'error'); return; }
   if (parentId) _docsOpen.add(parentId);
   await loadDocsScreen();
   showToast('תיקייה נוצרה', 'success');
 }
 
 async function docsDeleteFolder(id) {
-  if (!_docsCanDelete()) { showToast('מחיקת תיקיות מוגבלת למנהלים', 'error'); return; }
-  const folder = _docsFolders.find(f => f.id === id);
-  const hasKids = _docsFolders.some(f => f.parent_id === id);
-  const msg = hasKids
-    ? `למחוק את "${folder?.name}"? זה ימחק גם את כל תת-התיקיות והקבצים שבתוכה.`
-    : `למחוק את "${folder?.name}"? כל הקבצים שבתוכה יימחקו.`;
-  if (!confirm(msg)) return;
-  // collect the stored objects of the whole subtree first — the folder delete cascades to the file rows
-  const subtree = [id]; for (let i = 0; i < subtree.length; i++) _docsFolders.filter(f => f.parent_id === subtree[i]).forEach(f => subtree.push(f.id));
-  const { data: fileRows } = await db.from('project_files').select('url').in('folder_id', subtree);
-  const paths = (fileRows || []).map(r => sbPathOf(r.url)).filter(Boolean);
+  const folder = _docsFolderById(id);
+  if (!folder) return;
+  if (folder.is_default) { showToast('תיקיית ברירת מחדל לא נמחקת — ניתן להעביר לארכיון', 'error'); return; }
+  if (!confirm(`למחוק את "${folder.name}"? אפשר למחוק רק תיקייה ריקה — אחרת העבר אותה לארכיון.`)) return;
   const { data: gone, error } = await db.from('folders').delete().eq('id', id).select('id');
-  if (error || !gone?.length) { showToast('שגיאה במחיקת תיקייה' + (error ? ': ' + error.message : ' (אין הרשאה)'), 'error'); return; }
-  if (paths.length) await db.storage.from('documents').remove(paths);
+  if (error || !gone?.length) {
+    showToast(error && /not empty/i.test(error.message) ? 'התיקייה אינה ריקה — העבר אותה לארכיון במקום למחוק' : 'לא ניתן למחוק' + (error ? ': ' + _friendlyErr(error.message) : ' (אין הרשאה)'), 'error');
+    return;
+  }
   if (_docsSelectedFolder === id) {
     _docsSelectedFolder = null;
     document.getElementById('docs-files-pnl').innerHTML = `
@@ -5144,6 +5390,19 @@ async function docsDeleteFolder(id) {
   await loadDocsScreen();
   showToast('התיקייה נמחקה', 'success');
 }
+
+// Archive instead of delete: nothing is lost, the folder (and its files) just leave the working view
+async function docsToggleArchive(id) {
+  const folder = _docsFolderById(id);
+  if (!folder) return;
+  const archiving = !folder.archived_at;
+  if (archiving && !confirm(`להעביר את "${folder.name}" לארכיון? הקבצים נשמרים, אך אי אפשר להוסיף אליה קבצים עד לשחזור.`)) return;
+  const { data, error } = await db.from('folders').update({ archived_at: archiving ? new Date().toISOString() : null }).eq('id', id).select('id');
+  if (error || !data?.length) { showToast('אין הרשאה לארכב תיקייה זו' + (error ? ': ' + _friendlyErr(error.message) : ''), 'error'); return; }
+  await loadDocsScreen();
+  showToast(archiving ? 'התיקייה הועברה לארכיון' : 'התיקייה שוחזרה', 'success');
+}
+function docsToggleShowArchived() { _docsShowArchived = !_docsShowArchived; _renderDocsTree(); }
 
 // Uploads one file with the given bearer token; returns the fetch Response.
 async function _docsUploadOnce(token, path, file) {
@@ -5182,15 +5441,19 @@ async function docsUploadFile(input, folderId) {
         throw new Error(`upload failed (${resp.status}) ${body}`.trim());
       }
       const url = sbRef(path);
-      await db.from('project_files').insert({
+      const { error: insErr } = await db.from('project_files').insert({
         company_id: currentCompanyId, project_id: _activeProjectId, folder_id: folderId,
         name: file.name, url, size_bytes: file.size,
         uploaded_by: currentUserId, uploaded_by_name: _currentUserProfile?.full_name || ''
       });
+      if (insErr) {   // refused (e.g. plans: supervisor / project manager only) — do not leave an orphan object behind
+        await db.storage.from('documents').remove([path]);
+        throw new Error(insErr.message);
+      }
     } catch (e) {
       console.warn('docsUploadFile failed', file.name, e);
       logClientError('docs upload failed', { name: file.name, type: file.type, size: file.size, msg: e.message });
-      showToast('שגיאה בהעלאת ' + file.name, 'error');
+      showToast(/plans may only/i.test(e.message) ? 'העלאת תוכניות מותרת למפקח / מנהל פרויקט בלבד' : 'שגיאה בהעלאת ' + file.name, 'error');
     }
   }
   selectDocsFolder(folderId);
@@ -5202,7 +5465,7 @@ async function docsDeleteFile(fileId, folderId) {
   const { data: row } = await db.from('project_files').select('url').eq('id', fileId).maybeSingle();
   const path = sbPathOf(row?.url);
   const { data: gone, error } = await db.from('project_files').delete().eq('id', fileId).select('id');
-  if (error || !gone?.length) { showToast('שגיאה במחיקה' + (error ? ': ' + error.message : ' (אין הרשאה)'), 'error'); return; }
+  if (error || !gone?.length) { showToast('שגיאה במחיקה' + (error ? ': ' + _friendlyErr(error.message) : ' (אין הרשאה)'), 'error'); return; }
   if (path) await db.storage.from('documents').remove([path]);
   selectDocsFolder(folderId);
 }
@@ -5480,11 +5743,11 @@ async function _pcUploadFiles(formId, files) {
         company_id: currentCompanyId, form_id: formId, name: file.name, url: sbRef(path), size_bytes: file.size,
         uploaded_by_name: _currentUserProfile?.full_name || ''
       });
-      if (rowErr) throw rowErr;
+      if (rowErr) { await db.storage.from('documents').remove([path]); throw rowErr; }   // no orphan object when the row is refused
       ok++;
     } catch (e) {
       logClientError('precontrol upload failed', { name: file.name, type: file.type, size: file.size, msg: e.message });
-      showToast('שגיאה בהעלאת ' + file.name, 'error');
+      showToast('שגיאה בהעלאת ' + file.name + (/_notag_chk/i.test(e.message || '') ? ' — שם הקובץ מכיל תגית HTML' : ''), 'error');
     }
   }
   return ok;
@@ -5504,7 +5767,7 @@ async function pcDeleteFile(fileId) {
   const path = sbPathOf(f.url);
   if (path) await db.storage.from('documents').remove([path]);
   const { error } = await db.from('precontrol_files').delete().eq('id', fileId);
-  if (error) { showToast('שגיאה במחיקה: ' + error.message, 'error'); return; }
+  if (error) { showToast('שגיאה במחיקה: ' + _friendlyErr(error.message), 'error'); return; }
   _pcFiles = _pcFiles.filter(x => x.id !== fileId);
   document.getElementById('pc-files-list').innerHTML = _pcFilesHtml();
 }
@@ -5532,7 +5795,7 @@ async function _savePcFormImpl() {
   } else {
     ({ data: saved, error } = await db.from('precontrol_forms').update(row).eq('id', c.id).select().single());
   }
-  if (error) { errEl.textContent = 'שגיאה בשמירה: ' + error.message; return; }
+  if (error) { errEl.textContent = 'שגיאה בשמירה: ' + _friendlyErr(error.message); return; }
   // history ('updated' / 'status_changed') is written by DB triggers — nothing to write from here
   const pending = _pcPending.length;
   const uploaded = pending ? await _pcUploadFiles(saved.id, _pcPending) : 0;
@@ -5562,7 +5825,7 @@ async function deletePcForm() {
     if (rmErr || (removed || []).length !== paths.length) { errEl.textContent = 'לא ניתן למחוק את הקבצים המצורפים — הטופס לא נמחק'; return; }
   }
   const { data, error } = await db.from('precontrol_forms').delete().eq('id', c.id).select('id');
-  if (error || !data?.length) { errEl.textContent = 'המחיקה נכשלה' + (error ? ': ' + error.message : ' (אין הרשאה)'); return; }
+  if (error || !data?.length) { errEl.textContent = 'המחיקה נכשלה' + (error ? ': ' + _friendlyErr(error.message) : ' (אין הרשאה)'); return; }
   closeById('m-pc-form');
   showToast('הטופס נמחק', 'success');
   await loadPrecontrolScreen();
@@ -5590,7 +5853,7 @@ async function submitPcDecision() {
   const btn = document.getElementById('pc-dec-btn'); btn.disabled = true;
   const { error } = await db.from('precontrol_forms').update({ status, decision_note: note || null }).eq('id', c.id);
   btn.disabled = false;
-  if (error) { errEl.textContent = /only quality assurance/.test(error.message) ? 'רק הבטחת איכות או אדמין רשאים לשנות סטטוס' : 'שגיאה: ' + error.message; return; }
+  if (error) { errEl.textContent = /only quality assurance/.test(error.message) ? 'רק הבטחת איכות או אדמין רשאים לשנות סטטוס' : 'שגיאה: ' + _friendlyErr(error.message); return; }
   closeById('m-pc-decision');
   showToast('ההחלטה נשמרה', 'success');
   await loadPrecontrolScreen();
@@ -5762,20 +6025,26 @@ async function _pcSendMail() {
   const gen = generatePcPdf(c.id);   // opens the helper window synchronously (inside the click); everything else is awaited below
   const p = _allProjects.find(x => x.id === c.project_id);
   const link = `${location.origin}${location.pathname}?pc=${c.id}`;
-  // the mail carries a link to the PDF of the saved form (mailto cannot attach files); 90-day signed link
   const r = await gen;
-  let pdfLink = '';
-  if (r) { const ptr = await _pcStoreVersion(r.f, r.blob); if (ptr) pdfLink = await sbSign(ptr, 90 * 86400); }
-  const lines = [
+  const ptr = r ? await _pcStoreVersion(r.f, r.blob) : null;
+  const mkLines = pdfPart => [
     `פרויקט: ${p?.name || ''}`, `סוג: ${PC_TYPES[c.form_type].label} #${c.serial_number}`, `כותרת: ${c.title}`,
     c.supplier_name ? `${PC_TYPES[c.form_type].nameLbl}: ${c.supplier_name}` : null, c.material ? `${PC_TYPES[c.form_type].matLbl}: ${c.material}` : null,
-    `סטטוס: ${PC_STATUS[c.status].label}`, '', 'האישור והמעקב מתבצעים במערכת:', link,
-    pdfLink ? '' : null, pdfLink ? 'הטופס כקובץ PDF (הקישור תקף 90 יום):' : null, pdfLink || null,
+    `סטטוס: ${PC_STATUS[c.status].label}`, '', 'האישור והמעקב מתבצעים במערכת:', link, ...pdfPart,
   ].filter(l => l !== null).join('\n');
   const subject = `[${PC_TYPES[c.form_type].short} #${c.serial_number}] ${c.title} — ${PC_STATUS[c.status].label}`;
   const okMails = chosen.map(u => u.email).filter(e => _NCR_EMAIL_RE.test(e));
   if (okMails.length < chosen.length) showToast('כתובת מייל לא תקינה הוסרה מרשימת הנמענים', 'info');
   if (!okMails.length) { showToast('אין כתובת מייל תקינה לנמענים שנבחרו', 'error'); return; }
+  if (!ptr) showToast('ה-PDF לא הופק או לא נשמר — המייל יישלח בלי קובץ מצורף', 'info');
+  // 1) server-side send (PDF attached; recipients are the project's own users, enforced by the server)
+  const sent = await sendServerMail({ kind: 'precontrol', ref: c.id, to: okMails, subject, text: mkLines(ptr ? ['', 'הטופס מצורף למייל (PDF).'] : []), attachmentRef: ptr, attachmentName: `precontrol_${c.serial_number ?? 'x'}.pdf` });
+  if (sent.ok) { _sentToast(sent, okMails.length === 1 ? okMails[0] : `${okMails.length} נמענים`); return; }
+  if (!sent.fallback) { showToast('המייל לא נשלח: ' + sent.message, 'error'); return; }
+  showToast('השליחה האוטומטית אינה זמינה כרגע — נפתח מייל ידני', 'info');
+  // 2) fallback: a mailto: draft carrying a 90-day signed link to the PDF of the saved form
+  const pdfLink = ptr ? await sbSign(ptr, 90 * 86400) : '';
+  const lines = mkLines(pdfLink ? ['', 'הטופס כקובץ PDF (הקישור תקף 90 יום):', pdfLink] : []);
   const to = okMails.map(_mailtoAddr).join(',');
   let href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines)}`;
   // mail clients (Outlook/Windows) drop mailto links longer than ~2000 characters — Hebrew is percent-encoded ~6x
@@ -5859,7 +6128,7 @@ async function openProjectBoard(projectId) {
   // Parallel fetch: work items + KPI data
   const [{ data, error }, { data: findings }, { data: inspections }, { data: typeConfig }] = await Promise.all([
     db.from('work_items')
-      .select('*, checklist_instances(id, task_name, task_order, list_no, is_checked, checked_by, checked_at, signer_name, signer_role, signature_url, document_url, inspection_order_id), work_item_checklists(id, list_no, label)')
+      .select('*, checklist_instances(id, task_name, task_order, list_no, is_checked, checked_by, checked_at, signer_name, signer_role, signature_url, document_url, inspection_order_id, required_signer), work_item_checklists(id, list_no, label)')
       .eq('project_id', projectId)
       .order('row_order'),
     db.from('findings').select('id, severity, status').eq('project_id', projectId),
@@ -5902,7 +6171,7 @@ async function openProjectBoard(projectId) {
   // Show tabs only when more than one sub-project
   document.getElementById('board-tabs').innerHTML = spNames.length > 1
     ? spNames.map((sp, i) =>
-        `<button class="board-tab ${i===0?'active':''}" onclick="switchBoardTab('${sp.replace(/'/g,"\\'").replace(/"/g,'&quot;')}',this)">${sp}</button>`
+        `<button class="board-tab ${i===0?'active':''}" data-sp="${_attr(sp)}" onclick="switchBoardTab(this.dataset.sp,this)">${_attr(sp)}</button>`
       ).join('')
     : '';
 
@@ -5934,7 +6203,7 @@ function _setBoardBreadcrumb(pathArr) {
   const el = document.getElementById('brd-breadcrumb');
   if (!el) return;
   el.innerHTML = pathArr.map((seg, i) =>
-    `<span class="brd-bc-item${i === pathArr.length - 1 ? ' brd-bc-cur' : ''}">${seg}</span>`
+    `<span class="brd-bc-item${i === pathArr.length - 1 ? ' brd-bc-cur' : ''}">${_attr(seg)}</span>`
   ).join('<span class="brd-bc-sep">›</span>');
 }
 
@@ -5997,7 +6266,7 @@ function _renderBoardTree(items) {
     html += `<div class="brd-nd brd-nd-l1" onclick="_togBrdNd(this)">
       <i class="ti ti-chevron-down brd-nd-chev"></i>
       <div class="brd-nd-dot ${stDot}"></div>
-      <span class="brd-nd-nm">${st}</span>
+      <span class="brd-nd-nm">${_attr(st)}</span>
       <span class="brd-nd-pct">${stP.checked}/${stP.total}</span>
       ${_brdBar(stP.pct, stDot)}
     </div>
@@ -6010,7 +6279,7 @@ function _renderBoardTree(items) {
       html += `<div class="brd-nd brd-nd-l2" onclick="_togBrdNd(this)">
         <i class="ti ti-chevron-down brd-nd-chev"></i>
         <div class="brd-nd-dot ${ssDot}"></div>
-        <span class="brd-nd-nm">${ss}</span>
+        <span class="brd-nd-nm">${_attr(ss)}</span>
         <span class="brd-nd-pct">${ssP.checked}/${ssP.total}</span>
         ${_brdBar(ssP.pct, ssDot)}
       </div>
@@ -6028,7 +6297,7 @@ function _renderBoardTree(items) {
           const isDone = wiP.total > 0 && wiP.checked === wiP.total;
           const isStop = wi.is_stop_point && !wi.stop_released;
           const wiDot  = isStop ? 'risk' : isDone ? 'ok' : wiP.checked > 0 ? 'warn' : 'none';
-          const safeEl = el.replace(/"/g, '&quot;');
+          const safeEl = _attr(el);
           const hasCert = _boardCertWiIds.has(wi.id);
           const hasInsp = _boardInspWiIds.has(wi.id);
           const certIcon = hasCert
@@ -6038,9 +6307,9 @@ function _renderBoardTree(items) {
               : '';
           html += `<div class="brd-nd brd-nd-l3${isDone?' wi-done':''}${isStop?' wi-stop':''}" id="bnd-${wi.id}" data-wi-id="${wi.id}" data-label="${safeEl}" onclick="_clickBrdWi(this)">
             <div class="brd-nd-dot ${wiDot}"></div>
-            <span class="brd-nd-nm">${el}</span>
+            <span class="brd-nd-nm">${_attr(el)}</span>
             ${certIcon}
-            ${wi.execution_type ? `<span style="font-size:9px;color:#94A3B8;flex-shrink:0;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${wi.execution_type}</span>` : ''}
+            ${wi.execution_type ? `<span style="font-size:9px;color:#94A3B8;flex-shrink:0;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_attr(wi.execution_type)}</span>` : ''}
             <span class="brd-nd-pct">${wiP.checked}/${wiP.total}</span>
             ${_brdBar(wiP.pct, wiDot)}
           </div>`;
@@ -6049,7 +6318,7 @@ function _renderBoardTree(items) {
           html += `<div class="brd-nd brd-nd-l3" onclick="_togBrdNd(this)">
             <i class="ti ti-chevron-down brd-nd-chev"></i>
             <div class="brd-nd-dot ${elDot}"></div>
-            <span class="brd-nd-nm">${el}</span>
+            <span class="brd-nd-nm">${_attr(el)}</span>
             <span class="brd-nd-pct">${elP.checked}/${elP.total}</span>
             ${_brdBar(elP.pct, elDot)}
           </div>
@@ -6060,7 +6329,7 @@ function _renderBoardTree(items) {
             const isDone = wiP.total > 0 && wiP.checked === wiP.total;
             const isStop = wi.is_stop_point && !wi.stop_released;
             const wiDot  = isStop ? 'risk' : isDone ? 'ok' : wiP.checked > 0 ? 'warn' : 'none';
-            const safeEl = (el + ' › ' + (wi.sub_element || '')).replace(/"/g, '&quot;');
+            const safeEl = _attr(el + ' › ' + (wi.sub_element || ''));
             const hasCert = _boardCertWiIds.has(wi.id);
             const hasInsp = _boardInspWiIds.has(wi.id);
             const certIcon = hasCert
@@ -6070,9 +6339,9 @@ function _renderBoardTree(items) {
                 : '';
             html += `<div class="brd-nd brd-nd-l4${isDone?' wi-done':''}${isStop?' wi-stop':''}" id="bnd-${wi.id}" data-wi-id="${wi.id}" data-label="${safeEl}" onclick="_clickBrdWi(this)">
               <div class="brd-nd-dot ${wiDot}"></div>
-              <span class="brd-nd-nm">${wi.sub_element || '–'}</span>
+              <span class="brd-nd-nm">${_attr(wi.sub_element || '–')}</span>
               ${certIcon}
-              ${wi.execution_type ? `<span style="font-size:9px;color:#94A3B8;flex-shrink:0;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${wi.execution_type}</span>` : ''}
+              ${wi.execution_type ? `<span style="font-size:9px;color:#94A3B8;flex-shrink:0;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_attr(wi.execution_type)}</span>` : ''}
               <span class="brd-nd-pct">${wiP.checked}/${wiP.total}</span>
               ${_brdBar(wiP.pct, wiDot)}
             </div>`;
@@ -6124,16 +6393,16 @@ function _renderBoardDetails(wi, contextLabel) {
   const stopRel = wi.stop_released;
   const isActive = isStop && !stopRel;
 
-  const safeWiName = (wi.sub_element || '–').replace(/'/g, "\\'");
+  const safeWiName = _attr(wi.sub_element || '–');
 
   // Build full tree path
   const _pathParts = [wi.sub_project, wi.structure, wi.sub_structure, wi.element].filter(Boolean);
   const _pathHtml  = _pathParts.map((p,i) =>
-    `<span style="color:${i === _pathParts.length-1 ? '#374151' : '#94A3B8'}">${p}</span>`
+    `<span style="color:${i === _pathParts.length-1 ? '#374151' : '#94A3B8'}">${_attr(p)}</span>`
   ).join('<span style="color:#CBD5E1;padding:0 3px">›</span>');
 
   let html = `<div class="brd-det-hdr">
-    <div class="brd-det-title">${wi.sub_element || '–'}</div>
+    <div class="brd-det-title">${_attr(wi.sub_element || '–')}</div>
     ${_pathHtml ? `<div class="brd-det-meta" style="display:flex;align-items:center;flex-wrap:wrap;gap:1px;font-size:11px;margin-top:3px">${_pathHtml}</div>` : ''}
   </div>`;
 
@@ -6165,7 +6434,7 @@ function _renderBoardDetails(wi, contextLabel) {
       <div class="brd-ks-l">משימות</div>
     </div>
     ${wi.execution_type ? `<div class="brd-ks-item" style="gap:3px">
-      <div style="font-size:12px;font-weight:700;color:#1E293B">${wi.execution_type}</div>
+      <div style="font-size:12px;font-weight:700;color:#1E293B">${_attr(wi.execution_type)}</div>
       <div class="brd-ks-l">סוג ביצוע</div>
     </div>` : ''}
     ${wi.section_from != null ? `<div class="brd-ks-item" style="gap:3px">
@@ -6179,7 +6448,7 @@ function _renderBoardDetails(wi, contextLabel) {
     html += `<div class="brd-stop-banner" id="stop-banner-${wi.id}">
       <i class="ti ti-octagon" style="font-size:16px;flex-shrink:0"></i>
       <span style="flex:1"><b>נקודת עצירה</b> – נדרש אישור בקר לפני המשך</span>
-      <button class="brd-det-btn" style="border-color:#C0392B;color:#C0392B;background:#FFF1F0;margin:0" onclick="openStopRelease('${wi.id}','${safeWiName}')">
+      <button class="brd-det-btn" style="border-color:#C0392B;color:#C0392B;background:#FFF1F0;margin:0" data-n="${safeWiName}" onclick="openStopRelease('${wi.id}',this.dataset.n)">
         <i class="ti ti-check"></i>שחרר
       </button>
     </div>`;
@@ -6187,7 +6456,7 @@ function _renderBoardDetails(wi, contextLabel) {
   if (isStop && stopRel) {
     html += `<div class="brd-stop-banner released" id="stop-banner-${wi.id}">
       <i class="ti ti-octagon-check" style="font-size:16px;flex-shrink:0"></i>
-      <span><b>שוחרר</b>${wi.stop_released_at ? ' – ' + new Date(wi.stop_released_at).toLocaleDateString('he-IL') : ''}${wi.stop_release_notes ? ': ' + wi.stop_release_notes : ''}</span>
+      <span><b>שוחרר</b>${wi.stop_released_at ? ' – ' + new Date(wi.stop_released_at).toLocaleDateString('he-IL') : ''}${wi.stop_release_notes ? ': ' + _attr(wi.stop_release_notes) : ''}</span>
     </div>`;
   }
 
@@ -6200,8 +6469,7 @@ function _renderBoardDetails(wi, contextLabel) {
   </div>`;
 
   // Checklist — signer enforcement + status badge
-  const reqSigner = wi.execution_type ? (_typeSignerMap[wi.execution_type] || null) : null;
-  const canSign = !reqSigner || currentUserRole === 'admin' || currentSystemAdmin || currentSignerRole === reqSigner;
+  // who may sign is decided per row (required_signer on the row, else the execution-type default) — see _rowReq / _clTableHtml; the database enforces it
   const clStatus = total === 0 ? null : checked === total ? 'done' : checked > 0 ? 'partial' : 'none';
   const statusBadge = clStatus === 'done'
     ? `<span style="font-size:9px;font-weight:700;color:#16A34A;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:4px;padding:1px 5px;margin-top:2px;display:inline-block">הסתיים ✓</span>`
@@ -6217,7 +6485,7 @@ function _renderBoardDetails(wi, contextLabel) {
         ${isDone ? '<i class="ti ti-check"></i>' : checked > 0 ? '<i class="ti ti-minus" style="font-size:9px"></i>' : ''}
       </div>
       <div style="flex:1;min-width:0">
-        <div class="brd-wi-name ${nameClass}">${wi.sub_element || '–'}</div>
+        <div class="brd-wi-name ${nameClass}">${_attr(wi.sub_element || '–')}</div>
         ${statusBadge}
         ${wi.section_from != null ? `<div class="brd-wi-meta">חתך ${wi.section_from}–${wi.section_to}</div>` : ''}
       </div>
@@ -6228,8 +6496,6 @@ function _renderBoardDetails(wi, contextLabel) {
     <div class="brd-cl-wrap" id="cl-${wi.id}">
       ${wi.checklist_instances.length === 0 && !(wi.work_item_checklists || []).length
         ? '<div style="padding:12px 20px;font-size:12px;color:var(--t4)">אין משימות לסוג ביצוע זה</div>'
-        : !canSign
-        ? `<div style="padding:14px 16px;font-size:12px;color:var(--t3);display:flex;align-items:center;gap:8px"><i class="ti ti-lock" style="font-size:15px;color:var(--t4);flex-shrink:0"></i>רשימת תיוג זו שייכת ל<b>${_signerLabel(reqSigner)}</b> — אין הרשאת עריכה</div>`
         : _clListsHtml(wi)}
     </div>
   </div>`;
@@ -6255,6 +6521,40 @@ function _clListNos(wi) {
 }
 const _clLabel = (wi, no) => (wi.work_item_checklists || []).find(l => l.list_no === no)?.label || '';
 const _clCanDeleteList = () => !!(currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager');
+const _clCanEditStructure = _clCanDeleteList;
+// effective signer requirement of a row: its own, else the default of its execution type
+const _rowReq = (wi, ci) => ci.required_signer || (wi.execution_type ? _typeSignerMap[wi.execution_type] : null) || null;
+
+// admin / project manager: choose which professional role may sign this row (the database refuses anyone else)
+let _rowSignerCi = null;
+function editRowSigner(ciId, wiId) {
+  const wi = _boardItems.find(i => i.id === wiId), ci = wi?.checklist_instances.find(c => c.id === ciId);
+  if (!ci) return;
+  _rowSignerCi = { ciId, wiId };
+  _fillRoleSelect('rs-role', { blank: 'ללא הגבלה (כל חבר בפרויקט)', requiredOnly: true });
+  document.getElementById('rs-role').value = ci.required_signer || '';
+  document.getElementById('rs-same-name').checked = false;
+  document.getElementById('rs-task').textContent = ci.task_name;
+  document.getElementById('rs-err').textContent = '';
+  openM('m-row-signer');
+}
+async function saveRowSigner() {
+  if (!_rowSignerCi) return;
+  const { ciId, wiId } = _rowSignerCi, val = document.getElementById('rs-role').value || null;
+  const wi = _boardItems.find(i => i.id === wiId), ci = wi?.checklist_instances.find(c => c.id === ciId);
+  if (!ci) return;
+  const all = document.getElementById('rs-same-name').checked;
+  // "same task in this work item" = every list of the item; a manager of the project may update them all
+  let q = db.from('checklist_instances').update({ required_signer: val }).eq('work_item_id', wiId);
+  q = all ? q.eq('task_name', ci.task_name).eq('is_checked', false) : q.eq('id', ciId);
+  const { data, error } = await q.select('id');
+  if (error || !data?.length) { document.getElementById('rs-err').textContent = error ? 'שגיאה: ' + _friendlyErr(error.message) : 'אין הרשאה לשנות'; return; }
+  const ids = new Set(data.map(d => d.id));
+  wi.checklist_instances.forEach(c => { if (ids.has(c.id)) c.required_signer = val; });
+  closeById('m-row-signer');
+  _clAfterListChange(wi);
+  showToast('החותם הנדרש עודכן', 'success');
+}
 
 // The "document" cell of a checklist row: own document > linked inspection order's certificate > upload (once ticked), + the link button
 function _clDocCellHtml(ci, checked) {
@@ -6282,9 +6582,13 @@ function _clTableHtml(wi, items) {
       <col style="width:50%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%">
     </colgroup>
     <thead><tr><th>משימה</th><th>תפקיד</th><th>שם מלא</th><th>תאריך חתימה</th><th>מסמך</th><th></th></tr></thead>
-    <tbody>${items.map(ci => `
+    <tbody>${items.map(ci => {
+      const req = _rowReq(wi, ci), mine = _canSignAs(currentSignerRole, req), lockedForMe = !ci.is_checked && !mine;
+      const tag = req ? `<span class="req-tag${lockedForMe ? ' locked' : ''}" title="${lockedForMe ? 'אין לך הרשאה לחתום בשורה זו' : 'התפקיד שאמור לחתום'}"><i class="ti ti-${lockedForMe ? 'lock' : 'signature'}" style="font-size:11px"></i>${_attr(_signerLabel(req))}</span>` : '';
+      const edit = _clCanEditStructure() ? `<i class="ti ti-pencil req-edit" title="הגדר מי רשאי לחתום בשורה" onclick="event.stopPropagation();editRowSigner('${ci.id}','${wi.id}')"></i>` : '';
+      return `
       <tr id="ci-${ci.id}">
-        <td class="brd-cl-task${ci.is_checked ? ' done' : ''}" onclick="toggleCheckItem('${ci.id}','${wi.id}')">${_attr(ci.task_name)}</td>
+        <td class="brd-cl-task${ci.is_checked ? ' done' : ''}${lockedForMe ? ' locked' : ''}" onclick="toggleCheckItem('${ci.id}','${wi.id}')">${_attr(ci.task_name)}${tag}${edit}</td>
         <td id="ci-role-${ci.id}" class="brd-cl-meta">${ci.is_checked && ci.signer_role ? _signerLabel(ci.signer_role) : ''}</td>
         <td id="ci-name-${ci.id}" class="brd-cl-meta">${ci.is_checked && ci.signer_name ? _signerCellHtml(ci.signer_name, ci.signature_url) : ''}</td>
         <td id="ci-date-${ci.id}">
@@ -6296,7 +6600,7 @@ function _clTableHtml(wi, items) {
         <td style="text-align:center;cursor:pointer" onclick="toggleCheckItem('${ci.id}','${wi.id}')">
           <div class="chk ${ci.is_checked ? 'on' : ''}">${ci.is_checked ? '<i class="ti ti-check"></i>' : ''}</div>
         </td>
-      </tr>`).join('')}
+      </tr>`; }).join('')}
     </tbody>
   </table>`;
 }
@@ -6393,22 +6697,16 @@ async function _clAddListImpl(wiId, srcNo) {
   const src = srcNo || _clListNos(wi)[0] || 1;
   const tasks = wi.checklist_instances.filter(c => _clNo(c) === src).sort((a, b) => a.task_order - b.task_order);
   if (!tasks.length) { showToast('אין רשימת תיוג לשכפול', 'error'); return; }
-  // fresh from the DB: another user may have added a list meanwhile; (work_item_id, list_no) is unique so a collision fails cleanly
-  const { data: cur } = await db.from('work_item_checklists').select('list_no').eq('work_item_id', wiId);
-  const no = Math.max(1, ..._clListNos(wi), ...(cur || []).map(l => l.list_no)) + 1;
-  const { data: row, error: e1 } = await db.from('work_item_checklists')
-    .insert({ company_id: currentCompanyId, work_item_id: wiId, list_no: no, label: null, created_by: currentUserId }).select('id, list_no, label').single();
-  if (e1) { showToast(e1.code === '23505' ? 'רשימה חדשה נוצרה בינתיים על ידי משתמש אחר — נסה שוב' : 'שגיאה ביצירת הרשימה: ' + e1.message, 'error'); return; }
-  const { data: ins, error: e2 } = await db.from('checklist_instances')
-    .insert(tasks.map(t => ({ company_id: currentCompanyId, work_item_id: wiId, task_name: t.task_name, task_order: t.task_order, list_no: no })))
-    .select('id, task_name, task_order, list_no, is_checked, checked_by, checked_at, signer_name, signer_role, signature_url, document_url, inspection_order_id');
-  if (e2) {
-    const { data: gone } = await db.from('work_item_checklists').delete().eq('id', row.id).select('id');
-    if (!gone?.length) { (wi.work_item_checklists = wi.work_item_checklists || []).push(row); _clAfterListChange(wi); }   // could not undo: show the empty list so it can be removed by a manager
-    showToast('שגיאה ביצירת הרשימה: ' + e2.message, 'error'); return;
-  }
+  // server-side duplicate (copies the tasks AND their required signers); members may not insert checklist rows directly
+  const { data: newNo, error: e1 } = await db.rpc('duplicate_work_item_checklist', { p_work_item: wiId, p_src_no: src });
+  if (e1) { showToast(e1.code === '23505' ? 'רשימה חדשה נוצרה בינתיים על ידי משתמש אחר — נסה שוב' : 'שגיאה ביצירת הרשימה: ' + _friendlyErr(e1.message), 'error'); return; }
+  const [{ data: row }, { data: ins }] = await Promise.all([
+    db.from('work_item_checklists').select('id, list_no, label').eq('work_item_id', wiId).eq('list_no', newNo).single(),
+    db.from('checklist_instances').select('id, task_name, task_order, list_no, is_checked, checked_by, checked_at, signer_name, signer_role, signature_url, document_url, inspection_order_id, required_signer').eq('work_item_id', wiId).eq('list_no', newNo),
+  ]);
+  const no = newNo;
   (wi.work_item_checklists = wi.work_item_checklists || []).push(row);
-  wi.checklist_instances.push(...ins);
+  wi.checklist_instances.push(...(ins || []));
   _clCollapsed.delete(`${wiId}:${no}`);
   _clAfterListChange(wi);
   const inp = document.getElementById(`cld-${wiId}-${no}`);
@@ -6423,8 +6721,8 @@ async function clSaveLabel(wiId, no, value) {
   if (!existing && !val) return;
   const { data, error } = existing
     ? await db.from('work_item_checklists').update({ label: val }).eq('id', existing.id).select('id, list_no, label')
-    : await db.from('work_item_checklists').insert({ company_id: currentCompanyId, work_item_id: wiId, list_no: no, label: val, created_by: currentUserId }).select('id, list_no, label');
-  if (error || !data?.length) { showToast('שגיאה בשמירת התיאור' + (error ? ': ' + error.message : ''), 'error'); return; }
+    : await db.rpc('set_checklist_label', { p_work_item: wiId, p_list_no: no, p_label: val }).then(r => ({ error: r.error, data: r.data ? [r.data] : [] }));   // creating the list row is a structure write → RPC
+  if (error || !data?.length) { showToast('שגיאה בשמירת התיאור' + (error ? ': ' + _friendlyErr(error.message) : ''), 'error'); return; }
   if (existing) existing.label = val; else (wi.work_item_checklists = wi.work_item_checklists || []).push(data[0]);
 }
 
@@ -6434,7 +6732,7 @@ async function clDeleteList(wiId, no) {
   const items = wi.checklist_instances.filter(c => _clNo(c) === no), signed = items.filter(c => c.is_checked).length;
   if (!confirm(`למחוק את רשימת תיוג ${no}${_clLabel(wi, no) ? ' (' + _clLabel(wi, no) + ')' : ''}?` + (signed ? `\nיש בה ${signed} משימות חתומות — החתימות יימחקו.` : ''))) return;
   const { error } = await db.from('checklist_instances').delete().eq('work_item_id', wiId).eq('list_no', no);
-  if (error) { showToast('שגיאה במחיקת הרשימה: ' + error.message, 'error'); return; }
+  if (error) { showToast('שגיאה במחיקת הרשימה: ' + _friendlyErr(error.message), 'error'); return; }
   await db.from('work_item_checklists').delete().eq('work_item_id', wiId).eq('list_no', no);
   wi.checklist_instances = wi.checklist_instances.filter(c => _clNo(c) !== no);
   wi.work_item_checklists = (wi.work_item_checklists || []).filter(l => l.list_no !== no);
@@ -6460,7 +6758,7 @@ async function clLinkOrder(ciId) {
   const o = hits[0], when = o.scheduled_date ? new Date(o.scheduled_date + 'T12:00').toLocaleDateString('he-IL') : '–';
   if (!confirm(`לשייך את המשימה להזמנה ${num}?\nתאריך: ${when}\nמיקום: ${o.location || '–'}\n${o.certificate_url ? 'יש תעודת מעבדה.' : 'התעודה טרם הועלתה — תופיע כאן אוטומטית.'}`)) return;
   const { data, error } = await db.from('checklist_instances').update({ inspection_order_id: o.id }).eq('id', ciId).select('id');
-  if (error || !data?.length) { showToast('שגיאה בשיוך ההזמנה' + (error ? ': ' + error.message : ''), 'error'); return; }
+  if (error || !data?.length) { showToast('שגיאה בשיוך ההזמנה' + (error ? ': ' + _friendlyErr(error.message) : ''), 'error'); return; }
   ci.inspection_order_id = o.id;
   const cell = document.getElementById('ci-doc-' + ciId); if (cell) cell.innerHTML = _clDocCellHtml(ci, ci.is_checked);
 }
@@ -6603,13 +6901,27 @@ async function _toggleCheckItemImpl(ciId, wiId) {
   const wasChecked = chkEl.classList.contains('on');
   const newVal = !wasChecked;
   const nowIso = new Date().toISOString();
-  // ticking an item is a signed action: the signer's profile signature is attached automatically
-  const sigRef = newVal ? requireProfileSignature() : null;
-  if (newVal && !sigRef) return;
 
   // Find existing ci data for rollback
   let ciData = null;
   for (const wi of _boardItems) { ciData = wi.checklist_instances.find(c => c.id === ciId); if (ciData) break; }
+
+  // permission pre-check (the database enforces the same rules — this only saves a round trip and explains why)
+  const wiObj = _boardItems.find(w => w.id === wiId);
+  if (newVal) {
+    const req = ciData && wiObj ? _rowReq(wiObj, ciData) : null;
+    if (!_canSignAs(currentSignerRole, req)) {
+      showToast(`שורה זו מיועדת ל${_signerLabel(req)} — אין לך הרשאה לחתום בה`, 'error');
+      return;
+    }
+  } else if (ciData?.checked_by && ciData.checked_by !== currentUserId && !_clCanEditStructure()) {
+    showToast('רק מי שחתם או מנהל פרויקט יכולים לבטל חתימה', 'error');
+    return;
+  }
+
+  // ticking an item is a signed action: the signer's profile signature is attached automatically
+  const sigRef = newVal ? requireProfileSignature() : null;
+  if (newVal && !sigRef) return;
 
   // Optimistic UI — checkbox + task name
   chkEl.classList.toggle('on', newVal);
@@ -6643,6 +6955,7 @@ async function _toggleCheckItemImpl(ciId, wiId) {
   }).eq('id', ciId);
 
   if (error) {
+    showToast(error.code === '42501' || /not authorized|only the signer/i.test(error.message) ? 'אין הרשאה לפעולה הזו (לפי התפקיד המקצועי / החותם)' : 'שגיאה בשמירה: ' + _friendlyErr(error.message), 'error');
     chkEl.classList.toggle('on', wasChecked);
     chkEl.innerHTML = wasChecked ? '<i class="ti ti-check"></i>' : '';
     nameEl.classList.toggle('done', wasChecked);
@@ -6792,7 +7105,7 @@ function handleExcelFile(file) {
           if (row[0]) { cur = row[0].toString().trim(); ord = 0; }
           if (cur && row[1]) {
             if (!templates[cur]) templates[cur] = [];
-            templates[cur].push({ task_order: ++ord, task_name: row[1].toString().trim() });
+            templates[cur].push({ task_order: ++ord, task_name: row[1].toString().trim(), required_signer: _signerFromLabel(row[2]) });
           }
         }
       }
@@ -6800,10 +7113,20 @@ function handleExcelFile(file) {
       _importParsedData = { workItems, templates };
       showImportPreview(workItems, templates);
     } catch (err) {
-      errEl.textContent = 'שגיאה: ' + err.message;
+      errEl.textContent = 'שגיאה: ' + _friendlyErr(err.message);
     }
   };
   reader.readAsArrayBuffer(file);
+}
+
+// optional 3rd column of the checklist-templates sheet: the role that must sign the row (Hebrew label or role code)
+function _signerFromLabel(v) {
+  const t = (v == null ? '' : String(v)).trim();
+  if (!t) return null;
+  const alias = { 'מודד מוסמך': 'surveyor', 'חשמלאי': 'electrical_inspector', 'חשמלאי מוסמך': 'electrical_inspector' };
+  if (alias[t]) return alias[t];
+  const hit = SIGNER_ROLES.find(([code, label]) => code === t || label.replace(/ \(.*\)$/, '') === t);
+  return hit && hit[0] !== 'qa_assurance' ? hit[0] : null;
 }
 
 function parseWorkItemsSheet(data) {
@@ -6841,13 +7164,13 @@ function showImportPreview(items, templates) {
   const tbody = document.getElementById('import-preview-tbody');
   tbody.innerHTML = items.slice(0, 60).map(item =>
     `<tr>
-      <td>${item.sub_project}</td>
-      <td>${item.structure}</td>
-      <td>${item.sub_structure}</td>
-      <td>${item.element}</td>
-      <td><b>${item.sub_element}</b></td>
+      <td>${_attr(item.sub_project)}</td>
+      <td>${_attr(item.structure)}</td>
+      <td>${_attr(item.sub_structure)}</td>
+      <td>${_attr(item.element)}</td>
+      <td><b>${_attr(item.sub_element)}</b></td>
       <td style="direction:ltr;text-align:left">${item.section_from !== null ? item.section_from+'–'+item.section_to : '–'}</td>
-      <td><span class="badge b-gray" style="font-size:10px">${item.execution_type}</span></td>
+      <td><span class="badge b-gray" style="font-size:10px">${_attr(item.execution_type)}</span></td>
     </tr>`
   ).join('') + (items.length > 60 ? `<tr class="loading-row"><td colspan="7">ועוד ${items.length - 60} שורות...</td></tr>` : '');
 }
@@ -6857,7 +7180,8 @@ function _roleLabel(role) {
 }
 
 function _signerLabel(signerRole) {
-  return { qa_inspector:'בקר איכות', site_manager:'מנהל עבודה', surveyor:'מודד מוסמך', qa_assurance:'הבטחת איכות' }[signerRole] || signerRole || '';
+  const hit = SIGNER_ROLES.find(([v]) => v === signerRole);
+  return hit ? hit[1].replace(/ \(.*\)$/, '') : (signerRole || '');
 }
 
 function editCheckDate(ciId) {
@@ -6880,11 +7204,13 @@ function editCheckDate(ciId) {
     saved = true;
     const v = inp.value;
     const newIso = v ? new Date(v + 'T12:00:00').toISOString() : ciData.checked_at;
+    let shownIso = newIso;
     if (v) {
-      await db.from('checklist_instances').update({ checked_at: newIso }).eq('id', ciId);
-      ciData.checked_at = newIso;
+      const { data: upd, error: ue } = await db.from('checklist_instances').update({ checked_at: newIso }).eq('id', ciId).select('id');
+      if (ue || !upd?.length) { showToast('רק מי שחתם או מנהל פרויקט יכולים לתקן את תאריך החתימה', 'error'); shownIso = ciData.checked_at; }
+      else ciData.checked_at = newIso;
     }
-    dateEl.innerHTML = `<span class="brd-cl-date" onclick="editCheckDate('${ciId}')">${new Date(newIso).toLocaleDateString('he-IL')}</span>`;
+    dateEl.innerHTML = `<span class="brd-cl-date" onclick="editCheckDate('${ciId}')">${new Date(shownIso).toLocaleDateString('he-IL')}</span>`;
   };
   inp.onblur = save;
   inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') { saved = true; dateEl.innerHTML = `<span class="brd-cl-date" onclick="editCheckDate('${ciId}')">${new Date(ciData.checked_at).toLocaleDateString('he-IL')}</span>`; } };
@@ -6903,9 +7229,10 @@ async function uploadClDoc(ciId) {
     if (!file) return;
     const docEl = document.getElementById('ci-doc-' + ciId);
     if (docEl) docEl.innerHTML = '<i class="ti ti-loader" style="animation:spin 1s linear infinite;font-size:13px;color:var(--t4)"></i>';
-    const ext  = file.name.split('.').pop();
-    const path = `checklist-docs/${currentCompanyId}/${ciId}.${ext}`;
-    const { error } = await db.storage.from('documents').upload(path, file, { upsert: true });
+    const ext  = (file.name.split('.').pop() || 'bin').replace(/[^A-Za-z0-9]/g, '').slice(0, 8) || 'bin';
+    // a new object per upload (nothing is overwritten or deleted): the row keeps pointing at the latest one
+    const path = `checklist-docs/${currentCompanyId}/${ciId}_${Date.now()}.${ext}`;
+    const { error } = await db.storage.from('documents').upload(path, file);
     if (error) {
       if (docEl) docEl.innerHTML = `<button class="brd-cl-up-btn" onclick="uploadClDoc('${ciId}')" title="שגיאה — נסה שוב"><i class="ti ti-upload"></i></button>`;
       showToast('שגיאה בהעלאת הקובץ', 'error');
@@ -6926,8 +7253,7 @@ let _profileSigUrl = null;
 
 async function openProfileModal() {
   document.getElementById('prof-name').value = currentUserFullName || '';
-  document.getElementById('prof-qa-opt').disabled = currentSignerRole !== 'qa_assurance';   // only an admin can grant it
-  document.getElementById('prof-signer-role').value = currentSignerRole || '';
+  document.getElementById('prof-signer-role').value = currentSignerRole || '';   // read-only: granted by an admin
   document.getElementById('prof-err').textContent = '';
   _profileSigUrl = _currentUserProfile?.signature_url || null;
   _profileSigRender(_profileSigUrl);
@@ -6981,7 +7307,7 @@ async function changeMyPassword() {
   btn.disabled = true;
   const { error } = await db.auth.updateUser({ password: p1 });
   btn.disabled = false;
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+  if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
 
   document.getElementById('prof-new-pass').value = '';
   document.getElementById('prof-new-pass2').value = '';
@@ -6991,24 +7317,21 @@ async function changeMyPassword() {
 
 async function saveProfileSettings() {
   const name       = document.getElementById('prof-name').value.trim();
-  const signerRole = document.getElementById('prof-signer-role').value;
   const errEl      = document.getElementById('prof-err');
   errEl.textContent = '';
   if (!name) { errEl.textContent = 'שם מלא הוא שדה חובה'; return; }
   const btn = document.getElementById('prof-save-btn');
   btn.disabled = true;
+  // the professional role is NOT sent: only a company admin may change it (database-enforced)
   const { error } = await db.from('profiles').update({
     full_name:     name,
-    signer_role:   signerRole || null,
     signature_url: _profileSigUrl || null
   }).eq('id', currentUserId);
   btn.disabled = false;
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+  if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
   currentUserFullName = name;
-  currentSignerRole   = signerRole || null;
   if (_currentUserProfile) {
     _currentUserProfile.full_name     = name;
-    _currentUserProfile.signer_role   = signerRole || null;
     _currentUserProfile.signature_url = _profileSigUrl || null;
   }
   const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -7042,14 +7365,12 @@ async function openTypeConfigModal() {
     return;
   }
 
-  listEl.innerHTML = types.map(t => `
+  listEl.innerHTML = types.map((t, i) => `
     <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--bdr)">
-      <div style="flex:1;font-size:13px;font-weight:600;color:var(--t1)">${t}</div>
-      <select class="form-in" id="tc-${t.replace(/\s/g,'_')}" style="width:170px;font-size:12px">
+      <div style="flex:1;font-size:13px;font-weight:600;color:var(--t1)">${_attr(t)}</div>
+      <select class="form-in" id="tc-${i}" style="width:170px;font-size:12px">
         <option value="">— ללא הגבלה —</option>
-        <option value="qa_inspector" ${configMap[t]==='qa_inspector'?'selected':''}>בקר איכות</option>
-        <option value="site_manager" ${configMap[t]==='site_manager'?'selected':''}>מנהל עבודה</option>
-        <option value="surveyor"     ${configMap[t]==='surveyor'    ?'selected':''}>מודד מוסמך</option>
+        ${SIGNER_ROLES.filter(([v]) => v !== 'qa_assurance').map(([v, l]) => `<option value="${v}" ${configMap[t]===v?'selected':''}>${l}</option>`).join('')}
       </select>
     </div>`).join('');
 
@@ -7063,17 +7384,17 @@ async function saveTypeConfig() {
   const types = JSON.parse(btn.dataset.types || '[]');
   btn.disabled = true;
 
-  const upserts = types.map(t => ({
+  const upserts = types.map((t, i) => ({
     company_id:      currentCompanyId,
     type_name:       t,
-    required_signer: document.getElementById('tc-' + t.replace(/\s/g,'_'))?.value || null
+    required_signer: document.getElementById('tc-' + i)?.value || null
   }));
 
   const { error } = await db.from('checklist_type_config')
     .upsert(upserts, { onConflict: 'company_id,type_name' });
 
   btn.disabled = false;
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+  if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
 
   // Refresh local map
   upserts.forEach(u => {
@@ -7130,7 +7451,7 @@ async function loadMyTasksScreen() {
     .eq('company_id', currentCompanyId);
 
   if (error) {
-    container.innerHTML = `<div style="padding:20px;color:#C0392B"><i class="ti ti-alert-circle"></i> שגיאה: ${error.message}</div>`;
+    container.innerHTML = `<div style="padding:20px;color:#C0392B"><i class="ti ti-alert-circle"></i> שגיאה: ${_attr(error.message)}</div>`;
     return;
   }
 
@@ -7160,7 +7481,7 @@ async function loadMyTasksScreen() {
     html += `<div class="card" style="margin-bottom:12px;padding:0;overflow:hidden">
       <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--bg-b);border-bottom:1px solid var(--bdr)">
         <i class="ti ti-building" style="font-size:14px;color:var(--acc)"></i>
-        <span style="font-weight:700;font-size:14px;color:var(--t1);flex:1">${projName}</span>
+        <span style="font-weight:700;font-size:14px;color:var(--t1);flex:1">${_attr(projName)}</span>
         <button class="btn btn-sm" onclick="openProjectBoard('${projId}')"><i class="ti ti-layout-board"></i>פתח לוח</button>
       </div>`;
     for (const wi of wItems) {
@@ -7169,14 +7490,14 @@ async function loadMyTasksScreen() {
       const total     = (wi.checklist_instances || []).length;
       html += `<div style="padding:10px 16px;border-bottom:1px solid var(--bdr)">
         <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:6px;display:flex;align-items:center;gap:8px">
-          ${wi.sub_element || '–'}
-          <span style="font-size:10px;color:var(--t3);font-weight:400">${wi.execution_type || ''}</span>
+          ${_attr(wi.sub_element || '–')}
+          <span style="font-size:10px;color:var(--t3);font-weight:400">${_attr(wi.execution_type || '')}</span>
           <span style="margin-right:auto;font-size:10.5px;color:var(--t3)">${done}/${total}</span>
         </div>
         ${unchecked.map(ci => `
           <div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12px;color:var(--t2)">
             <div class="chk" style="width:16px;height:16px;min-width:16px;border-radius:4px"></div>
-            ${ci.task_name}
+            ${_attr(ci.task_name)}
           </div>`).join('')}
       </div>`;
     }
@@ -7195,18 +7516,32 @@ async function confirmImport() {
 
   const { workItems, templates } = _importParsedData;
   try {
+    // 0. The database refuses HTML tags in text (e.g. "<b>"; a plain "<5" or "> 2" is fine). Check the whole file FIRST — the old tree is
+    //    deleted below, so a rejected row halfway through would leave the project empty.
+    const _tag = /<[A-Za-z\/!?]/;
+    const bad = [];
+    workItems.forEach((w, i) => { for (const k of ['sub_project', 'structure', 'sub_structure', 'element', 'sub_element', 'execution_type']) if (_tag.test(w[k] || '')) bad.push(`שורה ${i + 1}: ${w[k]}`); });
+    for (const [type_name, tasks] of Object.entries(templates)) {
+      if (_tag.test(type_name)) bad.push('סוג ביצוע: ' + type_name);
+      tasks.forEach(t => { if (_tag.test(t.task_name || '')) bad.push(`${type_name}: ${t.task_name}`); });
+    }
+    if (bad.length) throw new Error('הקובץ מכיל תגיות HTML (למשל <b>) שאינן מותרות — לא בוצע שינוי בפרויקט. ' + bad.slice(0, 3).join(' | '));
+
     // 1. Upsert templates
     const tRows = [];
     for (const [type_name, tasks] of Object.entries(templates))
-      for (const t of tasks) tRows.push({ type_name, task_order: t.task_order, task_name: t.task_name });
-    if (tRows.length > 0)
-      await db.from('checklist_templates').upsert(
+      for (const t of tasks) tRows.push({ type_name, task_order: t.task_order, task_name: t.task_name, required_signer: t.required_signer || null });
+    if (tRows.length > 0) {
+      const { error: te } = await db.from('checklist_templates').upsert(
         tRows.map(r => ({ ...r, company_id: currentCompanyId })),
         { onConflict: 'company_id,type_name,task_order' }
       );
+      if (te) throw new Error('שמירת התבניות נכשלה (לא בוצע שינוי בפרויקט): ' + te.message);
+    }
 
     // 2. Delete existing work items for this project
-    await db.from('work_items').delete().eq('project_id', _importProjectId);
+    const { error: de } = await db.from('work_items').delete().eq('project_id', _importProjectId);
+    if (de) throw new Error('מחיקת העץ הקיים נכשלה: ' + de.message);
 
     // 3. Insert work items in batch
     const toInsert = workItems.map(item => ({ ...item, project_id: _importProjectId, company_id: currentCompanyId }));
@@ -7217,7 +7552,7 @@ async function confirmImport() {
     const ciRows = [];
     for (const wi of inserted)
       for (const t of (templates[wi.execution_type] || []))
-        ciRows.push({ work_item_id: wi.id, task_name: t.task_name, task_order: t.task_order, company_id: currentCompanyId });
+        ciRows.push({ work_item_id: wi.id, task_name: t.task_name, task_order: t.task_order, company_id: currentCompanyId, required_signer: t.required_signer || null });
 
     for (let i = 0; i < ciRows.length; i += 500) {
       const { error: ce } = await db.from('checklist_instances').insert(ciRows.slice(i, i + 500));
@@ -7227,7 +7562,7 @@ async function confirmImport() {
     closeById('m-import-excel');
     openProjectDetail(_importProjectId);
   } catch (e) {
-    errEl.textContent = 'שגיאה: ' + e.message;
+    errEl.textContent = 'שגיאה: ' + _friendlyErr(e.message);
   }
   btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i>ייבא לפרויקט';
 }
@@ -7265,24 +7600,24 @@ async function openWorkTree(projectId) {
   for (const [sp, structures] of Object.entries(tree)) {
     html += `<div style="margin-bottom:4px">
       <div style="background:#F7F8FA;border-radius:8px;padding:8px 12px;font-weight:700;font-size:12px;color:#1E293B;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">
-        <i class="ti ti-building" style="color:#3B82F6"></i>${sp}
+        <i class="ti ti-building" style="color:#3B82F6"></i>${_attr(sp)}
       </div>
       <div>`;
     for (const [st, subs] of Object.entries(structures)) {
       html += `<div style="margin:4px 0 0 16px">
         <div style="padding:6px 12px;font-weight:600;font-size:12px;color:#374151;border-right:3px solid #E8EBF0;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">
-          <i class="ti ti-layers-subtract" style="color:#9AA3B0"></i> ${st}
+          <i class="ti ti-layers-subtract" style="color:#9AA3B0"></i> ${_attr(st)}
         </div>
         <div>`;
       for (const [ss, wItems] of Object.entries(subs)) {
         html += `<div style="margin:2px 0 0 28px">
-          <div style="padding:5px 10px;font-size:11px;font-weight:600;color:#6B7280">${ss}</div>`;
+          <div style="padding:5px 10px;font-size:11px;font-weight:600;color:#6B7280">${_attr(ss)}</div>`;
         for (const wi of wItems) {
-          html += `<div style="padding:5px 10px 5px 10px;margin:1px 0 0 12px;border-bottom:1px solid #F5F7FA;display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer" onclick="openChecklistModal('${wi.id}','${wi.sub_element.replace(/'/g,"\\'")}','${wi.execution_type.replace(/'/g,"\\'")}')">
+          html += `<div style="padding:5px 10px 5px 10px;margin:1px 0 0 12px;border-bottom:1px solid #F5F7FA;display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer" data-n="${_attr(wi.sub_element)}" data-t="${_attr(wi.execution_type)}" onclick="openChecklistModal('${wi.id}',this.dataset.n,this.dataset.t)">
             ${statusIcon(wi.status)}
-            <span style="flex:1">${wi.sub_element}</span>
+            <span style="flex:1">${_attr(wi.sub_element)}</span>
             <span style="font-size:10px;color:#9AA3B0;direction:ltr">${wi.section_from !== null ? wi.section_from+'–'+wi.section_to : ''}</span>
-            <span class="badge b-gray" style="font-size:9px">${wi.execution_type}</span>
+            <span class="badge b-gray" style="font-size:9px">${_attr(wi.execution_type)}</span>
             <i class="ti ti-chevron-left" style="color:#C8CDD6;font-size:13px"></i>
           </div>`;
         }
@@ -7346,7 +7681,7 @@ async function submitStopRelease() {
   }).eq('id', wiId);
 
   btn.disabled = false;
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+  if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
 
   closeById('m-stop-release');
   await openProjectBoard(_boardProjectId);
@@ -7369,7 +7704,7 @@ async function loadStopPointsAlert() {
     <div>
       <b>${data.length} נקודות עצירה פתוחות הדורשות אישור בקר:</b>
       <div style="margin-top:6px;display:flex;flex-direction:column;gap:3px">
-        ${data.slice(0, 5).map(wi => `<div style="font-size:12px">• ${projMap[wi.project_id] || '–'} – ${wi.sub_element}</div>`).join('')}
+        ${data.slice(0, 5).map(wi => `<div style="font-size:12px">• ${_attr(projMap[wi.project_id] || '–')} – ${_attr(wi.sub_element)}</div>`).join('')}
         ${data.length > 5 ? `<div style="font-size:11px;color:#C0392B">ועוד ${data.length - 5} נוספות...</div>` : ''}
       </div>
     </div>
@@ -7395,7 +7730,7 @@ async function loadBuildingReport() {
 
   const { data: items, error } = await q;
   if (error) {
-    tbody.innerHTML = `<tr class="loading-row"><td colspan="8" style="color:#C0392B">שגיאה: ${error.message}</td></tr>`;
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="8" style="color:#C0392B">שגיאה: ${_attr(error.message)}</td></tr>`;
     return;
   }
   if (!items || items.length === 0) {
@@ -7408,7 +7743,7 @@ async function loadBuildingReport() {
   // Group: project_id → sub_project → structure
   const groups = {};
   for (const wi of items) {
-    const k = `${wi.project_id}||${wi.sub_project || '–'}||${wi.structure || '–'}`;
+    const k = `${wi.project_id}||${_attr(wi.sub_project || '–')}||${_attr(wi.structure || '–')}`;
     if (!groups[k]) groups[k] = {
       project_id: wi.project_id,
       sub_project: wi.sub_project || '–',
@@ -7470,15 +7805,15 @@ async function loadBuildingReport() {
     const color  = progColor(pct);
     const spHdr  = !pid && g.sub_project !== lastSP
       ? `<tr style="background:#F0F4FA"><td colspan="8" style="padding:7px 14px;font-size:11px;font-weight:700;color:#1E293B;letter-spacing:.03em">
-           <i class="ti ti-git-branch" style="color:#3B82F6;margin-left:5px"></i>${g.sub_project}
+           <i class="ti ti-git-branch" style="color:#3B82F6;margin-left:5px"></i>${_attr(g.sub_project)}
          </td></tr>`
       : '';
     if (!pid) lastSP = g.sub_project;
 
     return `${spHdr}<tr>
-      ${pid ? '' : `<td style="font-size:12px;padding-right:24px">${projMap[g.project_id] || '–'}</td>`}
-      <td style="font-size:12px;color:#6B7280">${pid ? g.sub_project : ''}</td>
-      <td><b>${g.structure}</b></td>
+      ${pid ? '' : `<td style="font-size:12px;padding-right:24px">${_attr(projMap[g.project_id] || '–')}</td>`}
+      <td style="font-size:12px;color:#6B7280">${_attr(pid ? g.sub_project : '')}</td>
+      <td><b>${_attr(g.structure)}</b></td>
       <td style="text-align:center"><b>${total}</b></td>
       <td style="text-align:center">${completed > 0 ? `<span class="badge b-ok">${completed}</span>` : `<span style="color:#C8CDD6">0</span>`}</td>
       <td style="text-align:center">${inProg    > 0 ? `<span class="badge b-warn">${inProg}</span>` : `<span style="color:#C8CDD6">0</span>`}</td>
@@ -7570,7 +7905,7 @@ async function loadInspectionsScreen() {
   if (_activeProjectId) q = q.eq('project_id', _activeProjectId);
 
   const { data: orders, error } = await q;
-  if (error) { tbody.innerHTML = `<tr class="loading-row"><td colspan="12" style="color:#C0392B">שגיאה: ${error.message}</td></tr>`; return; }
+  if (error) { tbody.innerHTML = `<tr class="loading-row"><td colspan="12" style="color:#C0392B">שגיאה: ${_attr(error.message)}</td></tr>`; return; }
 
   _allInspOrders = orders || [];
   _filterInspTable();
@@ -7726,7 +8061,7 @@ function _fillInspTreePos(data, mode) {
     const uniq = arr => [...new Set(arr.filter(Boolean))].sort();
     const spOpts = uniq(_inspWiItems.map(w => w.sub_project));
     const lbl = txt => `<label style="font-size:10px;color:#94A3B8;font-weight:600;display:block;margin-bottom:2px">${txt}</label>`;
-    const sel = (id, opts, onch) => `<select class="form-in" id="${id}" style="font-size:11px" onchange="${onch}"><option value="">— בחר —</option>${opts.map(v=>`<option>${v}</option>`).join('')}</select>`;
+    const sel = (id, opts, onch) => `<select class="form-in" id="${id}" style="font-size:11px" onchange="${onch}"><option value="">— בחר —</option>${opts.map(v=>`<option>${_attr(v)}</option>`).join('')}</select>`;
     body.innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
         <div>${lbl('תת-פרויקט')}${sel('itp-sel-sp', spOpts, '_itpCascade(1)')}</div>
@@ -7756,7 +8091,7 @@ function _fillInspTreePos(data, mode) {
         ].map(([lbl, val, ltr]) => `
           <div style="display:flex;flex-direction:column;gap:1px">
             <span style="font-size:10px;color:#94A3B8;font-weight:600">${lbl}</span>
-            <span style="font-size:12px;color:${val==='–'?'#CBD5E1':'#1E293B'};font-weight:500${ltr?';direction:ltr;display:inline-block':''}">${val}</span>
+            <span style="font-size:12px;color:${val==='–'?'#CBD5E1':'#1E293B'};font-weight:500${ltr?';direction:ltr;display:inline-block':''}">${_attr(val)}</span>
           </div>`).join('')}
       </div>`;
   }
@@ -7767,7 +8102,7 @@ function _itpCascade(lvl) {
   const so  = (id, vals) => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.innerHTML = '<option value="">— בחר —</option>' + vals.map(v => `<option>${v}</option>`).join('');
+    el.innerHTML = '<option value="">— בחר —</option>' + vals.map(v => `<option>${_attr(v)}</option>`).join('');
     el.value = '';
   };
   const uniq = a => [...new Set(a.filter(Boolean))].sort();
@@ -8007,9 +8342,9 @@ async function openEditInspection(id) {
   if (inspWrap && inspProj) {
     inspWrap.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#F1F5F9;border:1.5px solid #E2E8F0;border-radius:8px">
       <i class="ti ti-building" style="color:#6B7280;font-size:14px;flex-shrink:0"></i>
-      <span style="font-size:13px;font-weight:600;color:#374151;flex:1">${inspProj.name}</span>
+      <span style="font-size:13px;font-weight:600;color:#374151;flex:1">${_attr(inspProj.name)}</span>
     </div>
-    <select id="insp-project" style="display:none"><option value="${inspProj.id}" selected>${inspProj.name}</option></select>`;
+    <select id="insp-project" style="display:none"><option value="${inspProj.id}" selected>${_attr(inspProj.name)}</option></select>`;
   }
 
   document.getElementById('insp-id').value            = o.id;
@@ -8126,7 +8461,7 @@ async function saveQuickResult() {
     .update({ status, result: result || null, result_notes: notes || null })
     .eq('id', id);
 
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+  if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
 
   closeById('m-quick-result');
   await loadInspectionsScreen();
@@ -8241,7 +8576,7 @@ async function submitInspectionAndSend() {
   if (insErr || !newOrder) {
     btn.disabled = false;
     win.close();
-    errEl.textContent = 'שגיאה: ' + (insErr?.message || 'לא ניתן לשמור הזמנה');
+    errEl.textContent = 'שגיאה: ' + (insErr ? _friendlyErr(insErr.message) : 'לא ניתן לשמור הזמנה');
     return;
   }
 
@@ -8305,20 +8640,10 @@ async function submitInspectionAndSend() {
   const pdfLink  = pdfUrl ? await sbSign(pdfUrl, 90 * 86400) : '';
   const pdfLine  = pdfLink ? `\nטופס הזמנת הבדיקה (PDF):\n${pdfLink}\n` : '';
 
-  const uploadParams = new URLSearchParams({
-    lab_upload: '',
-    order:      orderNum,
-    p:          project.id,
-    project:    project.name,
-    date:       dateStr,
-    location:   newOrder.location        || '',
-    inspector:  newOrder.inspector_name  || '',
-    contractor: newOrder.contractor      || '',
-  });
-  const uploadUrl = window.location.origin + window.location.pathname + '?' + uploadParams.toString();
+  const uploadUrl = _labUploadUrl(orderNum, project.id);   // short link: only the order number + project id (long Hebrew links look like spam)
 
-  const subject = encodeURIComponent(`בקשת בדיקת מעבדה — הזמנה #${orderNum} | ${project.name}`);
-  const body    = encodeURIComponent(
+  const subject = `בקשת בדיקת מעבדה — הזמנה #${orderNum} | ${project.name}`;
+  const mkBody = pl =>
     `שלום,\n\nהועברה לטיפולכם בקשת בדיקת מעבדה:\n\n` +
     `פרויקט: ${project.name}\n` +
     `מספר הזמנה: #${orderNum}\n` +
@@ -8327,17 +8652,16 @@ async function submitInspectionAndSend() {
     `מזמין הבדיקה: ${newOrder.inspector_name || '–'}\n` +
     `קבלן: ${newOrder.contractor || '–'}\n` +
     (newOrder.notes ? `הערות: ${newOrder.notes}\n` : '') +
-    pdfLine +
+    pl +
     `\n----\nלחצו על הקישור הבא כדי להעלות את תעודת המעבדה:\n${uploadUrl}\n\n` +
     `(מספר ההזמנה ממולא אוטומטית — אין צורך להקליד)\n\n` +
-    `בברכה`
-  );
+    `בברכה`;
 
-  // ── שלב 6: סגור מודל, רענן טבלה, פתח Outlook ────────────
+  // ── שלב 6: סגור מודל, רענן טבלה, שלח מייל (מהשרת; אם אי אפשר — טיוטת מייל ידנית) ────────────
   closeById('m-new-inspection');
   await loadInspectionsScreen();
 
-  window.location.href = `mailto:${_mailtoAddr(lab.email)}?subject=${subject}&body=${body}`;
+  await _deliverLabMail({ orderId: newOrder.id, to: lab.email, subject, bodyLink: mkBody(pdfLine), bodyAttached: mkBody('\nטופס הזמנת הבדיקה מצורף למייל (PDF).\n'), pdfRef: pdfUrl, orderNum });
 }
 
 async function submitInspection() {
@@ -8363,7 +8687,7 @@ async function submitInspection() {
   }
 
   btn.disabled = false;
-  if (error) { errEl.textContent = 'שגיאה: ' + error.message; return; }
+  if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
 
   closeById('m-new-inspection');
   await loadInspectionsScreen();
@@ -8648,7 +8972,38 @@ const _ncrMailKey = c => c ? `qafield_ncr_mail_${currentCompanyId}_${currentUser
 // no ? & # % = in an address (they would add mailto parameters such as bcc=...), no double dots, a real domain with a TLD
 const _NCR_EMAIL_RE = /^(?!.*\.\.)[^\s@<>",;?&#%=()\[\]\\:]+@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}$/;
 const _cleanLabEmail = v => { v = (v || '').trim(); return v && _NCR_EMAIL_RE.test(v) ? v : null; };
+// The lab link carries only what the upload needs (order number + project id). A long link full of encoded Hebrew details raised spam scores;
+// the details are in the mail body and in the attached PDF.
+const _labUploadUrl = (orderNum, projectId) => `${window.location.origin}${window.location.pathname}?lab_upload&order=${encodeURIComponent(orderNum)}&p=${encodeURIComponent(projectId)}`;
 const _mailtoAddr = a => a.replace(/[?&#%=]/g, c => encodeURIComponent(c));
+// ── server-side e-mail (Edge Function `send-email`: the PDF travels as a real attachment, nothing opens on the user's computer).
+// When the server cannot send (not configured / unreachable / provider refused) callers fall back to the old mailto: draft,
+// so nothing breaks before the mail provider is set up. 4xx answers (no permission, rate limit, bad input) are shown, not retried.
+async function sendServerMail({ kind, ref, to, subject, text, attachmentRef, attachmentName }) {
+  try {
+    const { data: sd } = await db.auth.getSession();
+    const token = sd?.session?.access_token;
+    if (!token) return { ok: false, fallback: false, message: 'ההתחברות פגה, התחבר מחדש' };
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+      method: 'POST', headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, ref_id: ref, to, subject, text, attachment_path: attachmentRef ? sbPathOf(attachmentRef) : undefined, attachment_name: attachmentName }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.ok) return { ok: true, dry: !!j.dry_run, attached: !!j.attached };
+    const fb = r.status >= 500 || r.status === 404 || ['not_configured', 'provider_rejected', 'provider_unreachable', 'log_unavailable', 'bad_attachment', 'attachment_unreadable', 'attachment_too_large'].includes(j.error);
+    if (!fb) logClientError('send-email refused', { kind, status: r.status, error: j.error });
+    return { ok: false, fallback: fb, message: j.message || ('שגיאה ' + r.status) };
+  } catch (e) { return { ok: false, fallback: true, message: 'שירות המייל אינו זמין' }; }
+}
+const _sentToast = (r, who) => showToast(r.dry ? `מצב בדיקה: המייל ל-${who} נבדק אך לא נשלח בפועל` : `המייל נשלח ל-${who} ✓${r.attached ? ' (PDF מצורף)' : ''}`, r.dry ? 'info' : 'success');
+// Lab order mail: server first, mailto draft as the fallback. `bodyAttached` says the PDF is attached, `bodyLink` carries a 90-day link instead.
+async function _deliverLabMail({ orderId, to, subject, bodyLink, bodyAttached, pdfRef, orderNum }) {
+  const r = await sendServerMail({ kind: 'lab_order', ref: orderId, to: [to], subject, text: pdfRef ? bodyAttached : bodyLink, attachmentRef: pdfRef, attachmentName: `order_${orderNum}.pdf` });
+  if (r.ok) { _sentToast(r, to); return; }
+  if (!r.fallback) { showToast('המייל לא נשלח: ' + r.message, 'error'); return; }
+  showToast('השליחה האוטומטית אינה זמינה כרגע — נפתח מייל ידני', 'info');
+  window.location.href = `mailto:${_mailtoAddr(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLink)}`;
+}
 // A project has one or two labs: control (lab_email is its address) and assurance. Only labs with an address can be sent to.
 const _projLabs = p => !p ? [] : [
   { kind: 'control',   label: 'מעבדה לבקרה',  name: p.lab_control_name,   email: p.lab_email },
@@ -8692,14 +9047,23 @@ async function _ncrMailSend() {
   const r = await p; if (!r) return;
   const ptr = await _ncrStoreVersion(r.f, r.blob);
   if (!ptr) { errEl.textContent = 'שמירת ה-PDF נכשלה — המייל לא נוצר. אפשר להוריד את הקובץ ולצרף ידנית.'; _ncrDownload(r.blob, r.fileName); return; }
-  const link = await sbSign(ptr, 90 * 86400);
-  if (!link) { errEl.textContent = 'יצירת הקישור נכשלה — המייל לא נוצר. אפשר להוריד את הקובץ ולצרף ידנית.'; _ncrDownload(r.blob, r.fileName); return; }
   try { const mk = _ncrMailKey(r.f.contractor); if (mk) localStorage.setItem(mk, extra.join(', ')); } catch (_) {}
   const proj = _allProjects.find(x => x.id === r.f.project_id)?.name || '';
   const sev = (_NCR_SEV[r.f.severity] || _NCR_SEV.high)[0];
   const subject = `אי-התאמה #${r.f.serial_number ?? ''} — ${r.f.title || ''}${proj ? ' (' + proj + ')' : ''}`;
-  const body = [`פרויקט: ${proj}`, `אי-התאמה #${r.f.serial_number ?? ''}: ${r.f.title || ''}`, `דרגה: ${sev}`, `סטטוס: ${_NCR_STATUS[r.f.status] || ''}`,
-    r.f.due_date ? `יעד לביצוע: ${new Date(r.f.due_date + 'T12:00').toLocaleDateString('he-IL')}` : null, '', 'הדוח המלא (PDF) — הקישור תקף 90 יום:', link].filter(x => x !== null).join('\n');
+  const mkBody = tail => [`פרויקט: ${proj}`, `אי-התאמה #${r.f.serial_number ?? ''}: ${r.f.title || ''}`, `דרגה: ${sev}`, `סטטוס: ${_NCR_STATUS[r.f.status] || ''}`,
+    r.f.due_date ? `יעד לביצוע: ${new Date(r.f.due_date + 'T12:00').toLocaleDateString('he-IL')}` : null, '', ...tail].filter(x => x !== null).join('\n');
+  // 1) server-side send with the PDF attached
+  const sent = await sendServerMail({ kind: 'ncr', ref: r.f.id, to: list, subject, text: mkBody(['הדוח המלא מצורף למייל (PDF).']), attachmentRef: ptr, attachmentName: `ncr_${r.f.serial_number ?? 'x'}.pdf` });
+  if (sent.ok) {
+    await _ncrLog(r.f, 'emailed', `שלח דוח PDF במייל ל-${list.length} נמענים`);
+    closeById('m-ncr-mail'); _sentToast(sent, list.length === 1 ? list[0] : `${list.length} נמענים`); return;
+  }
+  if (!sent.fallback) { errEl.textContent = 'המייל לא נשלח: ' + sent.message; return; }
+  // 2) fallback: a mailto: draft with a 90-day link to the PDF
+  const link = await sbSign(ptr, 90 * 86400);
+  if (!link) { errEl.textContent = 'יצירת הקישור נכשלה — המייל לא נוצר. אפשר להוריד את הקובץ ולצרף ידנית.'; _ncrDownload(r.blob, r.fileName); return; }
+  const body = mkBody(['הדוח המלא (PDF) — הקישור תקף 90 יום:', link]);
   const to = list.map(_mailtoAddr).join(',');
   let href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   if (href.length > 1900) href = `mailto:${to}?subject=${encodeURIComponent(subject.slice(0, 80))}&body=${encodeURIComponent(link)}`;
@@ -8968,6 +9332,14 @@ function _getToastContainer() {
   return c;
 }
 
+// The database refuses HTML tags in text columns (`*_notag_chk`) — show a Hebrew message instead of the raw constraint error
+function _friendlyErr(msg) {
+  const m = String(msg == null ? '' : msg);
+  if (/_(notag|nomarkup)_chk|check constraint .*(notag|nomarkup)/i.test(m)) return 'הטקסט מכיל תגית HTML (למשל <b>) — הסר אותה ונסה שוב';
+  if (/is_storage_pointer|_pointer_chk/i.test(m)) return 'כתובת קובץ לא תקינה';
+  if (/project is required/i.test(m)) return 'יש לבחור פרויקט (בורר הפרויקט העליון)';
+  return m;
+}
 function showToast(msg, type = 'info') {
   const cfg = {
     success: { bg: '#059669', icon: 'ti-circle-check' },
@@ -8980,7 +9352,8 @@ function showToast(msg, type = 'info') {
   const t = document.createElement('div');
   t.className = 'toast-item';
   t.style.background = bg;
-  t.innerHTML = `<i class="ti ${icon}"></i><span>${msg}</span>`;
+  t.innerHTML = `<i class="ti ${icon}"></i><span></span>`;
+  t.querySelector('span').textContent = _friendlyErr(msg);
   c.appendChild(t);
   requestAnimationFrame(() => { requestAnimationFrame(() => t.classList.add('show')); });
   setTimeout(() => {
@@ -8992,7 +9365,8 @@ function showToast(msg, type = 'info') {
 
 // ─── SEND TO LAB ─────────────────────────────────────────
 
-async function sendToLab(orderId) {
+const sendToLab = _pdfOnce(_sendToLab);   // single flight: a double click must not e-mail the lab twice
+async function _sendToLab(orderId) {
   // פותחים חלון לפני כל await — נדרש למניעת חסימת popup
   // אם יש כבר pdf_url נסגור אותו מיד, אחרת נשתמש בו לייצור PDF
   const win = window.open('', '_blank', 'width=860,height=700,left=100,top=100');
@@ -9080,20 +9454,10 @@ async function sendToLab(orderId) {
     : '';
 
   // בנה URL עם פרטי ההזמנה מוטמעים — ללא קריאת DB בדף הציבורי
-  const uploadParams = new URLSearchParams({
-    lab_upload: '',
-    order:      orderNum,
-    p:          project.id,
-    project:    project.name,
-    date:       dateStr,
-    location:   order.location   || '',
-    inspector:  order.inspector_name || '',
-    contractor: order.contractor || '',
-  });
-  const uploadUrl = window.location.origin + window.location.pathname + '?' + uploadParams.toString();
+  const uploadUrl = _labUploadUrl(orderNum, project.id);   // short link: only the order number + project id (long Hebrew links look like spam)
 
-  const subject = encodeURIComponent(`בקשת בדיקת מעבדה — הזמנה #${orderNum} | ${project.name}`);
-  const body    = encodeURIComponent(
+  const subject = `בקשת בדיקת מעבדה — הזמנה #${orderNum} | ${project.name}`;
+  const mkBody = pl =>
     `שלום,\n\nהועברה לטיפולכם בקשת בדיקת מעבדה:\n\n` +
     `פרויקט: ${project.name}\n` +
     `מספר הזמנה: #${orderNum}\n` +
@@ -9102,13 +9466,12 @@ async function sendToLab(orderId) {
     `מזמין הבדיקה: ${order.inspector_name || '–'}\n` +
     `קבלן: ${order.contractor || '–'}\n` +
     (order.notes ? `הערות: ${order.notes}\n` : '') +
-    pdfLine +
+    pl +
     `\n----\nלחצו על הקישור הבא כדי להעלות את תעודת המעבדה:\n${uploadUrl}\n\n` +
     `(מספר ההזמנה ממולא אוטומטית — אין צורך להקליד)\n\n` +
-    `בברכה`
-  );
+    `בברכה`;
 
-  window.location.href = `mailto:${_mailtoAddr(lab.email)}?subject=${subject}&body=${body}`;
+  await _deliverLabMail({ orderId: order.id, to: lab.email, subject, bodyLink: mkBody(pdfLine), bodyAttached: mkBody('\nטופס הזמנת הבדיקה מצורף למייל (PDF).\n'), pdfRef: pdfUrl, orderNum });
 }
 
 // ─── LAB UPLOAD PAGE ─────────────────────────────────────
