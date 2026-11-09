@@ -7070,9 +7070,9 @@ function openImportExcel(projectId) {
 
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('excel-file-input');
-  input.addEventListener('change', e => { if (e.target.files[0]) handleExcelFile(e.target.files[0]); });
-
   const dz = document.getElementById('import-dropzone');
+  if (!input || !dz) return;   // the public lab upload page replaces the whole body: nothing to wire (used to throw and be logged on every certificate upload)
+  input.addEventListener('change', e => { if (e.target.files[0]) handleExcelFile(e.target.files[0]); });
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
   dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
   dz.addEventListener('drop', e => {
@@ -8653,9 +8653,7 @@ async function submitInspectionAndSend() {
     `קבלן: ${newOrder.contractor || '–'}\n` +
     (newOrder.notes ? `הערות: ${newOrder.notes}\n` : '') +
     pl +
-    `\n----\nלחצו על הקישור הבא כדי להעלות את תעודת המעבדה:\n${uploadUrl}\n\n` +
-    `(מספר ההזמנה ממולא אוטומטית — אין צורך להקליד)\n\n` +
-    `בברכה`;
+    _labMailTail(uploadUrl);
 
   // ── שלב 6: סגור מודל, רענן טבלה, שלח מייל (מהשרת; אם אי אפשר — טיוטת מייל ידנית) ────────────
   closeById('m-new-inspection');
@@ -8975,6 +8973,11 @@ const _cleanLabEmail = v => { v = (v || '').trim(); return v && _NCR_EMAIL_RE.te
 // The lab link carries only what the upload needs (order number + project id). A long link full of encoded Hebrew details raised spam scores;
 // the details are in the mail body and in the attached PDF.
 const _labUploadUrl = (orderNum, projectId) => `${window.location.origin}${window.location.pathname}?lab_upload&order=${encodeURIComponent(orderNum)}&p=${encodeURIComponent(projectId)}`;
+// Lab mail footer: labs answer by e-mail (the Reply-To is the logged-in sender), the upload link stays as an alternative.
+const _labMailTail = uploadUrl => {
+  const n = (_currentUserProfile?.full_name || '').trim();
+  return `\n----\nאת תעודת המעבדה ניתן לשלוח בתשובה למייל זה${n ? ` (התשובה תגיע ישירות אל ${n})` : ''}.\nלחלופין, אפשר להעלות אותה בקישור:\n${uploadUrl}\n\nבברכה${n ? ',\n' + n : ''}`;
+};
 const _mailtoAddr = a => a.replace(/[?&#%=]/g, c => encodeURIComponent(c));
 // ── server-side e-mail (Edge Function `send-email`: the PDF travels as a real attachment, nothing opens on the user's computer).
 // When the server cannot send (not configured / unreachable / provider refused) callers fall back to the old mailto: draft,
@@ -9258,21 +9261,26 @@ window.addEventListener('load', async function() {
     overlay.style.display = 'none';
     await new Promise(r => setTimeout(r, 500));
     const { jsPDF } = window.jspdf;
+    // the canvas must be exactly as tall as the content: without an explicit height html2canvas uses max(content, window height),
+    // and a window taller than the content produced a blank second page
+    const contentH = Math.ceil(document.body.getBoundingClientRect().height);
     const canvas = await html2canvas(document.body, {
       scale: 2, useCORS: true, allowTaint: false,
       backgroundColor: '#ffffff', logging: false,
-      width: 794, windowWidth: 794,
+      width: 794, windowWidth: 794, height: contentH, windowHeight: contentH,
     });
     const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
     const pw = pdf.internal.pageSize.getWidth();
     const ph = pdf.internal.pageSize.getHeight();
     const imgD = canvas.toDataURL('image/jpeg', 0.93);
     const ih = (canvas.height / canvas.width) * pw;
-    if (ih <= ph) {
+    // up to 2 mm of rounding is ignored (the canvas now has exactly the content height): a body only a few pixels taller than one A4 page used to give a blank second page
+    const nPages = Math.max(1, Math.ceil((ih - 2) / ph));
+    if (nPages === 1) {
       pdf.addImage(imgD, 'JPEG', 0, 0, pw, ih);
     } else {
       let y = 0, p = 0;
-      while (y < ih && p < 15) {
+      while (p < nPages && p < 15) {
         if (p > 0) pdf.addPage();
         pdf.addImage(imgD, 'JPEG', 0, -y, pw, ih);
         y += ph; p++;
@@ -9467,9 +9475,7 @@ async function _sendToLab(orderId) {
     `קבלן: ${order.contractor || '–'}\n` +
     (order.notes ? `הערות: ${order.notes}\n` : '') +
     pl +
-    `\n----\nלחצו על הקישור הבא כדי להעלות את תעודת המעבדה:\n${uploadUrl}\n\n` +
-    `(מספר ההזמנה ממולא אוטומטית — אין צורך להקליד)\n\n` +
-    `בברכה`;
+    _labMailTail(uploadUrl);
 
   await _deliverLabMail({ orderId: order.id, to: lab.email, subject, bodyLink: mkBody(pdfLine), bodyAttached: mkBody('\nטופס הזמנת הבדיקה מצורף למייל (PDF).\n'), pdfRef: pdfUrl, orderNum });
 }

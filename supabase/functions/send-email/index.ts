@@ -148,7 +148,12 @@ Deno.serve(async (req) => {
   }
 
   // ── send ──
-  const payload: Record<string, unknown> = { from: MAIL_FROM, to, subject, text, html: toHtml(text) };
+  // The mail is sent from our verified address but carries the logged-in user's name, and replies go to that user (Reply-To).
+  const fromAddr = (MAIL_FROM.match(/<([^>]+)>/)?.[1] ?? MAIL_FROM).trim();
+  // letters / marks (Hebrew niqqud, other scripts) / digits and a few harmless punctuation marks (Hebrew gershayim, maqaf, curly apostrophe); cut by code points
+  const senderName = Array.from(String(prof.full_name ?? '').replace(/[^\p{L}\p{M}\p{N} .'\-׳״־’]/gu, '').replace(/\s+/g, ' ').trim()).slice(0, 50).join('').trim();
+  const from = senderName ? `"${senderName} via QAField" <${fromAddr}>` : MAIL_FROM;
+  const payload: Record<string, unknown> = { from, to, subject, text, html: toHtml(text) };
   if (me.email && EMAIL_RE.test(me.email)) payload.reply_to = me.email;
   if (attachment) payload.attachments = [attachment];
   let res: Response;
