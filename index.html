@@ -6408,10 +6408,10 @@ function _renderBoardDetails(wi, contextLabel) {
 
   // Action buttons
   html += `<div class="brd-det-actions">
-    <button class="brd-det-btn" onclick="toggleStopPoint('${wi.id}',${isStop})">
+    ${(!isStop || (stopRel ? _canReleaseStopPoint() : _canRemoveStopPoint())) ? `<button class="brd-det-btn" onclick="toggleStopPoint('${wi.id}',${isStop})">
       <i class="ti ${isStop ? 'ti-octagon-minus' : 'ti-octagon'}" style="color:${isStop ? '#EF4444' : '#6B7280'}"></i>
       ${isStop ? 'הסר עצירה' : 'נקודת עצירה'}
-    </button>
+    </button>` : ''}
     <button class="brd-det-btn" onclick="openNewInspection('${_boardProjectId}','${wi.id}')">
       <i class="ti ti-calendar-plus" style="color:#3B82F6"></i>הזמן בדיקה
     </button>
@@ -6448,9 +6448,9 @@ function _renderBoardDetails(wi, contextLabel) {
     html += `<div class="brd-stop-banner" id="stop-banner-${wi.id}">
       <i class="ti ti-octagon" style="font-size:16px;flex-shrink:0"></i>
       <span style="flex:1"><b>נקודת עצירה</b> – נדרש אישור בקר לפני המשך</span>
-      <button class="brd-det-btn" style="border-color:#C0392B;color:#C0392B;background:#FFF1F0;margin:0" data-n="${safeWiName}" onclick="openStopRelease('${wi.id}',this.dataset.n)">
+      ${_canReleaseStopPoint() ? `<button class="brd-det-btn" style="border-color:#C0392B;color:#C0392B;background:#FFF1F0;margin:0" data-n="${safeWiName}" onclick="openStopRelease('${wi.id}',this.dataset.n)">
         <i class="ti ti-check"></i>שחרר
-      </button>
+      </button>` : `<span style="font-size:11px;color:#9B2226" title="לפי ההרשאות, רק בקר איכות או הבטחת איכות רשאים לשחרר נקודת עצירה">שחרור: בקר איכות / הבטחת איכות</span>`}
     </div>`;
   }
   if (isStop && stopRel) {
@@ -7527,6 +7527,10 @@ async function confirmImport() {
     }
     if (bad.length) throw new Error('הקובץ מכיל תגיות HTML (למשל <b>) שאינן מותרות — לא בוצע שינוי בפרויקט. ' + bad.slice(0, 3).join(' | '));
 
+    // 0b. The import replaces the whole tree. Released stop points are approval records and cannot be deleted (database rule), so refuse up front.
+    const { count: relCount } = await db.from('work_items').select('id', { count: 'exact', head: true }).eq('project_id', _importProjectId).eq('stop_released', true);
+    if ((relCount ?? 0) > 0) throw new Error(`בפרויקט יש נקודות עצירה משוחררות (${relCount}). הייבוא מחליף את כל העץ ולכן אינו אפשרי: בקר איכות או הבטחת איכות צריכים לפתוח אותן מחדש (או להסיר אותן) לפני הייבוא. לא בוצע שינוי בפרויקט.`);
+
     // 1. Upsert templates
     const tRows = [];
     for (const [type_name, tasks] of Object.entries(templates))
@@ -7541,7 +7545,7 @@ async function confirmImport() {
 
     // 2. Delete existing work items for this project
     const { error: de } = await db.from('work_items').delete().eq('project_id', _importProjectId);
-    if (de) throw new Error('מחיקת העץ הקיים נכשלה: ' + de.message);
+    if (de) throw new Error('מחיקת העץ הקיים נכשלה: ' + _friendlyErr(de.message));
 
     // 3. Insert work items in batch
     const toInsert = workItems.map(item => ({ ...item, project_id: _importProjectId, company_id: currentCompanyId }));
@@ -7639,12 +7643,20 @@ async function openChecklistModal(workItemId, itemName, execType) {
 
 // ─── STOP POINTS ─────────────────────────────────────────
 
+// Who may release / remove a stop point (enforced by the database, migration 026 — the UI only hides what would be refused):
+//  * release: quality inspector or quality assurance only (no bypass for admins)
+//  * remove / re-open / delete a RELEASED stop point: the same people only (it is the approval record)
+//  * remove an OPEN stop point: the same people, or an admin / project manager
+//  * mark a work item as a stop point: any project member
+function _canReleaseStopPoint() { return currentSignerRole === 'qa_inspector' || currentSignerRole === 'qa_assurance'; }
+function _canRemoveStopPoint() { return _canReleaseStopPoint() || !!(currentSystemAdmin || currentUserRole === 'admin' || currentUserRole === 'manager'); }
+
 async function toggleStopPoint(wiId, currentVal) {
   const newVal = !currentVal;
   const { error } = await db.from('work_items')
     .update({ is_stop_point: newVal, ...(newVal ? {} : { stop_released: false, stop_released_at: null, stop_released_by: null, stop_release_result: null, stop_release_notes: null }) })
     .eq('id', wiId);
-  if (error) return;
+  if (error) { showToast(error.message, 'error'); return; }
   // Re-render the board to reflect change
   await openProjectBoard(_boardProjectId);
 }
@@ -7681,7 +7693,11 @@ async function submitStopRelease() {
   }).eq('id', wiId);
 
   btn.disabled = false;
-  if (error) { errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message); return; }
+  if (error) {
+    errEl.textContent = 'שגיאה: ' + _friendlyErr(error.message);
+    if (/release record cannot be edited/i.test(error.message || '')) openProjectBoard(_boardProjectId);   // somebody released it first: show the current state
+    return;
+  }
 
   closeById('m-stop-release');
   await openProjectBoard(_boardProjectId);
@@ -9346,6 +9362,11 @@ function _friendlyErr(msg) {
   if (/_(notag|nomarkup)_chk|check constraint .*(notag|nomarkup)/i.test(m)) return 'הטקסט מכיל תגית HTML (למשל <b>) — הסר אותה ונסה שוב';
   if (/is_storage_pointer|_pointer_chk/i.test(m)) return 'כתובת קובץ לא תקינה';
   if (/project is required/i.test(m)) return 'יש לבחור פרויקט (בורר הפרויקט העליון)';
+  if (/may release a stop point/i.test(m)) return 'רק בקר איכות או הבטחת איכות רשאים לשחרר נקודת עצירה';
+  if (/release record cannot be edited/i.test(m)) return 'נקודת העצירה כבר שוחררה. הלוח יתרענן; כדי לשנות את השחרור יש לפתוח אותה מחדש';
+  if (/re-open or remove a released stop point/i.test(m)) return 'נקודת עצירה משוחררת היא רישום אישור: רק בקר איכות או הבטחת איכות רשאים לפתוח אותה מחדש או להסיר אותה';
+  if (/may remove a stop point/i.test(m)) return 'רק בקר איכות, הבטחת איכות, אדמין או מנהל פרויקט רשאים להסיר נקודת עצירה';
+  if (/released stop point cannot be deleted/i.test(m)) return 'אי אפשר למחוק פריט עם נקודת עצירה משוחררת. בקר איכות או הבטחת איכות צריכים לפתוח אותה מחדש קודם';
   return m;
 }
 function showToast(msg, type = 'info') {
